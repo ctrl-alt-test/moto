@@ -144,7 +144,8 @@ int __cdecl main(int argc, char* argv[])
 	Leviathan::Editor editor = Leviathan::Editor();
 	editor.updateShaders(&shaderMain, true);
 
-	Leviathan::Song track(TRACK_AS_WAV_FILE);
+	// Leviathan::Song track(TRACK_AS_WAV_FILE);
+	Leviathan::NoSong track;
 
 	track.play();
 	double position = 0.0;

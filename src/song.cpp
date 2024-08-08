@@ -84,7 +84,7 @@ bool Song::is_playing()
 	return position<trackLength;
 }
 
-int Song::seek(long double position)
+void Song::seek(long double position)
 {
 	if (position>length)
 		position = length;
@@ -98,8 +98,6 @@ int Song::seek(long double position)
 	mediaSeeking->SetPositions(&seekPosition, AM_SEEKING_AbsolutePositioning, &seekPosition, AM_SEEKING_NoPositioning);
 	if (playing)
 		mediaControl->Run();
-
-	return 0;
 }
 
 long double Song::getTime()
