@@ -94,7 +94,7 @@ namespace Leviathan
 
         long double getElapsedTime() const {
             ULONGLONG currentTick = GetTickCount64();
-            return static_cast<long double>(currentTick - lastTick) / 100.;
+            return static_cast<long double>(currentTick - lastTick) / 1000.;
         }
     };
 }
