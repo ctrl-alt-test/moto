@@ -5,6 +5,10 @@ vec2 iMouse = vec2(700., 900.);
 uniform float iTime;
 #define iFrame 0
 
+in vec3 camPos;
+in vec3 camTa;
+in float camFocal;
+in float fishEyeFactor;
 
 #define MAX_SDF_STEPS 100
 #define MAX_HM_STEPS 50
@@ -283,7 +287,7 @@ void ComputeBezierSegmentsLength()
     }
 }
 
-// Quadradic Bézier curve exact bounding box from IQ:
+// Quadradic Bï¿½zier curve exact bounding box from IQ:
 // https://www.shadertoy.com/view/XdVBWd
 vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
 {
@@ -668,6 +672,14 @@ vec3 evalRadiance(int mid, vec3 p, vec3 V, vec3 N)
 
 // -------------------------------------------------------
 
+mat3 lookat(vec3 ro, vec3 ta)
+{
+    const vec3 up = vec3(0.,1.,0.);
+    vec3 fw = normalize(ta-ro);
+    vec3 rt = normalize(cross(fw, normalize(up)));
+    return mat3(rt, cross(rt, fw), fw);
+}
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLength();
@@ -676,13 +688,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     vec2 mouseInput = iMouse.xy / iResolution.xy;
 
-    vec3 ro;
-    vec3 rd;
     float time = iTime;
 #if ENABLE_STOCHASTIC_MOTION_BLUR
     time += hash(vec3(fragCoord, 1e-3*iTime)) * 0.008;
 #endif
-    orbitalCamera(uv, vec2(0.02 * time, 0.3) /*mouseInput*/, ro, rd);
+    // orbitalCamera(uv, vec2(0.02 * time, 0.3) /*mouseInput*/, ro, rd);
+    vec2 v = uv*2.-1.;
+    vec3 ro = camPos;
+    vec3 rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
 
     vec3 p;
     int mid;

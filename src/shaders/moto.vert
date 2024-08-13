@@ -6,6 +6,7 @@ out vec3 sunDir;
 out vec3 camPos;
 out vec3 camTa;
 out float camFocal;
+out float fishEyeFactor;
 
 uniform float iTime;
 
@@ -17,8 +18,15 @@ void main(void)
     float time = iTime;
     
     camFocal = 2.;
+    fishEyeFactor = 0.;
     sunDir = normalize(vec3(3.5,1.,-1.));
-    
-    camPos = vec3(5.+time*.5, 2., 0.+time*.5);
-    camTa = vec3(0., 2., 0.);
+
+    // list of camera shots
+    if (time < 5.) {
+        camPos = vec3(5.+time*.5, 2., 0.+time*.5);
+        camTa = vec3(0., 2., 0.);
+    } else {
+        camPos = vec3(7.5, 2., 2.5);
+        camTa = vec3(0., 2., 0.);
+    }
 }
