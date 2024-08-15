@@ -274,6 +274,12 @@ float Segment(vec3 p, vec3 a, vec3 b, out float h)
 	return length(ap - ab * h);
 }
 
+float Capsule(vec3 p, float h, float r)
+{
+    p.y += clamp(-p.y, 0., h);
+    return length(p) - r;
+}
+
 float Torus( vec3 p, vec2 t )
 {
     return length( vec2(length(p.xz)-t.x,p.y) )-t.y;
