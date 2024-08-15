@@ -170,7 +170,7 @@
       <Culture>0x0409</Culture>
     </ResourceCompile>
     <Link>
-      <AdditionalDependencies>winmm.lib;4klang.obj;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>winmm.lib;src/music/music.obj;opengl32.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>out/leviathan-debug.exe</OutputFile>
       <SuppressStartupBanner>true</SuppressStartupBanner>
       <GenerateDebugInformation>true</GenerateDebugInformation>
@@ -322,7 +322,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:300 /COMPMODE:SLOW /ORDERTRIES:9000 /REPORT:out.html /PROGRESSGUI /HASHSIZE:1000 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS /TRUNCATEFLOATS:32 %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>opengl32.lib;4klang.obj;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;src/music/music.obj;winmm.lib;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>out\leviathan-release.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
@@ -413,7 +413,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:1000 /COMPMODE:VERYSLOW /ORDERTRIES:30000 /REPORT:out.html /PROGRESSGUI /HASHSIZE:1000 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>opengl32.lib;winmm.lib;src/4klang/4klang.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;src/music/music.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>out\leviathan-release.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
@@ -510,7 +510,7 @@
     </ResourceCompile>
     <Link>
       <AdditionalOptions>/CRINKLER  /RANGE:opengl32 /HASHTRIES:100 /COMPMODE:INSTANT /ORDERTRIES:2000 /PROGRESSGUI /HASHSIZE:100 /UNSAFEIMPORT /UNALIGNCODE /SATURATE /NOINITIALIZERS /TRANSFORM:CALLS %(AdditionalOptions)</AdditionalOptions>
-      <AdditionalDependencies>opengl32.lib;winmm.lib;4klang.obj;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>opengl32.lib;winmm.lib;src/music/music.obj;%(AdditionalDependencies)</AdditionalDependencies>
       <OutputFile>out\leviathan-snapshot.exe</OutputFile>
       <SuppressStartupBanner>
       </SuppressStartupBanner>
@@ -557,6 +557,7 @@
     <ClInclude Include="src\editor.h" />
     <ClInclude Include="src\glext.h" />
     <ClInclude Include="src\4klang.h" />
+    <ClInclude Include="src\music\music.h" />
     <ClInclude Include="src\song.h" />
   </ItemGroup>
   <ItemGroup>

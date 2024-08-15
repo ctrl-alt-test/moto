@@ -38,38 +38,35 @@ static int shaderFXAA;
 
 // Sound 
 #ifdef SOUND_ON
-#include "4klang.h"
-static SAMPLE_TYPE	lpSoundBuffer[MAX_SAMPLES * 2];
-static HWAVEOUT	hWaveOut;
+#include "music/music.h"
+SUsample sound_buffer[SU_LENGTH_IN_SAMPLES * SU_CHANNEL_COUNT];
+HWAVEOUT	wave_out_handle;
 #pragma data_seg(".wavefmt")
-WAVEFORMATEX WaveFMT =
-{
-#ifdef FLOAT_32BIT	
+WAVEFORMATEX wave_format = {
+#ifdef SU_SAMPLE_FLOAT
 	WAVE_FORMAT_IEEE_FLOAT,
 #else
 	WAVE_FORMAT_PCM,
-#endif		
-	2, // channels
-	SAMPLE_RATE, // samples per sec
-	SAMPLE_RATE * sizeof(SAMPLE_TYPE) * 2, // bytes per sec
-	sizeof(SAMPLE_TYPE) * 2, // block alignment;
-	sizeof(SAMPLE_TYPE) * 8, // bits per sample
-	0 // extension not needed
+#endif
+	SU_CHANNEL_COUNT,
+	SU_SAMPLE_RATE, // samples per sec
+	SU_SAMPLE_RATE * SU_SAMPLE_SIZE * SU_CHANNEL_COUNT, // bytes per sec
+	SU_SAMPLE_SIZE * SU_CHANNEL_COUNT, // block alignment
+	SU_SAMPLE_SIZE * 8, // bits per sample
+	0
 };
 #pragma data_seg(".wavehdr")
-WAVEHDR WaveHDR =
-{
-	(LPSTR)lpSoundBuffer,
-	MAX_SAMPLES * sizeof(SAMPLE_TYPE) * 2,			// MAX_SAMPLES*sizeof(float)*2(stereo)
+WAVEHDR wave_header = {
+	(LPSTR)sound_buffer,
+	SU_LENGTH_IN_SAMPLES * SU_SAMPLE_SIZE * SU_CHANNEL_COUNT,
 	0,
 	0,
-	0,
+	WHDR_PREPARED,
 	0,
 	0,
 	0
-};
-MMTIME MMTime =
-{
+}; 
+MMTIME mmtime = {
 	TIME_SAMPLES,
 	0
 };
@@ -129,14 +126,17 @@ int __cdecl main(int argc, char* argv[])
 	// init sound
 #ifndef EDITOR_CONTROLS
 #ifdef SOUND_ON
-	#if 1 // 4 more bytes
-		CreateThread(0, 0, (LPTHREAD_START_ROUTINE)_4klang_render, lpSoundBuffer, 0, 0);
-	#else
-		_4klang_render(lpSoundBuffer);
-	#endif
-	waveOutOpen(&hWaveOut, WAVE_MAPPER, &WaveFMT, NULL, 0, CALLBACK_NULL);
-	waveOutPrepareHeader(hWaveOut, &WaveHDR, sizeof(WaveHDR));
-	waveOutWrite(hWaveOut, &WaveHDR, sizeof(WaveHDR));
+	// Load gm.dls if necessary.
+	#ifdef SU_LOAD_GMDLS
+			su_load_gmdls();
+	#endif // SU_LOAD_GMDLS
+	CreateThread(0, 0, (LPTHREAD_START_ROUTINE)su_render_song, sound_buffer, 0, 0);
+
+	// We render in the background while playing already. Fortunately,
+	// Windows is slow with the calls below, so we're not worried that
+	// we don't have enough samples ready before the track starts.
+	waveOutOpen(&wave_out_handle, WAVE_MAPPER, &wave_format, 0, 0, CALLBACK_NULL);
+	waveOutWrite(wave_out_handle, &wave_header, sizeof(wave_header));
 #else
 	long startTime = timeGetTime();
 #endif
@@ -167,8 +167,8 @@ int __cdecl main(int argc, char* argv[])
 		float time = (float)position;
 #else
 #ifdef SOUND_ON
-		waveOutGetPosition(hWaveOut, &MMTime, sizeof(MMTIME));
-		float time = ((float)MMTime.u.sample) / 44100.0f;
+		waveOutGetPosition(wave_out_handle, &mmtime, sizeof(MMTIME));
+		float time = ((float)mmtime.u.sample) / 44100.0f;
 #else
 		long currentTime = timeGetTime();
 		float time = (float)(currentTime - startTime) * 0.001f;
@@ -209,7 +209,7 @@ int __cdecl main(int argc, char* argv[])
 #endif
 
 #ifdef SOUND_ON
-	} while(MMTime.u.sample < MAX_SAMPLES && !GetAsyncKeyState(VK_ESCAPE));
+	} while(mmtime.u.sample < SU_LENGTH_IN_SAMPLES && !GetAsyncKeyState(VK_ESCAPE));
 #else
 	} while (!GetAsyncKeyState(VK_ESCAPE));
 #endif
