@@ -10,4 +10,5 @@ uniform float iTime;
 #define ZERO min(0, int(iTime))
 #include "common.frag"
 
+#include "roadContent.frag"
 #include "moto.frag"
