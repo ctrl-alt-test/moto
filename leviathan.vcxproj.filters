@@ -26,13 +26,19 @@
     <None Include="src\shaders\moto.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="src\shaders\moto.vert">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="src\shaders\fxaa.frag">
       <Filter>shaders</Filter>
     </None>
     <None Include="src\shaders\shaders.inl">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\common.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\scene.vert">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\scene.frag">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

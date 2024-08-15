@@ -91,7 +91,7 @@ void Editor::updateShaders(int* mainShaderPID, bool force_update)
 			printf("Refreshing shaders...                                                   \n");
 
 			Sleep(100);
-			int newPID = reloadShaderSource("src/shaders/moto.vert", "src/shaders/moto.frag");
+			int newPID = reloadShaderSource("src/shaders/scene.vert", "src/shaders/preprocessed.scene.frag");
 			if (newPID > 0) {
 				int oldPID = *mainShaderPID;
 				*mainShaderPID = newPID;

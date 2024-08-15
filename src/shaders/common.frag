@@ -1,47 +1,12 @@
-#define ENABLE_SMOOTHER_STEP_NOISE 0
-#define PI acos(-1.)
 #ifndef ZERO
 #define ZERO 0
 #endif
 
+const bool ENABLE_SMOOTHER_STEP_NOISE = false;
+const float PI = acos(-1.);
+
 // -------------------------------------------------------
-// Palette functions
-
-#define POSITIVE_DISTANCE_SPACE vec3(0.13, 0.62, 0.74)
-#define NEGATIVE_DISTANCE_SPACE vec3(0.01, 0.19, 0.28)
-#define ZERO_DISTANCE_ISO_LINE vec3(1.0, 0.72, 0.01)
-#define ISO_LINES vec3(0.56, 0.79, 0.9)
-
-// See: https://www.shadertoy.com/view/XcVGRR
-vec3 debugDistance(vec3 iResolution, float d)
-{
-    float refWidth = iResolution.y / 1080.;
-
-    float dd1 = fwidth(d);
-    float width1 = 2.5 * dd1 * refWidth;
-    
-    float iso1 = smoothstep(-dd1, dd1, abs(fract(d) * 2. - 1.) - (1. - width1));
-
-    float dd5 = fwidth(5. * d);
-    float width5 = 0.75 * dd5 * refWidth;
-    float iso5 = smoothstep(-dd5, dd5, abs(fract(5.*d) * 2. - 1.) - (1. - width5));
-
-    float dd0 = fwidth(d);
-    float width0 = 3. * dd0 * refWidth;
-    float iso0 = smoothstep(-dd0, dd0, width0 - abs(d));
-
-    float isoLines = max(iso0, max(iso1, iso5));
-
-    vec3 background = (d > 0. ? POSITIVE_DISTANCE_SPACE : mix(NEGATIVE_DISTANCE_SPACE, ISO_LINES, 0.1));
-    vec3 lineColor = mix(ISO_LINES * (d > 0. ? 1. : 0.8), ZERO_DISTANCE_ISO_LINE, iso0);
-
-    return mix(background, lineColor, isoLines);
-}
-
-vec3 debugPalette(float t)
-{
-    return cos(2. * PI * (t + vec3(0.1, 0.2, 0.3))) * 0.5 + 0.5;
-}
+// Palette function
 
 vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
 {
@@ -194,11 +159,14 @@ float valueNoise(vec2 p)
     vec2 p00 = floor(p);
 
     vec2 fp = p - p00;
-#if ENABLE_SMOOTHER_STEP_NOISE
-    fp = fp*fp*fp* (fp* (fp * 6.0 - 15.0) + 10.0);
-#else
-    fp = fp*fp * (3.0 - 2.0 * fp);
-#endif
+    if (ENABLE_SMOOTHER_STEP_NOISE)
+    {
+        fp = fp*fp*fp* (fp* (fp * 6.0 - 15.0) + 10.0);
+    }
+    else
+    {
+        fp = fp*fp * (3.0 - 2.0 * fp);
+    }
 
     vec2 p10 = p00 + vec2(1.0, 0.0);
     vec2 p01 = p00 + vec2(0.0, 1.0);
@@ -372,7 +340,7 @@ float BezierCurveLengthAt(vec2 A, vec2 B, vec2 C, float t)
 
     // Reparametrize for easier integration
     // t^2k1 + tk2 + k3 = k1((t + k4)^2 + k5)
-    float k4 = 0.5f * k2 / k1;
+    float k4 = 0.5 * k2 / k1;
     float k5 = k3 / k1 - k4 * k4;
 
     // Calculate the definite integrals of the velocity function to obtain the distance function

@@ -1,10 +1,3 @@
-#version 150
-out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.);
-vec2 iMouse = vec2(700., 900.);
-uniform float iTime;
-#define iFrame 0
-
 in vec3 camPos;
 in vec3 camTa;
 in float camFocal;
@@ -18,9 +11,7 @@ in float fishEyeFactor;
 #define MAX_LIGHTS 6
 #define EPSILON 1e-4
 #define BOUNCE_OFFSET 1e-3
-#define PI acos(-1.)
 #define GAMMA 2.2
-#define ZERO min(iFrame, 0)
 
 #define SPLINE_ABOUT_FOURTY_POINTS 0
 
@@ -31,127 +22,8 @@ in float fishEyeFactor;
 
 vec2 segmentPoints[] = vec2[](vec2(-5.0), vec2(5.0));
 
-vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
-{
-    return a + b * cos(2. * PI * (c * t + d));
-}
-
-vec3 debugPalette(float t)
-{
-    return cos(2. * PI * (t + vec3(0.1, 0.2, 0.3))) * 0.5 + 0.5;
-}
-
-// -------------------------------------------------------
-// Noise functions
-
-float hash(float x) { return fract(sin(x) * 43758.5453); }
-float hash(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
-float hash(vec3 xyz) { return hash(vec2(hash(xyz.xy), xyz.z)); }
-vec2 hash2(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
-
-float valueNoise(vec2 p)
-{
-    vec2 p00 = floor(p);
-
-    vec2 fp = p - p00;
-    fp = fp*fp * (3.0 - 2.0 * fp);
-
-    vec2 p10 = p00 + vec2(1.0, 0.0);
-    vec2 p01 = p00 + vec2(0.0, 1.0);
-    vec2 p11 = p00 + vec2(1.0, 1.0);
-
-    float v00 = hash(p00);
-    float v10 = hash(p10);
-    float v01 = hash(p01);
-    float v11 = hash(p11);
-
-    float v = mix(mix(v00, v10, fp.x), mix(v01, v11, fp.x), fp.y);
-    return v;// - 0.5; <---- FIXME
-}
-
-float fBm(vec2 p, int iterations, float a, float b)
-{
-    float v = 0.;
-    float weight = 1.0;
-    float frequency = 1.0;
-    float offset = 0.0;
-
-    for (int i = ZERO; i < iterations; ++i)
-    {
-        v += weight * valueNoise(frequency * p + offset);
-        weight *= clamp(a, 0., 1.);
-        frequency *= 1.0 + 2.0 * clamp(b, 0., 1.);
-        offset += 1.0;
-    }
-    return v;
-}
-
-// -------------------------------------------------------
-// Camera
-vec3 sphericalToCartesian(float r, float phi, float theta)
-{
-    float cosTheta = cos(theta);
-    float x = cosTheta * cos(phi);
-    float y = sin(theta);
-    float z = cosTheta * sin(phi);
-    return r * vec3(x, y, z);
-}
-
-vec3 worldToCubeMap(vec3 v)
-{
-    return vec3(v.x, v.y, -v.z);
-}
-
-void orbitalCamera(vec2 uv, vec2 mouseInput, out vec3 ro, out vec3 rd)
-{
-    mouseInput.y = clamp(mouseInput.y, 0.0, 1.0);
-    vec3 cameraPosition = sphericalToCartesian(10.0, 2.0 * PI * mouseInput.x, PI * (0.5 - mouseInput.y));
-    vec3 cameraTarget = vec3(0.);
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    vec3 cameraUp = vec3(0., 1., 0.);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    ro = cameraPosition;
-    rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
-}
-
-// -------------------------------------------------------
-// SDF functions
-
-float smin(float a, float b, float k)
-{
-    k *= 1.0 / (1.0 - sqrt(0.5));
-    return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
-}
-
-float Box(vec2 p, vec2 size, float corner)
-{
-   p = abs(p) - size + corner;
-   return length(max(p, 0.)) + min(max(p.x, p.y), 0.) - corner;
-}
-
-float Box(vec3 p, vec3 size, float corner)
-{
-   p = abs(p) - size + corner;
-   return length(max(p, 0.)) + min(max(max(p.x, p.y), p.z), 0.) - corner;
-}
-
-float Segment(vec2 p, vec2 a, vec2 b, out float h)
-{
-	vec2 ap = p - a;
-	vec2 ab = b - a;
-	h = clamp(dot(ap, ab) / dot(ab, ab), 0., 1.);
-	return length(ap - ab * h);
-}
-
 // -------------------------------------------------------
 // Spline function
-
 
 #if SPLINE_ABOUT_FOURTY_POINTS
 #define SPLINE_SIZE 37
@@ -187,92 +59,6 @@ vec2 spline[SPLINE_SIZE] = vec2[](
 // https://www.shadertoy.com/view/NltBRB
 // Credit: MMatteini
 
-// Roots of the cubic equation for the closest point to a bezier.
-// From: https://www.shadertoy.com/view/MdXBzB by tomkh
-vec4 FindCubicRoots(float a, float b, float c)
-{
-    float p = b - a * a / 3.0, p3 = p * p * p;
-    float q = a * (2.0 * a * a - 9.0 * b) / 27.0 + c;
-    float d = q * q + 4.0 * p3 / 27.0;
-    float offset = -a / 3.0;
-    if (d >= 0.0) {
-        float z = sqrt(d);
-        vec2 x = (vec2(z, -z) - q) / 2.0;
-        vec2 uv = sign(x) * pow(abs(x), vec2(1.0, 1.0) / 3.0);
-        return vec4(offset + uv.x + uv.y, 0, 0, 1.0);
-    }
-
-    float v = acos(-sqrt(-27.0 / p3) * q / 2.0) / 3.0;
-    float m = cos(v);
-    float n = sin(v) * sqrt(3.0);
-    return vec4(vec3(m + m, -n - m, n - m) * sqrt(-p / 3.0) + offset, 3.0);
-}
-
-// Returns 1.0 if the two vector are clockwise sorted, -1.0 otherwise
-float GetWinding(vec2 a, vec2 b)
-{
-    return 2.0 * step(a.x * b.y, a.y * b.x) - 1.0;
-}
-
-// Returns the signed distance from a point to a bezier curve
-// Mostly from: https://www.shadertoy.com/view/MdXBzB by tomkh
-vec2 BezierSDF(vec2 A, vec2 B, vec2 C, vec2 p)
-{
-    vec2 a = B - A, b = A - B * 2.0 + C, c = a * 2.0, d = A - p;
-    float dotbb = dot(b, b);
-
-    vec3 k = vec3(3.0 * dot(a, b), 2. * dot(a, a) + dot(d, b), dot(d, a)) / dotbb;
-    vec4 t = FindCubicRoots(k.x, k.y, k.z);
-    vec2 tsat = clamp(t.xy, 0., 1.);
-
-    vec2 dp1 = d + (c + b * tsat.x) * tsat.x;
-    float d1 = dot(dp1, dp1);
-    vec2 dp2 = d + (c + b * tsat.y) * tsat.y;
-    float d2 = dot(dp2, dp2);
-
-    // Find closest distance and t
-    vec4 r = (d1 < d2) ? vec4(d1, t.x, dp1) : vec4(d2, t.y, dp2);
-
-    // Check the distance sign
-    float s = GetWinding(r.zw, 2.0 * b * r.y + c);
-    
-    return vec2(s * sqrt(r.x), r.y);
-}
-
-// Calc the length of a quadratic bezier at the start/end points and at the specified value for the parameter t.
-// X = length of the bezier up to "t" 
-// Y = total length of the curve
-float BezierCurveLengthAt(vec2 A, vec2 B, vec2 C, float t)
-{
-    // Bezier curve function:
-    // f(t) = t^2(A - 2B + C) + t(2B - 2A) + A
-
-    // Calc the bezier curve derivative (velocity function):
-    // f'(t) = t(2A-4B+2C) + 2B - 2A = a1t + b1
-    vec2 a1 = 2.0 * (A - 2.0 * B + C);
-    vec2 b1 = 2.0 * (B - A);
-
-    // Calc the velocity function magnitude:
-    // ||f'(t)|| = sqrt(t^2 * k1 + t * k2 + k3)
-    float k1 = dot(a1, a1);
-    float k2 = 2.0 * dot(a1, b1);
-    float k3 = dot(b1, b1);
-
-    // Reparametrize for easier integration
-    // t^2k1 + tk2 + k3 = k1((t + k4)^2 + k5)
-    float k4 = 0.5f * k2 / k1;
-    float k5 = k3 / k1 - k4 * k4;
-
-    // Calculate the definite integrals of the velocity function to obtain the distance function
-    // solution to this integral form is from:
-    // https://en.wikipedia.org/wiki/List_of_integrals_of_irrational_functions
-    // S ||f'(t)|| dt = 0.5 * sqrt(k1) * [(k4 + t) * sqrt((t + k4)^2 + k5) + k5 ln(k4 + t + sqrt((t + k4)^2 + k5))]  
-    vec2 ti = vec2(0.0, t); // calc at both integration bounds at once
-    vec2 vt = sqrt((ti + k4) * (ti + k4) + k5);
-    vec2 sdft = sqrt(k1) * 0.5 * ((k4 + ti) * vt + k5 * log(abs(k4 + ti + vt)));
-    return sdft.y - sdft.x;
-}
-
 void ComputeBezierSegmentsLength()
 {
     float splineLength = 0.0;
@@ -285,43 +71,6 @@ void ComputeBezierSegmentsLength()
         splineSegmentDistances[i / 2] = splineLength;
         splineLength += segmentLength;
     }
-}
-
-// Quadradic B�zier curve exact bounding box from IQ:
-// https://www.shadertoy.com/view/XdVBWd
-vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
-{
-    // extremes
-    vec2 mi = min(A, C);
-    vec2 ma = max(A, C);
-
-    // maxima/minima point, if p1 is outside the current bbox/hull
-    if (B.x < mi.x || B.x > ma.x ||
-        B.y < mi.y || B.y > ma.y)
-    {
-        // p = (1-t)^2*p0 + 2(1-t)t*p1 + t^2*p2
-        // dp/dt = 2(t-1)*p0 + 2(1-2t)*p1 + 2t*p2 = t*(2*p0-4*p1+2*p2) + 2*(p1-p0)
-        // dp/dt = 0 -> t*(p0-2*p1+p2) = (p0-p1);
-
-        vec2 t = clamp((A - B) / (A - 2.0*B+C),0.0,1.0);
-        vec2 s = 1.0 - t;
-        vec2 q = s*s*A + 2.0*s*t*B + t*t*C;
-        
-        mi = min(mi, q);
-        ma = max(ma, q);
-    }
-    
-    return vec4(mi, ma);
-}
-
-float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
-{
-    vec4 aabb = BezierAABB(A, B, C);
-
-    vec2 center = (aabb.xy + aabb.zw) / 2.0;
-    vec2 size = aabb.zw - aabb.xy;
-
-    return Box(p - center, size / 2.0, 0.0);
 }
 
 // Decompose a give location into its distance from the closest point on the spline. 
