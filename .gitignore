@@ -1,0 +1,6 @@
+﻿bin
+out
+*.pdb
+*.suo
+*.user
+.vs
