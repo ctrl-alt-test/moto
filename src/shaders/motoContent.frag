@@ -4,8 +4,10 @@ vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
 // Moto position functions
 vec3 motoToWorld(vec3 v, bool isPos, float time)
 {
-    //v.xz *= Rotation(-PI/6.);
-    v.yz *= Rotation(-0.2*PI * sin(time));
+    float angle = atan(motoDir.z, motoDir.x);
+    // v.yz *= Rotation(-0.2*PI * sin(time));
+    v.xz *= Rotation(-angle);
+
     if (isPos)
     {
         v += motoPos;
@@ -16,13 +18,14 @@ vec3 motoToWorld(vec3 v, bool isPos, float time)
 
 vec3 worldToMoto(vec3 v, bool isPos, float time)
 {
-    //v.xz *= Rotation(PI/6.);
     if (isPos)
     {
         v -= motoPos;
         // v.z += 1.5*sin(time);
     }
-    v.yz *= Rotation(0.2*PI * sin(time));
+    float angle = atan(motoDir.z, motoDir.x);
+    // v.yz *= Rotation(0.2*PI * sin(time));
+    v.xz *= Rotation(angle);
     return v;
 }
 

@@ -332,7 +332,7 @@ mat3 lookat(vec3 ro, vec3 ta)
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLength();
-    GenerateSpline(1.2/*curvature*/, 2./*scale*/, 0./*seed*/);
+    GenerateSpline(1.2/*curvature*/, 2./*scale*/, 1./*seed*/);
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
     
@@ -350,6 +350,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     float ti = fract(iTime * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);
     motoPos.y = sceneHeightMap(motoPos.xz, 2, false);
+    vec3 nextPos;
+    nextPos.xz = GetPositionOnCurve(ti+0.01);
+    nextPos.y = sceneHeightMap(nextPos.xz, 2, false);
+    motoDir = normalize(nextPos - motoPos);
 
     // View moto from front
     // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);

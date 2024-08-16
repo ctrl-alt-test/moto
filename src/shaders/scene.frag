@@ -10,7 +10,7 @@ uniform float iTime;
 #define ZERO min(0, int(iTime))
 #include "common.frag"
 
-vec3 motoPos;
+vec3 motoPos, motoDir;
 
 #define NO_ID              -1.
 #define GROUND_ID           0.
