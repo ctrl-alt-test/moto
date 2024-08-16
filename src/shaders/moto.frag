@@ -15,12 +15,6 @@ in float fishEyeFactor;
 
 #define ENABLE_STOCHASTIC_MOTION_BLUR 1
 
-#define NO_ID       -1.
-#define GROUND_ID   0.
-#define BIDULE_ID   1.
-
-vec2 segmentPoints[] = vec2[](vec2(-5.0), vec2(5.0));
-
 // -------------------------------------------------------
 // Scene description functions
 
@@ -64,12 +58,24 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         color = mix(color, roadColor, isRoad);
         return material(vec3(0.0), color, 0.5);
     }
-    else if (mid == BIDULE_ID)
+
+    if (mid >= MOTO_ID && mid <= MOTO_MOTOR_ID)
     {
-        vec3 color = vec3(1.0);
-        return material(vec3(0.0), color, 0.25);
+        p = worldToMoto(p, true, iTime);
+        N = worldToMoto(N, false, iTime);
+        //return material(N * 0.5 + 0.5, vec3(0.), 0.15);
+        return motoMaterial(mid, p, N, iTime);
     }
-    
+
+    if (mid == DRIVER_ID)
+    {
+        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
+    }
+    if (mid == DRIVER_HELMET_ID)
+    {
+        return material(vec3(0.0), vec3(0.), 0.25);
+    }
+
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
@@ -77,14 +83,8 @@ vec2 sceneSDF(vec3 p)
 {
     vec2 d = vec2(1e6, NO_ID);
 
-    p -= vec3(0.0 , 1.0, 0.0);
-    float sphere = length(p) - 1.;
-    float box = Box(p, vec3(1.25, 0.4, 0.9), 0.1);
-    float bidule = smin(sphere, box, 0.01);
-    if (bidule < d.x)
-    {
-        d = vec2(bidule, BIDULE_ID);
-    }
+    d = MinDist(d, motoShape(p));
+    d = MinDist(d, driverShape(p));
 
     if (d.x > EPSILON)
     {
