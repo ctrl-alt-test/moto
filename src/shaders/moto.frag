@@ -242,8 +242,9 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
     return smoothstep(EPSILON, 1.0, t.x);
 }
 
-vec3 evalRadiance(float mid, vec3 p, vec3 V, vec3 N)
+vec3 evalRadiance(vec3 rm, vec3 p, vec3 V, vec3 N)
 {
+    float mid = rm.y;
     if (mid == NO_ID) // background / sky
     {
         vec3 rd = -V;
@@ -297,6 +298,11 @@ vec3 evalRadiance(float mid, vec3 p, vec3 V, vec3 N)
     radiance += m.emissive;
     radiance += (I0 + I1) * m.albedo;
     //radiance += F * I2;
+
+    float fogAmount = 1.0 - exp(-rm.x*0.03);
+    vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
+    radiance = mix(radiance, fogColor, fogAmount);
+
     return radiance;
 }
 
@@ -369,7 +375,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 t = rayMarchScene(ro, rd, MAX_DIST, MAX_SDF_STEPS, MAX_HM_STEPS, p);
     vec3 N = evalNormal(p, t.z, 1e-2);
 
-    vec3 radiance = evalRadiance(t.y, p, -rd, N);
+    vec3 radiance = evalRadiance(t, p, -rd, N);
     
     vec3 color = pow(radiance, vec3(1. / GAMMA));
     fragColor = vec4(color, 1.);
