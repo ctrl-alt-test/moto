@@ -19,25 +19,14 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == GROUND_ID)
     {
-        vec2 cellPos = floor(1.*p.xz + 0.5);
-        float cellID = hash(cellPos);
-        
-        /*
-        vec3 color = palette(cellID,
-            vec3(0.15,0.35,0.18),
-            vec3(0.15, 0.15, 0.1),
-            vec3(3.0,5.0,7.0),
-            vec3(0.0));
-        */
         vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
-        //color = debugPalette(cellID);
 
-        vec4 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
-        float isRoad = 1.0 - smoothstep(0.5, 0.6, abs(splineUV.x));
+        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
         vec3 roadColor = vec3(0.0);
         if (isRoad > 0.0)
         {
-            roadColor = roadPattern(splineUV.zx * 8., 3.5, vec2(0.7, 0.0));
+            roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
         }
         color = mix(color, roadColor, isRoad);
         return material(vec3(0.0), color, 0.5);
@@ -69,7 +58,7 @@ float tree(vec3 p, vec3 id) {
     // Remove half of the trees
     if (hash(ha) < .5) return 0.5;
     // and trees near the road
-    vec4 splineUV = ToSplineLocalSpace(id.xz, maxRoadWidth);
+    vec4 splineUV = ToSplineLocalSpace(id.xz, roadWidthInMeters.z);
     if (abs(splineUV.x) < 5.5) return 0.5;
     
     float y = smoothTerrainHeight(p.xz);

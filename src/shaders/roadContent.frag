@@ -1,7 +1,5 @@
 const int SPLINE_SIZE = 13;
 
-float maxRoadWidth = 1.0;
-
 float splineSegmentDistances[SPLINE_SIZE / 2];
 
 vec2 spline[SPLINE_SIZE] = vec2[](
@@ -159,6 +157,11 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
     return Bezier(A, B, C, t);
 }
 
+// x: actual width
+// y: width + transition
+// z: max width
+vec3 roadWidthInMeters = vec3(4.0, 8.0, 8.0);
+
 vec3 roadPattern(vec2 uv, float width, vec2 params)
 {
     // Total interval, line length
@@ -214,7 +217,6 @@ float terrainDetailHeight(vec2 p)
 
 vec2 terrainShape(vec3 p)
 {
-    float roadWidth = 4.;
     float heightToDistanceFactor = 0.75;
 
     // First, compute the smooth terrain
@@ -228,8 +230,8 @@ vec2 terrainShape(vec3 p)
     }
 
     // Compute the road presence
-    vec4 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
-    float isRoad = 1.0 - smoothstep(roadWidth, roadWidth + 4.0, abs(splineUV.x));
+    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+    float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
     // If (even partly) on the terrain, add detail to the terrain
     if (isRoad < 1.0)
@@ -241,7 +243,13 @@ vec2 terrainShape(vec3 p)
     float roadHeight = terrainHeight;
     if (isRoad > 0.0)
     {
-        // Coming in a future commit
+        // Get the point on the center line of the spline
+        vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw);
+
+        // Get the terrain height at the center line
+        roadHeight = smoothTerrainHeight(positionOnSpline);
+        float x = abs(splineUV.x / roadWidthInMeters.x);
+        roadHeight += 0.5 * (1. - x * x * x);
     }
 
     // Combine terrain height and road heigt
