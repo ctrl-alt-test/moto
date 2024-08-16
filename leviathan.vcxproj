@@ -192,8 +192,7 @@
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Editor|Win32'">
@@ -268,8 +267,7 @@ shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -359,8 +357,7 @@ shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Heavy Release|Win32'">
@@ -453,8 +450,7 @@ shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Snapshot|Win32'">
@@ -553,8 +549,7 @@ shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene
     </ProjectReference>
     <PreBuildEvent>
       <Message>Minify user-supplied shader files.</Message>
-      <Command>preprocess_shaders.bat
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag</Command>
+      <Command>preprocess_shaders.bat</Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
