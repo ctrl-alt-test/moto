@@ -32,7 +32,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
         //color = debugPalette(cellID);
 
-        vec3 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
+        vec4 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
         float isRoad = 1.0 - smoothstep(0.5, 0.6, abs(splineUV.x));
         vec3 roadColor = vec3(0.0);
         if (isRoad > 0.0)
@@ -69,7 +69,7 @@ float tree(vec3 p, vec3 id) {
     // Remove half of the trees
     if (hash(ha) < .5) return 0.5;
     // and trees near the road
-    vec3 splineUV = ToSplineLocalSpace(id.xz, maxRoadWidth);
+    vec4 splineUV = ToSplineLocalSpace(id.xz, maxRoadWidth);
     if (abs(splineUV.x) < 5.5) return 0.5;
     
     float y = smoothTerrainHeight(p.xz);

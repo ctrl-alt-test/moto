@@ -48,11 +48,16 @@ void ComputeBezierSegmentsLength()
 // and the length of the spline up to that point.
 // Returns a vector where:
 // X = signed distance from the spline
-// Y = spline parameter t at the closest point [0; 1]
+// Y = spline parameter t in the Bezier segment [0; 1]
 // Z = spline length at the closest point
-vec3 ToSplineLocalSpace(vec2 p, float splineWidth)
+// W = spline segment index
+//
+// To get t of the entire spline:
+// (Y + 0.5 * W) / float(SPLINE_SIZE)
+//
+vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 {
-    vec3 splineUV = vec3(3e10, 0, 0);
+    vec4 splineUV = vec4(3e10, 0, 0, 0);
 
     // For each bezier segment
     for (int i = 0; i < SPLINE_SIZE - 1; i += 2)
@@ -72,7 +77,12 @@ vec3 ToSplineLocalSpace(vec2 p, float splineWidth)
             {
                 float lengthInSegment = BezierCurveLengthAt(A, B, C, clamp(bezierSDF.y, 0., 1.));
                 float lengthInSpline = splineSegmentDistances[i / 2] + lengthInSegment;
-                splineUV = vec3(bezierSDF.x, (clamp(bezierSDF.y, 0., 1.) + 0.5 * float(i)) / float(SPLINE_SIZE), lengthInSpline);
+                splineUV = vec4(
+                    bezierSDF.x,
+                    clamp(bezierSDF.y, 0., 1.),
+                    //(clamp(bezierSDF.y, 0., 1.) + 0.5 * float(i)) / float(SPLINE_SIZE),
+                    lengthInSpline,
+                    float(i));
             }
         }
     }
@@ -128,11 +138,25 @@ vec2 GetPositionOnCurve(float t)
     vec2 A = spline[segmentIndex * 2];
     vec2 B = spline[segmentIndex * 2 + 1];
     vec2 C = spline[segmentIndex * 2 + 2];
-    
-    // Calculate the position on the Bézier curve using the Bézier formula
-    vec2 position = mix(mix(A, B, segmentT), mix(B, C, segmentT), segmentT);
-    
-    return position;
+
+    return Bezier(A, B, C, segmentT);
+}
+
+//
+// If you have a splineUV, call:
+// GetPositionOnSpline(splineUV.yw)
+//
+// This function does the same as the ChatGPT one, but without the for loop.
+//
+vec2 GetPositionOnSpline(vec2 spline_t_and_index)
+{
+    float t = spline_t_and_index.x;
+    int i = int(spline_t_and_index.y);
+    vec2 A = spline[i + 0];
+    vec2 B = spline[i + 1];
+    vec2 C = spline[i + 2];
+
+    return Bezier(A, B, C, t);
 }
 
 vec3 roadPattern(vec2 uv, float width, vec2 params)
@@ -190,7 +214,7 @@ vec2 terrainShape(vec3 p)
     }
 
     // Compute the road presence
-    vec3 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
+    vec4 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
     float isRoad = 1.0 - smoothstep(0.5, 1.0, abs(splineUV.x));
 
     // If far enough from the road, add detail
