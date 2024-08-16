@@ -25,7 +25,8 @@ void main(void)
     // list of camera shots
     if (time < 5.) {
         camPos = vec3(1.26, 1.07, -0.5);
-        camTa = vec3(-10., 0., 0);
+        camPos = vec3(2., 1.07, 1.5);
+        camTa = vec3(-2., 0., -5.);
     } else if (time < 10.) {
         camPos = vec3(0.02, 1.2, 0.05);
         camTa = vec3(10.,0.,0.);
@@ -37,7 +38,7 @@ void main(void)
         camTa = vec3(1.,-0.5,0.);
     } else {
         camMotoSpace = 0.;
-        camPos = vec3(0.02, 10.2+iTime*0.05, 0.05);
-        camTa = vec3(30.,2.,1.);
+        camPos = vec3(0.02, 5.2+iTime*0.05, 4.05);
+        camTa = vec3(10.,2.,1.);
     }
 }
