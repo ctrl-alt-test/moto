@@ -4,7 +4,7 @@ in float camMotoSpace;
 in float camFocal;
 in float fishEyeFactor;
 
-#define MAX_HM_STEPS 50
+const int MAX_HM_STEPS = 50;
 
 // -------------------------------------------------------
 // Scene description functions

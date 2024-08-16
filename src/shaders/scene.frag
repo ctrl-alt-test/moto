@@ -28,16 +28,16 @@ uniform float iTime;
 
 vec3 motoPos, motoDir;
 
-#define NO_ID                -1.
-#define GROUND_ID             0.
-#define MOTO_ID               1.
-#define MOTO_HEAD_LIGHT_ID    2.
-#define MOTO_BREAK_LIGHT_ID   3.
-#define MOTO_WHEEL_ID         4.
-#define MOTO_MOTOR_ID         5.
-#define MOTO_EXHAUST_ID       6.
-#define MOTO_DRIVER_ID        7.
-#define MOTO_DRIVER_HELMET_ID 8.
+const float NO_ID = -1.;
+const float GROUND_ID = 0.;
+const float MOTO_ID = 1.;
+const float MOTO_HEAD_LIGHT_ID = 2.;
+const float MOTO_BREAK_LIGHT_ID = 3.;
+const float MOTO_WHEEL_ID = 4.;
+const float MOTO_MOTOR_ID = 5.;
+const float MOTO_EXHAUST_ID = 6.;
+const float MOTO_DRIVER_ID = 7.;
+const float MOTO_DRIVER_HELMET_ID = 8.;
 
 bool IsMoto(float mid)
 {
