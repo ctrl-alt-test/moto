@@ -32,7 +32,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return material(vec3(0.0), color, 0.5);
     }
 
-    if (mid >= MOTO_ID && mid <= MOTO_MOTOR_ID)
+    if (mid >= MOTO_ID && mid <= MOTO_EXHAUST_ID)
     {
         p = worldToMoto(p, true, iTime);
         N = worldToMoto(N, false, iTime);
@@ -123,7 +123,7 @@ void motoCamera(vec2 uv, vec3 relativePos, vec3 relativeTa, out vec3 ro, out vec
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLength();
-    GenerateSpline(1.2/*curvature*/, 2./*scale*/, 1./*seed*/);
+    GenerateSpline(1.2/*curvature*/, 4./*scale*/, 1./*seed*/);
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
     

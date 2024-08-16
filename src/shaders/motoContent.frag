@@ -217,6 +217,9 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
         float isLight = smoothstep(0.9, 0.95, -N.x);
         return material(isLight * vec3(1., 0., 0.), vec3(0.), 0.5);
     }
+    else if (mid == MOTO_EXHAUST_ID) {
+        return material(vec3(0.0), vec3(0.2), 0.9);
+    }
     else if (mid == MOTO_MOTOR_ID)
     {
         return material(vec3(0.0), vec3(0.), 0.3);
@@ -532,7 +535,7 @@ vec2 motoShape(vec3 p)
             exhaust = min(exhaust, Segment(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
             exhaust = min(exhaust, Segment(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
         }
-        d = MinDist(d, vec2(exhaust, MOTO_ID));
+        d = MinDist(d, vec2(exhaust, MOTO_EXHAUST_ID));
     }
 
     // Seat
