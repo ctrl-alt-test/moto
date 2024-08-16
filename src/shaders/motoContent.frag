@@ -8,7 +8,8 @@ vec3 motoToWorld(vec3 v, bool isPos, float time)
     v.yz *= Rotation(-0.2*PI * sin(time));
     if (isPos)
     {
-        v.z -= 1.5*sin(time);
+        v += motoPos;
+        // v.z -= 1.5*sin(time);
     }
     return v;
 }
@@ -18,7 +19,8 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     //v.xz *= Rotation(PI/6.);
     if (isPos)
     {
-        v.z += 1.5*sin(time);
+        v -= motoPos;
+        // v.z += 1.5*sin(time);
     }
     v.yz *= Rotation(0.2*PI * sin(time));
     return v;
