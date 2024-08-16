@@ -63,6 +63,35 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
+float tree(vec3 p, vec3 id) {
+    float ha = hash(id);
+
+    // Remove half of the trees
+    if (hash(ha) < .5) return 0.5;
+    // and trees near the road
+    vec3 splineUV = ToSplineLocalSpace(id.xz, maxRoadWidth);
+    if (abs(splineUV.x) < 5.5) return 0.5;
+    
+    float y = smoothTerrainHeight(p.xz);
+    p -= vec3(.8*(ha-0.5), y, 1.2*(ha-0.5));
+    float d = Ellipsoid(p, vec3(0.2, 1., 0.2));
+    d = min(d, Ellipsoid(p + vec3(0,-3.,0), vec3(0.8, 6. - 4.*ha, 0.8)));
+    d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+
+    return d;
+}
+
+vec2 trees(vec3 p) {
+    float spacing = 3.;
+
+    // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
+    vec3 lim = vec3(1e8,0,1e8);
+    vec3 id = clamp(round(p / spacing), -lim, lim);
+    p -= spacing * id;
+    return vec2(tree(p, id), GROUND_ID);
+}
+
+
 vec2 sceneSDF(vec3 p)
 {
     vec2 d = vec2(1e6, NO_ID);
@@ -70,6 +99,7 @@ vec2 sceneSDF(vec3 p)
     d = MinDist(d, motoShape(p));
     d = MinDist(d, driverShape(p));
     d = MinDist(d, terrainShape(p));
+    d = MinDist(d, trees(p));
 
     if (d.x > EPSILON)
     {
