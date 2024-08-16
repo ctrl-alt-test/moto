@@ -3,17 +3,7 @@ in vec3 camTa;
 in float camFocal;
 in float fishEyeFactor;
 
-#define MAX_SDF_STEPS 100
 #define MAX_HM_STEPS 50
-#define MAX_SHADOW_STEPS 32
-#define MAX_DIST 60.0
-#define MAX_SHADOW_DIST 10.0
-#define MAX_LIGHTS 6
-#define EPSILON 1e-4
-#define BOUNCE_OFFSET 1e-3
-#define GAMMA 2.2
-
-#define ENABLE_STOCHASTIC_MOTION_BLUR 1
 
 // -------------------------------------------------------
 // Scene description functions
@@ -78,6 +68,7 @@ vec2 sceneSDF(vec3 p)
 
     d = MinDist(d, motoShape(p));
     d = MinDist(d, driverShape(p));
+    d = MinDist(d, terrainShape(p));
 
     if (d.x > EPSILON)
     {
@@ -87,224 +78,10 @@ vec2 sceneSDF(vec3 p)
     return d;
 }
 
-float sceneHeightMap(vec2 p, int maxIter, bool computeRoad)
-{
-    vec2 params = iMouse.xy / iResolution.xy;
-
-    float isRoad = 0.0;
-    if (true)//computeRoad) // FIXME: broken shadows on road sides
-    {
-        vec3 splineUV = ToSplineLocalSpace(p, maxRoadWidth);
-        isRoad = 1.0 - smoothstep(0.5, 1.0, abs(splineUV.x));
-    }
-
-    float terrain = 0.0;
-    if (isRoad < 1.0)
-    {
-        terrain = 5.*fBm(p * 0.1, maxIter, params.x, params.y) - 5.;
-    }
-
-    float road = 0.0;
-    if (isRoad >= 0.0)
-    {
-        road = 5.*fBm(p * 0.1, 2, params.x, params.y) - 5. + 0.2;
-    }
-    
-    return mix(terrain, road, isRoad);
-}
-
 // -------------------------------------------------------
 // Rendering functions
 
-// TODO: Ideally h would depend on the screen space projected size.
-vec3 evalNormal(vec3 p, float useSDF, float h)
-{
-    if (useSDF > 0.)
-    {
-        const vec2 k = vec2(1., -1.);
-        return normalize(
-            k.xyy * sceneSDF(p + k.xyy * h).x + 
-            k.yyx * sceneSDF(p + k.yyx * h).x + 
-            k.yxy * sceneSDF(p + k.yxy * h).x + 
-            k.xxx * sceneSDF(p + k.xxx * h).x
-        );
-    }
-    else
-    {
-        vec3 p10 = p + vec3(h, 0., 0.);
-        p10.y = sceneHeightMap(p10.xz, 6, true);
-
-        vec3 p01 = p + vec3(0., 0., h);
-        p01.y = sceneHeightMap(p01.xz, 6, true);
-
-        return normalize(cross(p01 - p, p10 - p));
-    }
-}
-
-vec2 rayMarchSceneSDF(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
-#ifdef ENABLE_STEP_COUNT
-, out int steps
-#endif
-)
-{
-    p = ro;
-    float t = 0.;
-    float mid = NO_ID;
-
-    for (int i = ZERO; i < max_steps; ++i)
-    {
-#ifdef ENABLE_STEP_COUNT
-        steps = i + 1;
-#endif
-
-        vec2 d = sceneSDF(p);
-        t += d.x;
-        mid = d.y;
-        p = ro + t * rd;
-
-        if (d.x < EPSILON || t >= tMax)
-        {
-            break;
-        }
-    }
-    if (t >= tMax)
-    {
-        mid = NO_ID;
-    }
-    return vec2(t, mid);
-}
-
-vec2 rayMarchSceneHeightMap(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p)
-{
-    float mid;
-    float tPrev;
-    float dPrev;
-    float t = 0.;
-    float d = tMax;
-    p = ro;
-    mid = NO_ID;
-
-    for (int i = ZERO; i < max_steps; ++i)
-    {
-        dPrev = d;
-        tPrev = t;
-
-        d = p.y - sceneHeightMap(p.xz, d < 2. ? 6 : 4, d < 4.);
-
-        if (d < 0.)
-        {
-            float w = d / dPrev;
-            t = (t - w * tPrev) / (1. - w);
-            p = ro + t * rd;
-            
-            // TODO: it should be possible to use only the first harmonics
-            // for large distance, and compute the finer details only when
-            // getting close.
-            break;
-        }
-
-        // Assume the height is a good approximation of the distance that can be marched.
-        t = tPrev + d * 0.8;
-        p = ro + t * rd;
-    }
-    p.y = sceneHeightMap(p.xz, 6, true);
-    mid = GROUND_ID;
-        
-    return vec2(t, mid);
-}
-
-vec3 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_sdf_steps, int max_hm_steps, out vec3 p)
-{
-    vec3 pSDF;
-    vec2 tSDF = rayMarchSceneSDF(ro, rd, tMax, max_sdf_steps, pSDF);
-
-    vec3 pHM;
-    vec2 tHM = rayMarchSceneHeightMap(ro, rd, tMax, max_hm_steps, pHM);
-
-    vec2 t;
-    if (tSDF.x < tHM.x)
-    {
-        t = tSDF;
-        p = pSDF;
-    }
-    else
-    {
-        t = tHM;
-        p = pHM;
-    }
-    return vec3(t, float(tSDF.x < tHM.x));
-}
-
-float castShadowRay(vec3 p, vec3 N, vec3 rd)
-{
-    vec3 t = rayMarchScene(p + BOUNCE_OFFSET * N, rd, MAX_SHADOW_DIST, MAX_SHADOW_STEPS, MAX_SHADOW_STEPS, p);
-
-    return smoothstep(EPSILON, 1.0, t.x);
-}
-
-vec3 evalRadiance(vec3 rm, vec3 p, vec3 V, vec3 N)
-{
-    float mid = rm.y;
-    if (mid == NO_ID) // background / sky
-    {
-        vec3 rd = -V;
-        float y = max(rd.y, 0.01);
-        vec3 col = mix(vec3(0.03,0.002,0.01), vec3(0,0,0.05), y);
-        vec3 p = normalize(rd*vec3(0.1,1,0.1));
-        float den = exp(-1. * fBm(p.xz*3. + vec2(iTime*0.01), 5, 0.6, 5.5));
-        col = mix(col, col+vec3(0.01,0.01,0.02),
-            smoothstep(.1, 1., den) * (1. - clamp(1. / (10.*y),0.,1.)));
-        
-        
-        float moonDistance = distance(rd, normalize(vec3(0.5,0.3,-1.)));
-        vec3 moonColor = vec3(1.,1.,1.) * den;
-        float moon = smoothstep(0.02,0.018, moonDistance);
-        col = mix(col, moonColor, moon*.1);
-        float halo = smoothstep(0.08,0., moonDistance);
-        col = mix(col, moonColor, halo*.02);
-        return col;
-    }
-
-    material m = computeMaterial(mid, p, N);
-
-
-    // Global illumination coming from the sky dome:
-
-    // Direct light:
-    vec3 L1 = normalize(vec3(0.4, 0.6*1.0, 0.8));
-    float NdotL1 = clamp(dot(N, L1), 0.0, 1.0);
-    float visibility_L1 = castShadowRay(p, N, L1);
-
-#if 1
-    // Day version:
-    vec3 I0 = daySkyDomeLight * (N.y * 0.5 + 0.5);
-    vec3 I1 = sunLight * NdotL1 * visibility_L1;
-#else
-    // Night version:
-    vec3 I0 = nightHorizonLight * mix(1.0, 0.1, N.y * N.y) * (N.x * 0.5 + 0.5);
-    vec3 I1 = moonLight * NdotL1 * visibility_L1;
-#endif
-
-    // Env map:
-    vec3 L2 = reflect(-V, N);
-    vec3 H = normalize(L2 + V);
-	float x = 1.0 - dot(V, H);
-	x = x*x*x*x*x;
-	float F = x + 0.04 * (1.0 - x);
-
-    //vec3 I2 = texture(iChannel0, worldToCubeMap(L2)).rgb;
-
-    vec3 radiance = vec3(0.);
-    radiance += m.emissive;
-    radiance += (I0 + I1) * m.albedo;
-    //radiance += F * I2;
-
-    float fogAmount = 1.0 - exp(-rm.x*0.03);
-    vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
-    radiance = mix(radiance, fogColor, fogAmount);
-
-    return radiance;
-}
+#include "rendering.frag"
 
 // -------------------------------------------------------
 
@@ -327,14 +104,6 @@ void motoCamera(vec2 uv, vec3 relativePos, vec3 relativeTa, out vec3 ro, out vec
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
 
-mat3 lookat(vec3 ro, vec3 ta)
-{
-    const vec3 up = vec3(0.,1.,0.);
-    vec3 fw = normalize(ta-ro);
-    vec3 rt = normalize(cross(fw, normalize(up)));
-    return mat3(rt, cross(rt, fw), fw);
-}
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLength();
@@ -355,10 +124,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     float ti = fract(iTime * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);
-    motoPos.y = sceneHeightMap(motoPos.xz, 2, false);
+    motoPos.y = smoothTerrainHeight(motoPos.xz);
     vec3 nextPos;
     nextPos.xz = GetPositionOnCurve(ti+0.01);
-    nextPos.y = sceneHeightMap(nextPos.xz, 2, false);
+    nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
 
     // View moto from front
@@ -372,8 +141,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 
     vec3 p;
-    vec3 t = rayMarchScene(ro, rd, MAX_DIST, MAX_SDF_STEPS, MAX_HM_STEPS, p);
-    vec3 N = evalNormal(p, t.z, 1e-2);
+    vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
+    vec3 N = evalNormal(p);
 
     vec3 radiance = evalRadiance(t, p, -rd, N);
     

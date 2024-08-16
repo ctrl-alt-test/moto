@@ -44,6 +44,9 @@
     <None Include="src\shaders\motoContent.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="src\shaders\rendering.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

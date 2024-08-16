@@ -7,6 +7,8 @@ const float PI = acos(-1.);
 
 // -------------------------------------------------------
 // Palette function
+// Code by IQ
+// See: https://iquilezles.org/articles/palettes/
 
 vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
 {
@@ -180,7 +182,7 @@ float valueNoise(vec2 p)
     return mix(mix(v00, v10, fp.x), mix(v01, v11, fp.x), fp.y);
 }
 
-float fBm(vec2 p, int iterations, float a, float b)
+float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
 {
     float v = 0.;
     float weight = 1.0;
@@ -189,10 +191,10 @@ float fBm(vec2 p, int iterations, float a, float b)
 
     for (int i = ZERO; i < iterations; ++i)
     {
-        float noise = valueNoise(frequency * p + offset) * 2. - 1.;
+        float noise = valueNoise(p * frequency + offset) * 2. - 1.;
         v += weight * noise;
-        weight *= clamp(a, 0., 1.);
-        frequency *= 1.0 + 2.0 * clamp(b, 0., 1.);
+        weight *= clamp(weight_param, 0., 1.);
+        frequency *= 1.0 + 2.0 * clamp(frequency_param, 0., 1.);
         offset += 1.0;
     }
     return v;
@@ -401,7 +403,8 @@ vec2 MinDist(vec2 d1, vec2 d2)
 }
 
 // -------------------------------------------------------
-// Camera
+// Camera functions
+
 vec3 sphericalToCartesian(float r, float phi, float theta)
 {
     float cosTheta = cos(theta);
@@ -432,6 +435,14 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
 
     ro = cameraPosition;
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
+}
+
+mat3 lookat(vec3 ro, vec3 ta)
+{
+    const vec3 up = vec3(0.,1.,0.);
+    vec3 fw = normalize(ta-ro);
+    vec3 rt = normalize(cross(fw, normalize(up)));
+    return mat3(rt, cross(rt, fw), fw);
 }
 
 // -------------------------------------------------------

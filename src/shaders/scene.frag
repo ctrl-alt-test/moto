@@ -1,6 +1,20 @@
 #version 150
 
 //#define DEBUG 1
+#define ENABLE_STOCHASTIC_MOTION_BLUR
+// #define MOUSE_CONTROLS_CAMERA
+// #define ENABLE_STEP_COUNT
+
+const int MAX_RAY_MARCH_STEPS = 200;
+const float MAX_RAY_MARCH_DIST = 100.0;
+const int MAX_SHADOW_STEPS = 30;
+const float MAX_SHADOW_DIST = 5.0;
+
+const float EPSILON = 1e-6;
+const float NORMAL_DP = 1e-3;
+const float BOUNCE_OFFSET = 1e-3;
+
+const float GAMMA = 2.2;
 
 out vec4 fragColor;
 const vec2 iResolution = vec2(1920.,1080.);
