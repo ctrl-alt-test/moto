@@ -1,5 +1,6 @@
 in vec3 camPos;
 in vec3 camTa;
+in float camMotoSpace;
 in float camFocal;
 in float fishEyeFactor;
 
@@ -130,14 +131,18 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     // camPos and camTa are passed by the vertex shader
     vec2 v = uv*2.-1.;
     vec3 ro = camPos;
-    vec3 camTa2 = motoPos;
-    vec3 rd = lookat(ro, camTa2) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
+    vec3 rd;
+    if (camMotoSpace > 0.5) {
+        motoCamera(uv, camPos, camTa, ro, rd);
+    } else {
+        rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
+    }
 
     // View moto from front
     // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);
 
     // First-person view
-    motoCamera(uv, vec3(0.02, 1.2, 0.05), vec3(10.,0.,0.), ro, rd);
+    // motoCamera(uv, vec3(0.02, 1.2, 0.05), vec3(10.,0.,0.), ro, rd);
 
     // Third-person view, near ground
     // motoCamera(uv, vec3(-2., 0.5, -0.2), vec3(10.,0.,0.), ro, rd);

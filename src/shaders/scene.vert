@@ -5,6 +5,7 @@ in vec4 a_position;
 out vec3 sunDir;
 out vec3 camPos;
 out vec3 camTa;
+out float camMotoSpace; // bool - 0. or 1.
 out float camFocal;
 out float fishEyeFactor;
 
@@ -19,14 +20,24 @@ void main(void)
     
     camFocal = 2.;
     fishEyeFactor = 0.;
-    sunDir = normalize(vec3(3.5,1.,-1.));
+    camMotoSpace = 1.;
 
     // list of camera shots
     if (time < 5.) {
-        camPos = vec3(5.+time*.5, 2., 0.+time*.5);
-        camTa = vec3(0., 2., 0.);
+        camPos = vec3(1.26, 1.07, -0.5);
+        camTa = vec3(-10., 0., 0);
+    } else if (time < 10.) {
+        camPos = vec3(0.02, 1.2, 0.05);
+        camTa = vec3(10.,0.,0.);
+    } else if (time < 15.) {
+        camPos = vec3(-1.1, 1.2, -0.8);
+        camTa = vec3(0.,0.,10.);
+    } else if (time < 20.) {
+        camPos = vec3(-3., 2.5, -0.2);
+        camTa = vec3(1.,-0.5,0.);
     } else {
-        camPos = vec3(7.5, 2., 2.5);
-        camTa = vec3(0., 2., 0.);
+        camMotoSpace = 0.;
+        camPos = vec3(0.02, 10.2+iTime*0.05, 0.05);
+        camTa = vec3(30.,2.,1.);
     }
 }
