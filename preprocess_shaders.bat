@@ -1,6 +1,8 @@
-pushd %~dp0
+@pushd %~dp0
 cd src\shaders
 ..\..\ShaderPreprocessor.exe scene.frag
-popd
+@popd
 
-shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag
+@if "%~1"=="--minify" (
+    shader_minifier.exe -v -o src\shaders\shaders.inl src\shaders\preprocessed.scene.frag src\shaders\scene.vert src\shaders\fxaa.frag
+)
