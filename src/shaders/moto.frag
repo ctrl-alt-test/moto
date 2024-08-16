@@ -251,10 +251,24 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 
 vec3 evalRadiance(float mid, vec3 p, vec3 V, vec3 N)
 {
-    if (mid == NO_ID)
+    if (mid == NO_ID) // background / sky
     {
-        // Background
-        return vec3(0.);//texture(iChannel0, worldToCubeMap(-V)).rgb;
+        vec3 rd = -V;
+        float y = max(rd.y, 0.01);
+        vec3 col = mix(vec3(0.03,0.002,0.01), vec3(0,0,0.05), y);
+        vec3 p = normalize(rd*vec3(0.1,1,0.1));
+        float den = exp(-1. * fBm(p.xz*3. + vec2(iTime*0.01), 5, 0.6, 5.5));
+        col = mix(col, col+vec3(0.01,0.01,0.02),
+            smoothstep(.1, 1., den) * (1. - clamp(1. / (10.*y),0.,1.)));
+        
+        
+        float moonDistance = distance(rd, normalize(vec3(0.5,0.3,-1.)));
+        vec3 moonColor = vec3(1.,1.,1.) * den;
+        float moon = smoothstep(0.02,0.018, moonDistance);
+        col = mix(col, moonColor, moon*.1);
+        float halo = smoothstep(0.08,0., moonDistance);
+        col = mix(col, moonColor, halo*.02);
+        return col;
     }
 
     material m = computeMaterial(mid, p, N);
