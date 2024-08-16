@@ -1,6 +1,10 @@
-﻿bin
-out
+﻿*.log
 *.pdb
 *.suo
+*.tlog
 *.user
 .vs
+bin
+Debug
+out
+Release
