@@ -24,13 +24,6 @@ vec3 sunLight = vec3(1.0, 0.85, 0.7);
 vec3 nightHorizonLight = 0.01 * vec3(0.07, 0.1, 1.0);
 vec3 moonLight = 0.02 * vec3(0.2, 0.8, 1.0);
 
-struct material
-{
-    vec3 emissive;
-    vec3 albedo;
-    float roughness;
-};
-
 material computeMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == GROUND_ID)
