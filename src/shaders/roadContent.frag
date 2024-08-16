@@ -181,7 +181,7 @@ vec2 terrainShape(vec3 p)
 {
     // First, compute the smooth terrain
     float height = smoothTerrainHeight(p.xz);
-    float d = p.y - (height * 2.5 - 5.);
+    float d = p.y - height;
 
     // If the distance is sufficiently large, stop there
     if (d > 1.)
@@ -200,6 +200,6 @@ vec2 terrainShape(vec3 p)
         height += detail * 0.05 * (1.0 - isRoad);
     }
     
-    d = p.y - (height * 2.5 - 5.);
+    d = p.y - height;
     return vec2(0.7 * d, GROUND_ID);
 }

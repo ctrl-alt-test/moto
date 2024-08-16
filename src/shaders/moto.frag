@@ -118,9 +118,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     time += hash(vec3(fragCoord, 1e-3*iTime)) * 0.008;
 #endif
     // orbitalCamera(uv, vec2(0.02 * time, 0.3) /*mouseInput*/, ro, rd);
-    vec2 v = uv*2.-1.;
-    vec3 ro = camPos;
-    vec3 rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
 
     float ti = fract(iTime * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);
@@ -129,6 +126,12 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     nextPos.xz = GetPositionOnCurve(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
+
+    // camPos and camTa are passed by the vertex shader
+    vec2 v = uv*2.-1.;
+    vec3 ro = camPos;
+    vec3 camTa2 = motoPos;
+    vec3 rd = lookat(ro, camTa2) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
 
     // View moto from front
     // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);
