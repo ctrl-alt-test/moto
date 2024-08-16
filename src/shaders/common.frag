@@ -159,6 +159,14 @@ vec2 hash2(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, 
 float valueNoise(vec2 p)
 {
     vec2 p00 = floor(p);
+    vec2 p10 = p00 + vec2(1.0, 0.0);
+    vec2 p01 = p00 + vec2(0.0, 1.0);
+    vec2 p11 = p00 + vec2(1.0, 1.0);
+
+    float v00 = hash(p00);
+    float v10 = hash(p10);
+    float v01 = hash(p01);
+    float v11 = hash(p11);
 
     vec2 fp = p - p00;
     if (ENABLE_SMOOTHER_STEP_NOISE)
@@ -170,16 +178,10 @@ float valueNoise(vec2 p)
         fp = fp*fp * (3.0 - 2.0 * fp);
     }
 
-    vec2 p10 = p00 + vec2(1.0, 0.0);
-    vec2 p01 = p00 + vec2(0.0, 1.0);
-    vec2 p11 = p00 + vec2(1.0, 1.0);
-
-    float v00 = hash(p00);
-    float v10 = hash(p10);
-    float v01 = hash(p01);
-    float v11 = hash(p11);
-
-    return mix(mix(v00, v10, fp.x), mix(v01, v11, fp.x), fp.y);
+    return mix(
+        mix(v00, v10, fp.x),
+        mix(v01, v11, fp.x),
+    fp.y);
 }
 
 float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
