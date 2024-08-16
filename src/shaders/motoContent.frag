@@ -24,9 +24,172 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     return v;
 }
 
+// dashboard
+
+
+float rect(vec2 uv, float x1, float y1, float x2, float y2) {
+  return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
+}
+
+vec3 meter3(vec2 uv, float value) {
+    uv.y *= 1. - smoothstep(0., 1., uv.x);
+    float r = rect(uv, 0., 0., 0.5, 0.05);
+    value *= 0.5;
+
+    float lines = smoothstep(0.3, 0.4, mod(uv.x, 0.02)/0.02);
+    vec3 baseCol = mix(vec3(1, 1, 0), vec3(1, 0, 0), uv.x*2.);
+    baseCol = mix(baseCol, vec3(0.3, 0, 0), smoothstep(0., 0.001, uv.x - value));
+    vec3 col = lines * baseCol;
+    return r * col;
+}
+
+// TODO: use the one from common
+float segment(vec2 uv, vec2 A, vec2 B, float r) 
+{
+    vec2 g = B - A;
+    vec2 h = uv - A;
+    float d = length(h - g * clamp(dot(g, h) / dot(g,g), 0.0, 1.0));
+	return smoothstep(r, 0.5*r, d);
+}
+
+vec3 meter4(vec2 uv, float value) {
+  float len = length(uv);
+  float angle = atan(uv.y, uv.x);
+
+  float lines =
+    smoothstep(0.7, 1., mod(angle, 0.25)/0.25) *
+    smoothstep(0., 0.01, abs(angle + 0.7) - 0.7) * // hide bottom-right
+    smoothstep(0., 0.01, 0.1 - length(uv)) *
+    smoothstep(0., 0.01, length(uv) - 0.06);
+
+  value = (value * 1.5 - 1.) * PI;
+  vec2 point = vec2(sin(value), cos(value)) * 0.07;
+  float line = segment(uv, vec2(0), point, 0.003);
+
+  vec3 col = vec3(0.1, 0.1, 0.8) * lines;
+  col += vec3(0.9, 0.6, 0.9) * line;
+  return col * 4.;
+}
+
+float digit(int n, vec2 p)
+{
+    const vec2 size = vec2(0.2, 0.35);
+    const float thickness = 0.085;
+    const float gap = 0.0125;
+    const float slant = 0.15;
+    const float roundOuterCorners = 0.5;
+    const float roundInterCorners = 0.15;
+    const float spacing = 0.67;
+
+    bool A = (n != 1 && n != 4);
+    bool B = (n != 5 && n != 6);
+    bool C = (n != 2);
+    bool D = (A && n != 7);
+    bool E = (A && n % 2 == 0);
+    bool F = (n != 1 && n != 2 && n != 3 && n != 7);
+    bool G = (n > 1 && n != 7);
+
+    p.x -= p.y * slant;
+    float boundingBox = Box(p, size, size.x * roundOuterCorners);
+    float innerBox = -Box(p, size - thickness, size.x * roundInterCorners);
+    float d = 1e6;
+
+    // Segment A
+    if (A)
+    {
+        float sA = innerBox;
+        sA = max(sA, gap + (p.x - p.y - size.x + size.y));
+        sA = max(sA, gap - (p.x + p.y + size.x - size.y));
+        d = min(d, sA);
+    }
+
+    // Segment B
+    if (B)
+    {
+        float sB = innerBox;
+        sB = max(sB, gap - (p.x - p.y - size.x + size.y));
+        sB = max(sB, gap - (p.x + p.y + size.x - size.y));
+        sB = max(sB, p.x - (p.y) - (size.x + thickness) / 2.);
+        d = min(d, sB);
+    }
+
+    // Segment C
+    if (C)
+    {
+        float sC = innerBox;
+        sC = max(sC, gap - (p.x - p.y + size.x - size.y));
+        sC = max(sC, gap - (p.x + p.y - size.x + size.y));
+        sC = max(sC, p.x + (p.y) - (size.x + thickness) / 2.);
+        d = min(d, sC);
+    }
+
+    // Segment D
+    if (D)
+    {
+        float sD = innerBox;
+        sD = max(sD, gap - (p.x - p.y + size.x - size.y));
+        sD = max(sD, gap + (p.x + p.y - size.x + size.y));
+        d = min(d, sD);
+    }
+
+    // Segment E
+    if (E)
+    {
+        float sE = innerBox;
+        sE = max(sE, gap + (p.x - p.y + size.x - size.y));
+        sE = max(sE, gap + (p.x + p.y - size.x + size.y));
+        sE = max(sE, -p.x + (p.y) - (size.x + thickness) / 2.);
+        d = min(d, sE);
+    }
+
+    // Segment F
+    if (F)
+    {
+        float sF = innerBox;
+        sF = max(sF, gap + (p.x - p.y - size.x + size.y));
+        sF = max(sF, gap + (p.x + p.y + size.x - size.y));
+        sF = max(sF, -p.x - (p.y) - (size.x + thickness) / 2.);
+        d = min(d, sF);
+    }
+
+    // Segment G
+    if (G)
+    {
+        float sG = -(thickness - abs(p.y) * 2.);
+        sG = max(sG, gap + (p.x - p.y + size.x - size.y));
+        sG = max(sG, gap - (p.x - p.y - size.x + size.y));
+        sG = max(sG, gap + (p.x + p.y + size.x - size.y));
+        sG = max(sG, gap - (p.x + p.y - size.x + size.y));
+        d = min(d, sG);
+    }
+
+    return max(d, boundingBox);
+}
+
+vec3 glowy(float d)
+{
+    float dd = fwidth(d);
+    float brightness = smoothstep(-dd, +dd, d);
+    vec3 bg = vec3(0.001);
+    vec3 segment = vec3(1., 0.015, 0.005);
+
+    vec3 innerColor = mix(segment, vec3(1., 0.2, 0.01), 1. - 1. / exp(50. * max(0., -d)));
+    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
+    return mix(innerColor, outerColor, brightness) * 2.;
+}
+
 vec3 motoDashboard(vec2 uv)
 {
-    return 0.1 * vec3(uv, 0.);
+    vec3 color;
+    color = meter3(uv * 0.7 - vec2(0.1, 0.1), 0.7+0.3*sin(iTime*0.5));
+    color += meter4(uv * .7 - vec2(0.6, 0.4), 0.7+0.3*sin(iTime*0.5));
+
+    int speed = 105 + int(sin(iTime*.5) * 10.);
+    if (speed>=100) color += glowy(digit(speed/100, uv * 2.5 - vec2(0.2,1.5)));
+    color += glowy(digit((speed/10)%10, uv * 2.5 - vec2(.7,1.5)));
+    color += glowy(digit(speed%10, uv * 2.5 - vec2(1.2,1.5)));
+
+    return color;
 }
 
 material motoMaterial(float mid, vec3 p, vec3 N, float time)
