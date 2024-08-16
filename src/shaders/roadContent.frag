@@ -198,32 +198,58 @@ const float terrain_fBm_frequency_param = 0.5;
 
 float smoothTerrainHeight(vec2 p)
 {
-    return fBm(p * 0.1, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
+    float hillHeightInMeters = 200.;
+    float hillLengthInMeters = 1000.;
+
+    return 0.5 * hillHeightInMeters * fBm(p * 2. / hillLengthInMeters, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
+}
+
+float terrainDetailHeight(vec2 p)
+{
+    float detailHeightInMeters = 2.;
+    float detailLengthInMeters = 50.;
+
+    return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
 vec2 terrainShape(vec3 p)
 {
+    float roadWidth = 4.;
+    float heightToDistanceFactor = 0.75;
+
     // First, compute the smooth terrain
-    float height = smoothTerrainHeight(p.xz);
-    float d = p.y - height;
+    float terrainHeight = smoothTerrainHeight(p.xz);
+    float relativeHeight = p.y - terrainHeight;
 
     // If the distance is sufficiently large, stop there
-    if (d > 1.)
+    if (relativeHeight > 4.)
     {
-        return vec2(0.7 * d, GROUND_ID);
+        return vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
     }
 
     // Compute the road presence
     vec4 splineUV = ToSplineLocalSpace(p.xz, maxRoadWidth);
-    float isRoad = 1.0 - smoothstep(0.5, 1.0, abs(splineUV.x));
+    float isRoad = 1.0 - smoothstep(roadWidth, roadWidth + 4.0, abs(splineUV.x));
 
-    // If far enough from the road, add detail
+    // If (even partly) on the terrain, add detail to the terrain
     if (isRoad < 1.0)
     {
-        float detail = fBm(p.xz * 1., 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
-        height += detail * 0.05 * (1.0 - isRoad);
+        terrainHeight += terrainDetailHeight(p.xz);
     }
+
+    // If (even partly) on the road, flatten road
+    float roadHeight = terrainHeight;
+    if (isRoad > 0.0)
+    {
+        // Coming in a future commit
+    }
+
+    // Combine terrain height and road heigt
+    float height = mix(terrainHeight, roadHeight, isRoad);
+
+    relativeHeight = p.y - height;
     
-    d = p.y - height;
-    return vec2(0.7 * d, GROUND_ID);
+    vec2 d = vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
+
+    return d;
 }
