@@ -15,8 +15,9 @@ in float fishEyeFactor;
 
 #define ENABLE_STOCHASTIC_MOTION_BLUR 1
 
-#define GROUND_ID 0
-#define BIDULE_ID 1
+#define NO_ID       -1.
+#define GROUND_ID   0.
+#define BIDULE_ID   1.
 
 vec2 segmentPoints[] = vec2[](vec2(-5.0), vec2(5.0));
 
@@ -36,7 +37,7 @@ struct material
     float roughness;
 };
 
-material computeMaterial(int mid, vec3 p, vec3 N)
+material computeMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == GROUND_ID)
     {
@@ -72,32 +73,22 @@ material computeMaterial(int mid, vec3 p, vec3 N)
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
-float sceneSDF(vec3 p, float dMax, out int mid)
+vec2 sceneSDF(vec3 p)
 {
-    float d = dMax;
-
-    /*
-    float ground = p.y + 0.0;
-    if (ground < d)
-    {
-        d = ground;
-        mid = GROUND_ID;
-    }
-    //*/
+    vec2 d = vec2(1e6, NO_ID);
 
     p -= vec3(0.0 , 1.0, 0.0);
     float sphere = length(p) - 1.;
     float box = Box(p, vec3(1.25, 0.4, 0.9), 0.1);
     float bidule = smin(sphere, box, 0.01);
-    if (bidule < d)
+    if (bidule < d.x)
     {
-        d = bidule;
-        mid = BIDULE_ID;
+        d = vec2(bidule, BIDULE_ID);
     }
 
-    if (d > EPSILON)
+    if (d.x > EPSILON)
     {
-        mid = -1;
+        d.y = NO_ID;
     }
 
     return d;
@@ -138,12 +129,11 @@ vec3 evalNormal(vec3 p, float useSDF, float h)
     if (useSDF > 0.)
     {
         const vec2 k = vec2(1., -1.);
-        int dummy;
         return normalize(
-            k.xyy * sceneSDF(p + k.xyy * h, 1.0, dummy) + 
-            k.yyx * sceneSDF(p + k.yyx * h, 1.0, dummy) + 
-            k.yxy * sceneSDF(p + k.yxy * h, 1.0, dummy) + 
-            k.xxx * sceneSDF(p + k.xxx * h, 1.0, dummy)
+            k.xyy * sceneSDF(p + k.xyy * h).x + 
+            k.yyx * sceneSDF(p + k.yyx * h).x + 
+            k.yxy * sceneSDF(p + k.yxy * h).x + 
+            k.xxx * sceneSDF(p + k.xxx * h).x
         );
     }
     else
@@ -158,34 +148,48 @@ vec3 evalNormal(vec3 p, float useSDF, float h)
     }
 }
 
-float rayMarchSceneSDF(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p, out int mid)
+vec2 rayMarchSceneSDF(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
+#ifdef ENABLE_STEP_COUNT
+, out int steps
+#endif
+)
 {
     p = ro;
     float t = 0.;
-    mid = -1;
+    float mid = NO_ID;
 
     for (int i = ZERO; i < max_steps; ++i)
     {
-        float d = sceneSDF(p, tMax - t, mid);
-        t += d;
+#ifdef ENABLE_STEP_COUNT
+        steps = i + 1;
+#endif
+
+        vec2 d = sceneSDF(p);
+        t += d.x;
+        mid = d.y;
         p = ro + t * rd;
 
-        if (d < EPSILON || t >= tMax)
+        if (d.x < EPSILON || t >= tMax)
         {
             break;
         }
     }
-    return t;
+    if (t >= tMax)
+    {
+        mid = NO_ID;
+    }
+    return vec2(t, mid);
 }
 
-float rayMarchSceneHeightMap(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p, out int mid)
+vec2 rayMarchSceneHeightMap(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p)
 {
+    float mid;
     float tPrev;
     float dPrev;
     float t = 0.;
     float d = tMax;
     p = ro;
-    mid = -1;
+    mid = NO_ID;
 
     for (int i = ZERO; i < max_steps; ++i)
     {
@@ -213,46 +217,41 @@ float rayMarchSceneHeightMap(vec3 ro, vec3 rd, float tMax, int max_steps, out ve
     p.y = sceneHeightMap(p.xz, 6, true);
     mid = GROUND_ID;
         
-    return t;
+    return vec2(t, mid);
 }
 
-vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_sdf_steps, int max_hm_steps, out vec3 p, out int mid)
+vec3 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_sdf_steps, int max_hm_steps, out vec3 p)
 {
     vec3 pSDF;
-    int midSDF;
-    float tSDF = rayMarchSceneSDF(ro, rd, tMax, max_sdf_steps, pSDF, midSDF);
+    vec2 tSDF = rayMarchSceneSDF(ro, rd, tMax, max_sdf_steps, pSDF);
 
     vec3 pHM;
-    int midHM;
-    float tHM = rayMarchSceneHeightMap(ro, rd, tMax, max_hm_steps, pHM, midHM);
+    vec2 tHM = rayMarchSceneHeightMap(ro, rd, tMax, max_hm_steps, pHM);
 
-    float t;
-    if (tSDF < tHM)
+    vec2 t;
+    if (tSDF.x < tHM.x)
     {
         t = tSDF;
         p = pSDF;
-        mid = midSDF;
     }
     else
     {
         t = tHM;
         p = pHM;
-        mid = midHM;
     }
-    return vec2(t, float(tSDF < tHM));
+    return vec3(t, float(tSDF.x < tHM.x));
 }
 
 float castShadowRay(vec3 p, vec3 N, vec3 rd)
 {
-    int mid = -1;
-    vec2 t = rayMarchScene(p + BOUNCE_OFFSET * N, rd, MAX_SHADOW_DIST, MAX_SHADOW_STEPS, MAX_SHADOW_STEPS, p, mid);
+    vec3 t = rayMarchScene(p + BOUNCE_OFFSET * N, rd, MAX_SHADOW_DIST, MAX_SHADOW_STEPS, MAX_SHADOW_STEPS, p);
 
     return smoothstep(EPSILON, 1.0, t.x);
 }
 
-vec3 evalRadiance(int mid, vec3 p, vec3 V, vec3 N)
+vec3 evalRadiance(float mid, vec3 p, vec3 V, vec3 N)
 {
-    if (mid < 0)
+    if (mid == NO_ID)
     {
         // Background
         return vec3(0.);//texture(iChannel0, worldToCubeMap(-V)).rgb;
@@ -322,22 +321,16 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     vec3 rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
 
     vec3 p;
-    int mid;
-    vec2 t = rayMarchScene(ro, rd, MAX_DIST, MAX_SDF_STEPS, MAX_HM_STEPS, p, mid);
-    vec3 N = evalNormal(p, t.y, 1e-2);
+    vec3 t = rayMarchScene(ro, rd, MAX_DIST, MAX_SDF_STEPS, MAX_HM_STEPS, p);
+    vec3 N = evalNormal(p, t.z, 1e-2);
 
-    vec3 radiance = evalRadiance(mid, p, -rd, N);
+    vec3 radiance = evalRadiance(t.y, p, -rd, N);
     
     vec3 color = pow(radiance, vec3(1. / GAMMA));
-    //color = fract(0.1*p);
-    //color = vec3(debugPalette(t.x));
-    //color = N * 0.5 + 0.5;
-    //color = vec3((N * 0.5 + 0.5).z);
     fragColor = vec4(color, 1.);
 }
 
 
 void main() {
     mainImage(fragColor, gl_FragCoord.xy);
-    // fragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
