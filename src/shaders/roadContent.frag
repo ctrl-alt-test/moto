@@ -228,7 +228,7 @@ float terrainDetailHeight(vec2 p)
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
-vec2 terrainShape(vec3 p)
+vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
 
@@ -243,7 +243,6 @@ vec2 terrainShape(vec3 p)
     }
 
     // Compute the road presence
-    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
     // If (even partly) on the terrain, add detail to the terrain

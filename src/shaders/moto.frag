@@ -46,15 +46,25 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
-float tree(vec3 p, vec3 globalP, vec3 id) {
+float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
     float ha = hash(id);
 
     // Remove half of the trees
     if (hash(ha) < .5) return 0.5;
     // and trees near the road
-    vec4 splineUV = ToSplineLocalSpace(id.xz, roadWidthInMeters.z);
     if (abs(splineUV.x) < 5.5) return 0.5;
-    
+
+    //
+    // FIXME: the splineUV is relative to the current position, not relative
+    // to the tree position.
+    // This will probably need some coordinate trickery to know if there is
+    // a tree or not.
+    // But if that doesn't work, we can still use splineUV to ignore cases in
+    // which we are sure there is or there is no tree. Then for cases in
+    // between, we can evaluate the spline relative to the tree position.
+    // That should still be a lot fewer spline evaluations.
+    //
+
     float y = smoothTerrainHeight(globalP.xz);
     float height = 6. - 4.5*ha;
     p -= vec3(.8*(ha-0.5), y + 0.5, 1.2*(ha-0.5));
@@ -65,14 +75,14 @@ float tree(vec3 p, vec3 globalP, vec3 id) {
     return d;
 }
 
-vec2 trees(vec3 p) {
+vec2 treesShape(vec3 p, vec4 splineUV) {
     float spacing = 3.;
 
     // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
     vec3 lim = vec3(1e8,0,1e8);
     vec3 id = clamp(round(p / spacing), -lim, lim);
     vec3 localP = p - spacing * id;
-    return vec2(tree(localP, p, id), GROUND_ID);
+    return vec2(tree(localP, p, id, splineUV), GROUND_ID);
 }
 
 
@@ -80,10 +90,12 @@ vec2 sceneSDF(vec3 p)
 {
     vec2 d = vec2(1e6, NO_ID);
 
+    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+
     d = MinDist(d, motoShape(p));
     d = MinDist(d, driverShape(p));
-    d = MinDist(d, terrainShape(p));
-    d = MinDist(d, trees(p));
+    d = MinDist(d, terrainShape(p, splineUV));
+    d = MinDist(d, treesShape(p, splineUV));
 
     return d;
 }
