@@ -36,13 +36,19 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
-float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
-    float ha = hash(id);
+float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
+    float h1 = hash(id);
+    float h2 = hash(h1);
 
-    // Remove half of the trees
-    if (hash(ha) < .5) return 0.5;
-    // and trees near the road
-    if (abs(splineUV.x) < 5.5) return 0.5;
+    // Define if the area has trees
+    float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
+    if (h1 < presence)
+    {
+        return 1e6;
+    }
+
+    // Clear trees close to the road
+    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
 
     //
     // FIXME: the splineUV is relative to the current position, not relative
@@ -55,27 +61,34 @@ float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
     // That should still be a lot fewer spline evaluations.
     //
 
-    float y = smoothTerrainHeight(globalP.xz);
-    float height = 6. - 4.5*ha;
-    p -= vec3(.8*(ha-0.5), y + 0.5, 1.2*(ha-0.5));
-    float d = Ellipsoid(p, vec3(0.2, 1., 0.2));
-    d = min(d, Ellipsoid(p + vec3(0,-2.- height/2.,0), vec3(0.8, height, 0.8)));
-    if (d < 1.)
+    float treeHeight = mix(5., 20., 1.-h1*h1);
+    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
+    float terrainHeight = smoothTerrainHeight(id);
+
+    localP.y -= terrainHeight + 0.5 * treeHeight;
+    localP.xz += (vec2(h1, h2)*2. - 1.) * 2.;
+
+    float d = Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth));
+
+    float leaves = 1. - smoothstep(50., 200., current_t);
+    if (d < 2. && leaves > 0.)
     {
-        d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
     }
 
     return d;
 }
 
-vec2 treesShape(vec3 p, vec4 splineUV) {
-    float spacing = 3.;
+vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
+{
+    float spacing = 10.;
 
     // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
-    vec3 lim = vec3(1e8,0,1e8);
-    vec3 id = clamp(round(p / spacing), -lim, lim);
-    vec3 localP = p - spacing * id;
-    return vec2(tree(localP, p, id, splineUV), GROUND_ID);
+    //vec3 lim = vec3(1e8,0,1e8);
+    vec2 id = round(p.xz / spacing) * spacing;
+    vec3 localP = p;
+    localP.xz -= id;
+    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
 }
 
 vec2 cityShape(vec3 p){
@@ -95,7 +108,7 @@ vec2 cityShape(vec3 p){
             CITY_ID);
 }
 
-vec2 sceneSDF(vec3 p)
+vec2 sceneSDF(vec3 p, float current_t)
 {
     vec2 d = vec2(1e6, NO_ID);
 
@@ -114,7 +127,7 @@ vec2 sceneSDF(vec3 p)
     d = MinDist(d, terrainShape(p, splineUV));
 #endif
 #ifndef DISABLE_TREES
-    d = MinDist(d, treesShape(p, splineUV));
+    d = MinDist(d, treesShape(p, splineUV, current_t));
 #endif
 
     return d;
@@ -175,7 +188,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     vec3 p;
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
-    vec3 N = evalNormal(p);
+    vec3 N = evalNormal(p, t.x);
 
     vec3 radiance = evalRadiance(t, p, -rd, N);
     

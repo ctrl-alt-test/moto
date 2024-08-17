@@ -1,13 +1,13 @@
-vec3 evalNormal(vec3 p)
+vec3 evalNormal(vec3 p, float t)
 {
     // TODO: Ideally h would depend on the screen space projected size.
     const float h = NORMAL_DP;
     const vec2 k = vec2(1., -1.);
     return normalize(
-        k.xyy * sceneSDF(p + k.xyy * h).x + 
-        k.yyx * sceneSDF(p + k.yyx * h).x + 
-        k.yxy * sceneSDF(p + k.yxy * h).x + 
-        k.xxx * sceneSDF(p + k.xxx * h).x
+        k.xyy * sceneSDF(p + k.xyy * h, t).x + 
+        k.yyx * sceneSDF(p + k.yyx * h, t).x + 
+        k.yxy * sceneSDF(p + k.yxy * h, t).x + 
+        k.xxx * sceneSDF(p + k.xxx * h, t).x
     );
 }
 
@@ -27,7 +27,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         steps = i + 1;
 #endif
 
-        d = sceneSDF(p);
+        d = sceneSDF(p, t);
         t += d.x;
         p = ro + t * rd;
 
