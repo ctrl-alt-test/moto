@@ -122,7 +122,7 @@ void motoCamera(vec2 uv, vec3 relativePos, vec3 relativeTa, out vec3 ro, out vec
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    ComputeBezierSegmentsLength();
+    ComputeBezierSegmentsLengthAndAABB();
     GenerateSpline(1.2/*curvature*/, 4./*scale*/, 1./*seed*/);
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);

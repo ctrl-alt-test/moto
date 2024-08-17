@@ -33,8 +33,9 @@ vec3 motoPos, motoDir;
 #define MOTO_BREAK_LIGHT_ID 3.
 #define MOTO_WHEEL_ID       4.
 #define MOTO_MOTOR_ID       5.
-#define DRIVER_ID           6.
-#define DRIVER_HELMET_ID    7.
+#define MOTO_EXHAUST_ID     6
+#define DRIVER_ID           7.
+#define DRIVER_HELMET_ID    8.
 
 #include "roadContent.frag"
 #include "motoContent.frag"

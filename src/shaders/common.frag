@@ -264,6 +264,14 @@ mat2 Rotation(float angle)
     return mat2(c, s, -s, c);
 }
 
+float DistanceFromAABB(vec2 p, vec4 aabb)
+{
+    vec2 center = (aabb.xy + aabb.zw) / 2.0;
+    vec2 size = aabb.zw - aabb.xy;
+
+    return Box(p - center, size / 2.0, 0.0);
+}
+
 // -------------------------------------------------------
 // Bézier functions
 
