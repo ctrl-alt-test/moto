@@ -56,6 +56,18 @@ void sideShotRear()
     camProjectionRatio = 2.;
 }
 
+void fpsDashboardShot()
+{
+    vec2 noise = valueNoise(5.*iTime);
+    vec2 slowNoise = valueNoise(0.1*iTime);
+
+    camPos = vec3(0.1, 1.12, 0.);
+    camPos.z += mix(-0.02, 0.02, slowNoise.x);
+    camPos.y += 0.01 * noise.y;
+    camTa = vec3(5, 1, 0.);
+    camProjectionRatio = 0.6;
+}
+
 // t should go from 0 to 1 in roughly 4 seconds
 void dashBoardUnderTheShoulderShot(float t)
 {
