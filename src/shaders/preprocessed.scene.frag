@@ -6,6 +6,10 @@
 
 
 
+
+
+
+
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
@@ -19,7 +23,7 @@ const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
 
 out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.);
+const vec2 iResolution = vec2(1920.,1080.) / 2.;
 vec2 iMouse = vec2(700., 900.);
 uniform float iTime;
 
@@ -481,12 +485,20 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
 
-mat3 lookat(vec3 ro, vec3 ta)
+void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, float projectionRatio, float camFishEye, out vec3 ro, out vec3 rd)
 {
-    const vec3 up = vec3(0.,1.,0.);
-    vec3 fw = normalize(ta-ro);
-    vec3 rt = normalize(cross(fw, normalize(up)));
-    return mat3(rt, cross(rt, fw), fw);
+    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
+    if (abs(dot(cameraForward, cameraUp)) > 0.99)
+    {
+        cameraUp = vec3(1., 0., 0.);
+    }
+    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
+    cameraUp = normalize(cross(cameraRight, cameraForward));
+
+    
+    uv *= mix(1., length(uv), camFishEye);
+    ro = cameraPosition;
+    rd = normalize(cameraForward * projectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
 
 
@@ -637,7 +649,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     }
 
     
-    for (int i = 0; i < SPLINE_SIZE - 1; i += 2)
+    for (int i = ZERO; i < SPLINE_SIZE - 1; i += 2)
     {
         vec2 A = spline[i + 0];
         vec2 B = spline[i + 1];
@@ -696,7 +708,7 @@ vec2 GetPositionOnCurve(float t)
     
     
     int segmentIndex = 0;
-    for (int i = 0; i < SPLINE_SIZE / 2 - 1; ++i) {
+    for (int i = ZERO; i < SPLINE_SIZE / 2 - 1; ++i) {
         if (splineSegmentDistances[i] <= targetLength && splineSegmentDistances[i + 1] > targetLength) {
             segmentIndex = i;
             break;
@@ -880,16 +892,28 @@ float rect(vec2 uv, float x1, float y1, float x2, float y2) {
   return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
 }
 
-vec3 meter3(vec2 uv, float value) {
-    uv.y *= 1. - smoothstep(0., 1., uv.x);
-    float r = rect(uv, 0., 0., 0.5, 0.05);
-    value *= 0.5;
 
-    float lines = smoothstep(0.3, 0.4, mod(uv.x, 0.02)/0.02);
-    vec3 baseCol = mix(vec3(1, 1, 0), vec3(1, 0, 0), uv.x*2.);
-    baseCol = mix(baseCol, vec3(0.3, 0, 0), smoothstep(0., 0.001, uv.x - value));
+vec3 meter3(vec2 uv, float value) {
+    
+    
+    
+
+    float verticalLength = 0.04 + 0.15 * smoothstep(0.1, 0.4, uv.x);
+
+    float r = Box(uv, vec2(0.5, verticalLength), 0.01);
+    
+
+    float lines = smoothstep(0.5, 0.7, fract(uv.x * 30.));
+    lines *= smoothstep(0.1, 0.3, fract(uv.y/verticalLength*2.));
+
+    vec3 baseCol =
+        mix(vec3(0.7, 0.9, 0.8),
+            vec3(0.8, 0., 0.), smoothstep(0.4, 0.41, uv.x));
+
+    value *= 0.5;
+    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value - uv.x));
     vec3 col = lines * baseCol;
-    return r * col;
+    return smoothstep(0.001, 0., r) * float(uv.y > 0.) * col;
 }
 
 
@@ -913,17 +937,16 @@ vec3 meter4(vec2 uv, float value) {
 
   value = (value * 1.5 - 1.) * PI;
   vec2 point = vec2(sin(value), cos(value)) * 0.07;
-  float line = segment(uv, vec2(0), point, 0.003);
-
-  vec3 col = vec3(0.1, 0.1, 0.8) * lines;
-  col += vec3(0.9, 0.6, 0.9) * line;
-  return col * 4.;
+  float line = segment(uv, vec2(0), point, 0.004);
+  vec3 col = vec3(0.36, 0.16, 0.12) * lines;
+  col += vec3(0.7, 0.1, 0.1) * line;
+  return col;
 }
 
 float digit(int n, vec2 p)
 {
     const vec2 size = vec2(0.2, 0.35);
-    const float thickness = 0.085;
+    const float thickness = 0.065;
     const float gap = 0.0125;
     const float slant = 0.15;
     const float roundOuterCorners = 0.5;
@@ -1019,24 +1042,30 @@ vec3 glowy(float d)
 {
     float dd = fwidth(d);
     float brightness = smoothstep(-dd, +dd, d);
-    vec3 bg = vec3(0.001);
-    vec3 segment = vec3(1., 0.015, 0.005);
+    vec3 bg = vec3(0.);
+    vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
 
-    vec3 innerColor = mix(segment, vec3(1., 0.2, 0.01), 1. - 1. / exp(50. * max(0., -d)));
-    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
-    return mix(innerColor, outerColor, brightness) * 2.;
+    vec3 innerColor = segment; mix(segment, vec3(0.2), 1. - clamp(0., 1., 1. / exp(50. * max(0., -d))));
+    vec3 outerColor = mix(bg, segment, clamp(0., 1., 1. / exp(200. * max(0., d))));
+    return mix(innerColor, outerColor, brightness);
 }
 
 vec3 motoDashboard(vec2 uv)
 {
     vec3 color;
-    color = meter3(uv * 0.7 - vec2(0.1, 0.1), 0.7+0.3*sin(iTime*0.5));
-    color += meter4(uv * .7 - vec2(0.6, 0.4), 0.7+0.3*sin(iTime*0.5));
+    color = meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5));
+    color += meter4(uv * .7 - vec2(0.6, 0.45), 0.4);
 
     int speed = 105 + int(sin(iTime*.5) * 10.);
-    if (speed>=100) color += glowy(digit(speed/100, uv * 2.5 - vec2(0.2,1.5)));
-    color += glowy(digit((speed/10)%10, uv * 2.5 - vec2(.7,1.5)));
-    color += glowy(digit(speed%10, uv * 2.5 - vec2(1.2,1.5)));
+    {
+        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.9);
+        if (speed>=100) color += glowy(digit(speed/100, uvSpeed));
+        color += glowy(digit((speed/10)%10, uvSpeed - vec2(.5,0)));
+        color += glowy(digit(speed%10, uvSpeed - vec2(1.,0)));
+    }
+
+    
+    color += glowy(digit(5, uv * 8. - vec2(0.7,2.4)));
 
     return color;
 }
@@ -1051,10 +1080,11 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
         float isDashboard = smoothstep(0.9, 0.95, -N.x + 0.4 * N.y - 0.07);
         if (isDashboard > 0.)
         {
-            emissive = mix(emissive, motoDashboard(p.zy * 5.5 + vec2(0.5, -5.)), isDashboard);
+            vec3 color = motoDashboard(p.zy * 5.5 + vec2(0.5, -5.));
+            emissive = mix(vec3(0), color, isDashboard);
         }
 
-        return material(emissive, vec3(0.), 0.15);
+        return material(emissive, vec3(0), 0.15);
     }
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
@@ -1080,7 +1110,7 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
-        return material(vec3(0.0), vec3(0.), 0.25);
+        return material(vec3(0.0), vec3(0., 0., 0.3), 0.25);
     }
 
     return material(vec3(0.0), vec3(0.), 0.15);
@@ -1427,10 +1457,9 @@ vec2 motoShape(vec3 p)
 in vec3 camPos;
 in vec3 camTa;
 in float camMotoSpace;
-in float camFocal;
-in float fishEyeFactor;
-
-const int MAX_HM_STEPS = 50;
+in float camProjectionRatio;
+in float camFishEye;
+in float camShowDriver;
 
 
 
@@ -1528,10 +1557,21 @@ vec2 sceneSDF(vec3 p)
 
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 
+// Active conditional block: #ifndef DISABLE_MOTO
     d = MinDist(d, motoShape(p));
-    d = MinDist(d, driverShape(p));
+// End of active block.
+// Active conditional block: #ifndef DISABLE_MOTO_DRIVER
+    if (camShowDriver > 0.5)
+    {
+        d = MinDist(d, driverShape(p));
+    }
+// End of active block.
+// Active conditional block: #ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));
+// End of active block.
+// Active conditional block: #ifndef DISABLE_TREES
     d = MinDist(d, treesShape(p, splineUV));
+// End of active block.
 
     return d;
 }
@@ -1673,29 +1713,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
 
 
-void motoCamera(vec2 uv, vec3 relativePos, vec3 relativeTa, out vec3 ro, out vec3 rd)
-{
-    vec3 cameraPosition = motoToWorld(relativePos, true, iTime);
-
-    vec3 cameraTarget = cameraPosition + relativeTa;
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    vec3 cameraUp = vec3(0., 1., 0.);
-    cameraUp = motoToWorld(cameraUp, false, iTime);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    ro = cameraPosition;
-    rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
-}
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLengthAndAABB();
-    GenerateSpline(1.2 , 4. , 1. );
+    GenerateSpline(1.2 , 40. , 1. );
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
     
@@ -1715,14 +1736,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     motoDir = normalize(nextPos - motoPos);
 
     
-    vec2 v = uv*2.-1.;
-    vec3 ro = camPos;
+    vec3 ro;
     vec3 rd;
+    vec3 cameraPosition = camPos;
+    vec3 cameraTarget = camTa;
+    vec3 cameraUp = vec3(0., 1., 0.);
     if (camMotoSpace > 0.5) {
-        motoCamera(uv, camPos, camTa, ro, rd);
-    } else {
-        rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
+        cameraPosition = motoToWorld(camPos, true, iTime);
+        cameraTarget = motoToWorld(camTa, true, iTime);
+        
     }
+    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, camProjectionRatio, camFishEye, ro, rd);
 
     
     

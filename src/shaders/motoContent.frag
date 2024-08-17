@@ -36,16 +36,28 @@ float rect(vec2 uv, float x1, float y1, float x2, float y2) {
   return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
 }
 
+// vertical bars
 vec3 meter3(vec2 uv, float value) {
-    uv.y *= 1. - smoothstep(0., 1., uv.x);
-    float r = rect(uv, 0., 0., 0.5, 0.05);
-    value *= 0.5;
+    // 0.69, 0.87, 0.79
+    // 0.29, 0.63, 0.43
+    // 0.36, 0.16, 0.12
 
-    float lines = smoothstep(0.3, 0.4, mod(uv.x, 0.02)/0.02);
-    vec3 baseCol = mix(vec3(1, 1, 0), vec3(1, 0, 0), uv.x*2.);
-    baseCol = mix(baseCol, vec3(0.3, 0, 0), smoothstep(0., 0.001, uv.x - value));
+    float verticalLength = 0.04 + 0.15 * smoothstep(0.1, 0.4, uv.x);
+
+    float r = Box(uv, vec2(0.5, verticalLength), 0.01);
+    // if (r > 0. || uv.y < -0.02) return vec3(0.);
+
+    float lines = smoothstep(0.5, 0.7, fract(uv.x * 30.));
+    lines *= smoothstep(0.1, 0.3, fract(uv.y/verticalLength*2.));
+
+    vec3 baseCol =
+        mix(vec3(0.7, 0.9, 0.8),
+            vec3(0.8, 0., 0.), smoothstep(0.4, 0.41, uv.x));
+
+    value *= 0.5;
+    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value - uv.x));
     vec3 col = lines * baseCol;
-    return r * col;
+    return smoothstep(0.001, 0., r) * float(uv.y > 0.) * col;
 }
 
 // TODO: use the one from common
@@ -69,17 +81,16 @@ vec3 meter4(vec2 uv, float value) {
 
   value = (value * 1.5 - 1.) * PI;
   vec2 point = vec2(sin(value), cos(value)) * 0.07;
-  float line = segment(uv, vec2(0), point, 0.003);
-
-  vec3 col = vec3(0.1, 0.1, 0.8) * lines;
-  col += vec3(0.9, 0.6, 0.9) * line;
-  return col * 4.;
+  float line = segment(uv, vec2(0), point, 0.004);
+  vec3 col = vec3(0.36, 0.16, 0.12) * lines;
+  col += vec3(0.7, 0.1, 0.1) * line;
+  return col;
 }
 
 float digit(int n, vec2 p)
 {
     const vec2 size = vec2(0.2, 0.35);
-    const float thickness = 0.085;
+    const float thickness = 0.065;
     const float gap = 0.0125;
     const float slant = 0.15;
     const float roundOuterCorners = 0.5;
@@ -175,24 +186,30 @@ vec3 glowy(float d)
 {
     float dd = fwidth(d);
     float brightness = smoothstep(-dd, +dd, d);
-    vec3 bg = vec3(0.001);
-    vec3 segment = vec3(1., 0.015, 0.005);
+    vec3 bg = vec3(0.);
+    vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
 
-    vec3 innerColor = mix(segment, vec3(1., 0.2, 0.01), 1. - 1. / exp(50. * max(0., -d)));
-    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
-    return mix(innerColor, outerColor, brightness) * 2.;
+    vec3 innerColor = segment; mix(segment, vec3(0.2), 1. - clamp(0., 1., 1. / exp(50. * max(0., -d))));
+    vec3 outerColor = mix(bg, segment, clamp(0., 1., 1. / exp(200. * max(0., d))));
+    return mix(innerColor, outerColor, brightness);
 }
 
 vec3 motoDashboard(vec2 uv)
 {
     vec3 color;
-    color = meter3(uv * 0.7 - vec2(0.1, 0.1), 0.7+0.3*sin(iTime*0.5));
-    color += meter4(uv * .7 - vec2(0.6, 0.4), 0.7+0.3*sin(iTime*0.5));
+    color = meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5));
+    color += meter4(uv * .7 - vec2(0.6, 0.45), 0.4);
 
     int speed = 105 + int(sin(iTime*.5) * 10.);
-    if (speed>=100) color += glowy(digit(speed/100, uv * 2.5 - vec2(0.2,1.5)));
-    color += glowy(digit((speed/10)%10, uv * 2.5 - vec2(.7,1.5)));
-    color += glowy(digit(speed%10, uv * 2.5 - vec2(1.2,1.5)));
+    {
+        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.9);
+        if (speed>=100) color += glowy(digit(speed/100, uvSpeed));
+        color += glowy(digit((speed/10)%10, uvSpeed - vec2(.5,0)));
+        color += glowy(digit(speed%10, uvSpeed - vec2(1.,0)));
+    }
+
+    // gear number
+    color += glowy(digit(5, uv * 8. - vec2(0.7,2.4)));
 
     return color;
 }
@@ -207,10 +224,11 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
         float isDashboard = smoothstep(0.9, 0.95, -N.x + 0.4 * N.y - 0.07);
         if (isDashboard > 0.)
         {
-            emissive = mix(emissive, motoDashboard(p.zy * 5.5 + vec2(0.5, -5.)), isDashboard);
+            vec3 color = motoDashboard(p.zy * 5.5 + vec2(0.5, -5.));
+            emissive = mix(vec3(0), color, isDashboard);
         }
 
-        return material(emissive, vec3(0.), 0.15);
+        return material(emissive, vec3(0), 0.15);
     }
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
