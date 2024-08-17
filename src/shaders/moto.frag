@@ -61,7 +61,10 @@ float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
     p -= vec3(.8*(ha-0.5), y + 0.5, 1.2*(ha-0.5));
     float d = Ellipsoid(p, vec3(0.2, 1., 0.2));
     d = min(d, Ellipsoid(p + vec3(0,-2.- height/2.,0), vec3(0.8, height, 0.8)));
-    d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+    if (d < 1.)
+    {
+        d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+    }
 
     return d;
 }
