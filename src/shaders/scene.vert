@@ -14,16 +14,16 @@ uniform float iTime;
 
 const float INFINITE = 9e7;
 
-float hash(float x) { return fract(sin(x) * 43758.5453); }
-vec2 hash2(float x) { float h = hash(x); return vec2(h, hash(h)); }
+float hash11(float x) { return fract(sin(x) * 43758.5453); }
+vec2 hash12(float x) { float h = hash11(x); return vec2(h, hash11(h)); }
 
 vec2 valueNoise(float p)
 {
     float p0 = floor(p);
     float p1 = p0 + 1.;
 
-    vec2 v0 = hash2(p0);
-    vec2 v1 = hash2(p1);
+    vec2 v0 = hash12(p0);
+    vec2 v1 = hash12(p1);
 
     float fp = p - p0;
     fp = fp*fp * (3.0 - 2.0 * fp);

@@ -44,7 +44,7 @@ vec3 meter3(vec2 uv, float value) {
 
     float verticalLength = 0.04 + 0.15 * smoothstep(0.1, 0.4, uv.x);
 
-    float r = Box(uv, vec2(0.5, verticalLength), 0.01);
+    float r = Box2(uv, vec2(0.5, verticalLength), 0.01);
     // if (r > 0. || uv.y < -0.02) return vec3(0.);
 
     float lines = smoothstep(0.5, 0.7, fract(uv.x * 30.));
@@ -106,8 +106,8 @@ float digit(int n, vec2 p)
     bool G = (n > 1 && n != 7);
 
     p.x -= p.y * slant;
-    float boundingBox = Box(p, size, size.x * roundOuterCorners);
-    float innerBox = -Box(p, size - thickness, size.x * roundInterCorners);
+    float boundingBox = Box2(p, size, size.x * roundOuterCorners);
+    float innerBox = -Box2(p, size - thickness, size.x * roundInterCorners);
     float d = 1e6;
 
     // Segment A
@@ -384,7 +384,7 @@ vec2 motoShape(vec3 p)
         if (frontWheel < 0.25)
         {
             pFrontWheel.z = abs(pFrontWheel.z);
-            cyl = Segment(pFrontWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
+            cyl = Segment3(pFrontWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
             float frontBreak = cyl - 0.15;
             frontBreak = -min(-frontBreak, -pFrontWheel.z + 0.05);
             frontBreak = -min(-frontBreak, pFrontWheel.z - 0.04);
@@ -403,7 +403,7 @@ vec2 motoShape(vec3 p)
         if (rearWheel < 0.25)
         {
             pRearWheel.z = abs(pRearWheel.z);
-            cyl = Segment(pRearWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
+            cyl = Segment3(pRearWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
             float rearBreak = cyl - 0.15;
             rearBreak = -min(-rearBreak, -pRearWheel.z + 0.05);
             rearBreak = -min(-rearBreak, pRearWheel.z - 0.04);
@@ -416,7 +416,7 @@ vec2 motoShape(vec3 p)
         if (true)
         {
             vec3 pBreak = p - breakLightOffsetFromMotoRoot;
-            float breakBlock = Box(pBreak, vec3(0.02, 0.025, 0.1), 0.02);
+            float breakBlock = Box3(pBreak, vec3(0.02, 0.025, 0.1), 0.02);
             d = MinDist(d, vec2(breakBlock, MOTO_BREAK_LIGHT_ID));
         }
     }
@@ -430,13 +430,13 @@ vec2 motoShape(vec3 p)
         vec3 pForkAngle = pForkTop + vec3(-0.14, 0.04, 0.05);
         pFork.z = abs(pFork.z);
         pFork -= frontWheelPos + vec3(0.0, 0.0, frontWheelThickness + 2. * forkThickness);
-        float fork = Segment(pFork, pForkTop, vec3(0.0), h) - forkThickness;
+        float fork = Segment3(pFork, pForkTop, vec3(0.0), h) - forkThickness;
 
         // Join between the fork and the handle
-        fork = min(fork, Segment(pFork, pForkTop, pForkAngle, h) - forkThickness * 0.7);
+        fork = min(fork, Segment3(pFork, pForkTop, pForkAngle, h) - forkThickness * 0.7);
 
         // Handle
-        float handle = Segment(pFork, pForkAngle, pForkAngle + vec3(-0.08, -0.07, 0.3), h);
+        float handle = Segment3(pFork, pForkAngle, pForkAngle + vec3(-0.08, -0.07, 0.3), h);
         fork = min(fork, handle - mix(0.035, 0.02, smoothstep(0.25, 0.4, h)));
 
         // Mirror
@@ -480,7 +480,7 @@ vec2 motoShape(vec3 p)
 
         d = MinDist(d, vec2(headBlock, MOTO_HEAD_LIGHT_ID));
 
-        float joint = Box(p - vec3(0.4, 0.82, 0.0), vec3(0.04, 0.1, 0.08), 0.02);
+        float joint = Box3(p - vec3(0.4, 0.82, 0.0), vec3(0.04, 0.1, 0.08), 0.02);
         d = MinDist(d, vec2(joint, MOTO_MOTOR_ID));
     }
 
@@ -517,7 +517,7 @@ vec2 motoShape(vec3 p)
         vec3 pMotorSkewd = pMotor;
         pMotorSkewd.x *= 1. - pMotorSkewd.y * 0.4;
         pMotorSkewd.x += pMotorSkewd.y * 0.1;
-        float motorBlock = Box(pMotorSkewd, vec3(0.44, 0.29, 0.11), 0.02);
+        float motorBlock = Box3(pMotorSkewd, vec3(0.44, 0.29, 0.11), 0.02);
         
         if (motorBlock < 0.5)
         {
@@ -526,25 +526,25 @@ vec2 motoShape(vec3 p)
             vec3 pMotor2 = pMotor - vec3(0.00, 0.12, 0.0);
             pMotor1.xy *= Rotation(-0.35);
             pMotor2.xy *= Rotation(0.35);
-            motorBlock = min(motorBlock, Box(pMotor1, vec3(0.1, 0.12, 0.20), 0.04));
-            motorBlock = min(motorBlock, Box(pMotor2, vec3(0.1, 0.12, 0.20), 0.04));
+            motorBlock = min(motorBlock, Box3(pMotor1, vec3(0.1, 0.12, 0.20), 0.04));
+            motorBlock = min(motorBlock, Box3(pMotor2, vec3(0.1, 0.12, 0.20), 0.04));
 
             // Gear box on the side
             vec3 pGearBox = pMotor - vec3(-0.15, -0.12, -0.125);
             pGearBox.xy *= Rotation(-0.15);
-            float gearBox = Segment(pGearBox, vec3(0.2, 0.0, 0.0), vec3(-0.15, 0.0, 0.0), h);
+            float gearBox = Segment3(pGearBox, vec3(0.2, 0.0, 0.0), vec3(-0.15, 0.0, 0.0), h);
             gearBox -= mix(0.08, 0.15, h);
             
             pGearBox.x += 0.13;
             float gearBoxCut = -pGearBox.z - 0.05;
-            gearBoxCut = min(gearBoxCut, Box(pGearBox, vec3(0.16, 0.08, 0.1), 0.04));
+            gearBoxCut = min(gearBoxCut, Box3(pGearBox, vec3(0.16, 0.08, 0.1), 0.04));
             gearBox = -min(-gearBox, -gearBoxCut);
 
             motorBlock = min(motorBlock, gearBox);
 
             // Pedals
             vec3 pPedals = pMotor - vec3(0.24, -0.13, 0.0);
-            float pedals = Segment(pPedals, vec3(0.0, 0.0, .4), vec3(0.0, 0.0, -.4), h) - 0.02;
+            float pedals = Segment3(pPedals, vec3(0.0, 0.0, .4), vec3(0.0, 0.0, -.4), h) - 0.02;
             motorBlock = min(motorBlock, pedals);
         }
         d = MinDist(d, vec2(motorBlock, MOTO_MOTOR_ID));
@@ -555,14 +555,14 @@ vec2 motoShape(vec3 p)
     {
         vec3 pExhaust = p;
         pExhaust -= vec3(0.0, 0.0, rearWheelThickness + 0.05);
-        float exhaust = Segment(pExhaust, vec3(0.24, 0.25, 0.0), vec3(-0.7, 0.3, 0.05), h);
+        float exhaust = Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(-0.7, 0.3, 0.05), h);
 
         if (exhaust < 0.6)
         {
             exhaust -= mix(0.04, 0.08, mix(h, smoothstep(0.5, 0.7, h), 0.5));
             exhaust = -min(-exhaust, p.x - 0.7 * p.y + 0.9);
-            exhaust = min(exhaust, Segment(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
-            exhaust = min(exhaust, Segment(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
+            exhaust = min(exhaust, Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
+            exhaust = min(exhaust, Segment3(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
         }
         d = MinDist(d, vec2(exhaust, MOTO_EXHAUST_ID));
     }

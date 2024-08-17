@@ -182,10 +182,10 @@ vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
 
 
 
-float hash(float x) { return fract(sin(x) * 43758.5453); }
-float hash(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
-float hash(vec3 xyz) { return hash(vec2(hash(xyz.xy), xyz.z)); }
-vec2 hash2(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
+float hash11(float x) { return fract(sin(x) * 43758.5453); }
+float hash21(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
+float hash31(vec3 xyz) { return hash21(vec2(hash21(xyz.xy), xyz.z)); }
+vec2 hash22(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
 
 float valueNoise(vec2 p)
 {
@@ -194,10 +194,10 @@ float valueNoise(vec2 p)
     vec2 p01 = p00 + vec2(0.0, 1.0);
     vec2 p11 = p00 + vec2(1.0, 1.0);
 
-    float v00 = hash(p00);
-    float v10 = hash(p10);
-    float v01 = hash(p01);
-    float v11 = hash(p11);
+    float v00 = hash21(p00);
+    float v10 = hash21(p10);
+    float v01 = hash21(p01);
+    float v11 = hash21(p11);
 
     vec2 fp = p - p00;
     if (ENABLE_SMOOTHER_STEP_NOISE)
@@ -242,13 +242,13 @@ float smin(float a, float b, float k)
     return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
 }
 
-float Box(vec2 p, vec2 size, float corner)
+float Box2(vec2 p, vec2 size, float corner)
 {
    p = abs(p) - size + corner;
    return length(max(p, 0.)) + min(max(p.x, p.y), 0.) - corner;
 }
 
-float Box(vec3 p, vec3 size, float corner)
+float Box3(vec3 p, vec3 size, float corner)
 {
    p = abs(p) - size + corner;
    return length(max(p, 0.)) + min(max(max(p.x, p.y), p.z), 0.) - corner;
@@ -261,7 +261,7 @@ float Ellipsoid( in vec3 p, in vec3 r )
     return k0*(k0-1.0)/k1;
 }
 
-float Segment(vec2 p, vec2 a, vec2 b, out float h)
+float Segment2(vec2 p, vec2 a, vec2 b, out float h)
 {
 	vec2 ap = p - a;
 	vec2 ab = b - a;
@@ -269,7 +269,7 @@ float Segment(vec2 p, vec2 a, vec2 b, out float h)
 	return length(ap - ab * h);
 }
 
-float Segment(vec3 p, vec3 a, vec3 b, out float h)
+float Segment3(vec3 p, vec3 a, vec3 b, out float h)
 {
 	vec3 ap = p - a;
 	vec3 ab = b - a;
@@ -300,7 +300,7 @@ float DistanceFromAABB(vec2 p, vec4 aabb)
     vec2 center = (aabb.xy + aabb.zw) / 2.0;
     vec2 size = aabb.zw - aabb.xy;
 
-    return Box(p - center, size / 2.0, 0.0);
+    return Box2(p - center, size / 2.0, 0.0);
 }
 
 
@@ -437,7 +437,7 @@ float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
     vec2 center = (aabb.xy + aabb.zw) / 2.0;
     vec2 size = aabb.zw - aabb.xy;
 
-    return Box(p - center, size / 2.0, 0.0);
+    return Box2(p - center, size / 2.0, 0.0);
 }
 
 
@@ -644,10 +644,12 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     vec4 splineUV = vec4(1e6, 0, 0, 0);
 
     float d = DistanceFromAABB(p, splineAABB);
-    if (d > splineWidth)
-    {
-        return splineUV;
-    }
+
+    
+    
+    
+    
+    
 
     
     for (int i = ZERO; i < SPLINE_SIZE - 1; i += 2)
@@ -682,7 +684,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 
 void GenerateSpline(float maxCurvature, float segmentLength, float seed)
 {
-    vec2 direction = vec2(hash(seed), hash(seed + 1.0)) * 2.0 - 1.0;
+    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
     direction = normalize(direction);
     vec2 point = vec2(0.);
     for(int i = 0; i < SPLINE_SIZE; i++) {
@@ -690,7 +692,7 @@ void GenerateSpline(float maxCurvature, float segmentLength, float seed)
             spline[i] = point + 1.*direction;
             continue;
         }
-        float ha = hash(seed + float(i) * 3.0);
+        float ha = hash11(seed + float(i) * 3.0);
         point += direction * segmentLength;
         float angle = mix(-maxCurvature, maxCurvature, ha);
         direction *= Rotation(angle);
@@ -774,10 +776,10 @@ vec3 roadPattern(vec2 uv, float width, vec2 params)
     vec2 separationTileUV = vec2(fract(uv.x / separationLineParams.x) * separationLineParams.x, tileY);
     vec2 sideTileUV = vec2(fract((uv.x + 0.4) / sideLineParams.x) * sideLineParams.x, uv.y);
 
-    float sideLine1 = Box(sideTileUV - vec2(0.5 * sideLineParams.y, width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
-    float sideLine2 = Box(sideTileUV - vec2(0.5 * sideLineParams.y, -width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
+    float sideLine1 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
+    float sideLine2 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, -width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
 
-    float separationLine1 = Box(separationTileUV - vec2(0.5 * separationLineParams.y, 0.0), vec2(0.5 * separationLineParams.y, 0.10), 0.01);
+    float separationLine1 = Box2(separationTileUV - vec2(0.5 * separationLineParams.y, 0.0), vec2(0.5 * separationLineParams.y, 0.10), 0.01);
 
     float pattern = min(min(sideLine1, sideLine2), separationLine1);
 
@@ -901,7 +903,7 @@ vec3 meter3(vec2 uv, float value) {
 
     float verticalLength = 0.04 + 0.15 * smoothstep(0.1, 0.4, uv.x);
 
-    float r = Box(uv, vec2(0.5, verticalLength), 0.01);
+    float r = Box2(uv, vec2(0.5, verticalLength), 0.01);
     
 
     float lines = smoothstep(0.5, 0.7, fract(uv.x * 30.));
@@ -963,8 +965,8 @@ float digit(int n, vec2 p)
     bool G = (n > 1 && n != 7);
 
     p.x -= p.y * slant;
-    float boundingBox = Box(p, size, size.x * roundOuterCorners);
-    float innerBox = -Box(p, size - thickness, size.x * roundInterCorners);
+    float boundingBox = Box2(p, size, size.x * roundOuterCorners);
+    float innerBox = -Box2(p, size - thickness, size.x * roundInterCorners);
     float d = 1e6;
 
     
@@ -1111,7 +1113,7 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
-        return material(vec3(0.0), vec3(0., 0., 0.3), 0.25);
+        return material(vec3(0.0), vec3(0.), 0.25);
     }
 
     return material(vec3(0.0), vec3(0.), 0.15);
@@ -1218,9 +1220,9 @@ vec2 motoShape(vec3 p)
 {
     p = worldToMoto(p, true, iTime);
     
-    float aabb = length(p);
-    if (aabb > 2.0)
-        return vec2(aabb - 1.5, MOTO_ID);
+    float boundingSphere = length(p);
+    if (boundingSphere > 2.0)
+        return vec2(boundingSphere - 1.5, MOTO_ID);
 
     vec2 d = vec2(1e6, MOTO_ID);
     float h;
@@ -1241,7 +1243,7 @@ vec2 motoShape(vec3 p)
         if (frontWheel < 0.25)
         {
             pFrontWheel.z = abs(pFrontWheel.z);
-            cyl = Segment(pFrontWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
+            cyl = Segment3(pFrontWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
             float frontBreak = cyl - 0.15;
             frontBreak = -min(-frontBreak, -pFrontWheel.z + 0.05);
             frontBreak = -min(-frontBreak, pFrontWheel.z - 0.04);
@@ -1260,7 +1262,7 @@ vec2 motoShape(vec3 p)
         if (rearWheel < 0.25)
         {
             pRearWheel.z = abs(pRearWheel.z);
-            cyl = Segment(pRearWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
+            cyl = Segment3(pRearWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
             float rearBreak = cyl - 0.15;
             rearBreak = -min(-rearBreak, -pRearWheel.z + 0.05);
             rearBreak = -min(-rearBreak, pRearWheel.z - 0.04);
@@ -1273,7 +1275,7 @@ vec2 motoShape(vec3 p)
         if (true)
         {
             vec3 pBreak = p - breakLightOffsetFromMotoRoot;
-            float breakBlock = Box(pBreak, vec3(0.02, 0.025, 0.1), 0.02);
+            float breakBlock = Box3(pBreak, vec3(0.02, 0.025, 0.1), 0.02);
             d = MinDist(d, vec2(breakBlock, MOTO_BREAK_LIGHT_ID));
         }
     }
@@ -1287,13 +1289,13 @@ vec2 motoShape(vec3 p)
         vec3 pForkAngle = pForkTop + vec3(-0.14, 0.04, 0.05);
         pFork.z = abs(pFork.z);
         pFork -= frontWheelPos + vec3(0.0, 0.0, frontWheelThickness + 2. * forkThickness);
-        float fork = Segment(pFork, pForkTop, vec3(0.0), h) - forkThickness;
+        float fork = Segment3(pFork, pForkTop, vec3(0.0), h) - forkThickness;
 
         
-        fork = min(fork, Segment(pFork, pForkTop, pForkAngle, h) - forkThickness * 0.7);
+        fork = min(fork, Segment3(pFork, pForkTop, pForkAngle, h) - forkThickness * 0.7);
 
         
-        float handle = Segment(pFork, pForkAngle, pForkAngle + vec3(-0.08, -0.07, 0.3), h);
+        float handle = Segment3(pFork, pForkAngle, pForkAngle + vec3(-0.08, -0.07, 0.3), h);
         fork = min(fork, handle - mix(0.035, 0.02, smoothstep(0.25, 0.4, h)));
 
         
@@ -1337,7 +1339,7 @@ vec2 motoShape(vec3 p)
 
         d = MinDist(d, vec2(headBlock, MOTO_HEAD_LIGHT_ID));
 
-        float joint = Box(p - vec3(0.4, 0.82, 0.0), vec3(0.04, 0.1, 0.08), 0.02);
+        float joint = Box3(p - vec3(0.4, 0.82, 0.0), vec3(0.04, 0.1, 0.08), 0.02);
         d = MinDist(d, vec2(joint, MOTO_MOTOR_ID));
     }
 
@@ -1374,7 +1376,7 @@ vec2 motoShape(vec3 p)
         vec3 pMotorSkewd = pMotor;
         pMotorSkewd.x *= 1. - pMotorSkewd.y * 0.4;
         pMotorSkewd.x += pMotorSkewd.y * 0.1;
-        float motorBlock = Box(pMotorSkewd, vec3(0.44, 0.29, 0.11), 0.02);
+        float motorBlock = Box3(pMotorSkewd, vec3(0.44, 0.29, 0.11), 0.02);
         
         if (motorBlock < 0.5)
         {
@@ -1383,25 +1385,25 @@ vec2 motoShape(vec3 p)
             vec3 pMotor2 = pMotor - vec3(0.00, 0.12, 0.0);
             pMotor1.xy *= Rotation(-0.35);
             pMotor2.xy *= Rotation(0.35);
-            motorBlock = min(motorBlock, Box(pMotor1, vec3(0.1, 0.12, 0.20), 0.04));
-            motorBlock = min(motorBlock, Box(pMotor2, vec3(0.1, 0.12, 0.20), 0.04));
+            motorBlock = min(motorBlock, Box3(pMotor1, vec3(0.1, 0.12, 0.20), 0.04));
+            motorBlock = min(motorBlock, Box3(pMotor2, vec3(0.1, 0.12, 0.20), 0.04));
 
             
             vec3 pGearBox = pMotor - vec3(-0.15, -0.12, -0.125);
             pGearBox.xy *= Rotation(-0.15);
-            float gearBox = Segment(pGearBox, vec3(0.2, 0.0, 0.0), vec3(-0.15, 0.0, 0.0), h);
+            float gearBox = Segment3(pGearBox, vec3(0.2, 0.0, 0.0), vec3(-0.15, 0.0, 0.0), h);
             gearBox -= mix(0.08, 0.15, h);
             
             pGearBox.x += 0.13;
             float gearBoxCut = -pGearBox.z - 0.05;
-            gearBoxCut = min(gearBoxCut, Box(pGearBox, vec3(0.16, 0.08, 0.1), 0.04));
+            gearBoxCut = min(gearBoxCut, Box3(pGearBox, vec3(0.16, 0.08, 0.1), 0.04));
             gearBox = -min(-gearBox, -gearBoxCut);
 
             motorBlock = min(motorBlock, gearBox);
 
             
             vec3 pPedals = pMotor - vec3(0.24, -0.13, 0.0);
-            float pedals = Segment(pPedals, vec3(0.0, 0.0, .4), vec3(0.0, 0.0, -.4), h) - 0.02;
+            float pedals = Segment3(pPedals, vec3(0.0, 0.0, .4), vec3(0.0, 0.0, -.4), h) - 0.02;
             motorBlock = min(motorBlock, pedals);
         }
         d = MinDist(d, vec2(motorBlock, MOTO_MOTOR_ID));
@@ -1412,14 +1414,14 @@ vec2 motoShape(vec3 p)
     {
         vec3 pExhaust = p;
         pExhaust -= vec3(0.0, 0.0, rearWheelThickness + 0.05);
-        float exhaust = Segment(pExhaust, vec3(0.24, 0.25, 0.0), vec3(-0.7, 0.3, 0.05), h);
+        float exhaust = Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(-0.7, 0.3, 0.05), h);
 
         if (exhaust < 0.6)
         {
             exhaust -= mix(0.04, 0.08, mix(h, smoothstep(0.5, 0.7, h), 0.5));
             exhaust = -min(-exhaust, p.x - 0.7 * p.y + 0.9);
-            exhaust = min(exhaust, Segment(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
-            exhaust = min(exhaust, Segment(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
+            exhaust = min(exhaust, Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
+            exhaust = min(exhaust, Segment3(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
         }
         d = MinDist(d, vec2(exhaust, MOTO_EXHAUST_ID));
     }
@@ -1493,56 +1495,69 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
-float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
-    float ha = hash(id);
+float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
+    float h1 = hash21(id);
+    float h2 = hash11(h1);
 
     
-    if (hash(ha) < .5) return 0.5;
-    
-    if (abs(splineUV.x) < 5.5) return 0.5;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    float y = smoothTerrainHeight(globalP.xz);
-    float height = 6. - 4.5*ha;
-    p -= vec3(.8*(ha-0.5), y + 0.5, 1.2*(ha-0.5));
-    float d = Ellipsoid(p, vec3(0.2, 1., 0.2));
-    d = min(d, Ellipsoid(p + vec3(0,-2.- height/2.,0), vec3(0.8, height, 0.8)));
-    if (d < 1.)
+    float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
+    if (h1 < presence)
     {
-        d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+        return 1e6;
+    }
+
+    
+    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    float treeHeight = mix(5., 20., 1.-h1*h1);
+    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
+    float terrainHeight = smoothTerrainHeight(id);
+
+    localP.y -= terrainHeight + 0.5 * treeHeight;
+    localP.xz += (vec2(h1, h2)*2. - 1.) * 2.;
+
+    float d = Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth));
+
+    float leaves = 1. - smoothstep(50., 200., current_t);
+    if (d < 2. && leaves > 0.)
+    {
+        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
     }
 
     return d;
 }
 
-vec2 treesShape(vec3 p, vec4 splineUV) {
-    float spacing = 3.;
+vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
+{
+    float spacing = 10.;
 
     
-    vec3 lim = vec3(1e8,0,1e8);
-    vec3 id = clamp(round(p / spacing), -lim, lim);
-    vec3 localP = p - spacing * id;
-    return vec2(tree(localP, p, id, splineUV), GROUND_ID);
+    
+    vec2 id = round(p.xz / spacing) * spacing;
+    vec3 localP = p;
+    localP.xz -= id;
+    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
 }
 
 vec2 cityShape(vec3 p){
     vec3 o=p;
     
-    float len = Box(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
+    float len = Box3(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
     if (len > 10.) return vec2(len-5., CITY_ID);
 
     
-    float seed=hash(floor(o.xz/14.));
+    float seed=hash21(floor(o.xz/14.));
     p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
     float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
     p.xz=mod(o.xz+6.,14.)-7.;
@@ -1552,7 +1567,7 @@ vec2 cityShape(vec3 p){
             CITY_ID);
 }
 
-vec2 sceneSDF(vec3 p)
+vec2 sceneSDF(vec3 p, float current_t)
 {
     vec2 d = vec2(1e6, NO_ID);
 
@@ -1571,7 +1586,7 @@ vec2 sceneSDF(vec3 p)
     d = MinDist(d, terrainShape(p, splineUV));
 // End of active block.
 // Active conditional block: #ifndef DISABLE_TREES
-    d = MinDist(d, treesShape(p, splineUV));
+    d = MinDist(d, treesShape(p, splineUV, current_t));
 // End of active block.
 
     return d;
@@ -1582,16 +1597,16 @@ vec2 sceneSDF(vec3 p)
 
 // Include begin: rendering.frag
 // --------------------------------------------------------------------
-vec3 evalNormal(vec3 p)
+vec3 evalNormal(vec3 p, float t)
 {
     
     const float h = NORMAL_DP;
     const vec2 k = vec2(1., -1.);
     return normalize(
-        k.xyy * sceneSDF(p + k.xyy * h).x + 
-        k.yyx * sceneSDF(p + k.yyx * h).x + 
-        k.yxy * sceneSDF(p + k.yxy * h).x + 
-        k.xxx * sceneSDF(p + k.xxx * h).x
+        k.xyy * sceneSDF(p + k.xyy * h, t).x + 
+        k.yyx * sceneSDF(p + k.yyx * h, t).x + 
+        k.yxy * sceneSDF(p + k.yxy * h, t).x + 
+        k.xxx * sceneSDF(p + k.xxx * h, t).x
     );
 }
 
@@ -1609,7 +1624,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
 // Inactive conditional block: #ifdef ENABLE_STEP_COUNT
 
 
-        d = sceneSDF(p);
+        d = sceneSDF(p, t);
         t += d.x;
         p = ro + t * rd;
 
@@ -1669,6 +1684,11 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     {
         
         return sky(-V);
+    }
+
+    if (mid == MOTO_EXHAUST_ID)
+    {
+        return sky(reflect(-V, N));
     }
 
     material m = computeMaterial(mid, p, N);
@@ -1761,7 +1781,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     vec3 p;
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
-    vec3 N = evalNormal(p);
+    vec3 N = evalNormal(p, t.x);
 
     vec3 radiance = evalRadiance(t, p, -rd, N);
     

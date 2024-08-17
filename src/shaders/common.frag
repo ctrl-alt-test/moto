@@ -151,10 +151,10 @@ vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
 // -------------------------------------------------------
 // Noise functions
 
-float hash(float x) { return fract(sin(x) * 43758.5453); }
-float hash(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
-float hash(vec3 xyz) { return hash(vec2(hash(xyz.xy), xyz.z)); }
-vec2 hash2(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
+float hash11(float x) { return fract(sin(x) * 43758.5453); }
+float hash21(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
+float hash31(vec3 xyz) { return hash21(vec2(hash21(xyz.xy), xyz.z)); }
+vec2 hash22(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
 
 float valueNoise(vec2 p)
 {
@@ -163,10 +163,10 @@ float valueNoise(vec2 p)
     vec2 p01 = p00 + vec2(0.0, 1.0);
     vec2 p11 = p00 + vec2(1.0, 1.0);
 
-    float v00 = hash(p00);
-    float v10 = hash(p10);
-    float v01 = hash(p01);
-    float v11 = hash(p11);
+    float v00 = hash21(p00);
+    float v10 = hash21(p10);
+    float v01 = hash21(p01);
+    float v11 = hash21(p11);
 
     vec2 fp = p - p00;
     if (ENABLE_SMOOTHER_STEP_NOISE)
@@ -211,13 +211,13 @@ float smin(float a, float b, float k)
     return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
 }
 
-float Box(vec2 p, vec2 size, float corner)
+float Box2(vec2 p, vec2 size, float corner)
 {
    p = abs(p) - size + corner;
    return length(max(p, 0.)) + min(max(p.x, p.y), 0.) - corner;
 }
 
-float Box(vec3 p, vec3 size, float corner)
+float Box3(vec3 p, vec3 size, float corner)
 {
    p = abs(p) - size + corner;
    return length(max(p, 0.)) + min(max(max(p.x, p.y), p.z), 0.) - corner;
@@ -230,7 +230,7 @@ float Ellipsoid( in vec3 p, in vec3 r )
     return k0*(k0-1.0)/k1;
 }
 
-float Segment(vec2 p, vec2 a, vec2 b, out float h)
+float Segment2(vec2 p, vec2 a, vec2 b, out float h)
 {
 	vec2 ap = p - a;
 	vec2 ab = b - a;
@@ -238,7 +238,7 @@ float Segment(vec2 p, vec2 a, vec2 b, out float h)
 	return length(ap - ab * h);
 }
 
-float Segment(vec3 p, vec3 a, vec3 b, out float h)
+float Segment3(vec3 p, vec3 a, vec3 b, out float h)
 {
 	vec3 ap = p - a;
 	vec3 ab = b - a;
@@ -269,7 +269,7 @@ float DistanceFromAABB(vec2 p, vec4 aabb)
     vec2 center = (aabb.xy + aabb.zw) / 2.0;
     vec2 size = aabb.zw - aabb.xy;
 
-    return Box(p - center, size / 2.0, 0.0);
+    return Box2(p - center, size / 2.0, 0.0);
 }
 
 // -------------------------------------------------------
@@ -406,7 +406,7 @@ float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
     vec2 center = (aabb.xy + aabb.zw) / 2.0;
     vec2 size = aabb.zw - aabb.xy;
 
-    return Box(p - center, size / 2.0, 0.0);
+    return Box2(p - center, size / 2.0, 0.0);
 }
 
 // -------------------------------------------------------

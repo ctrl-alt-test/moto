@@ -37,8 +37,8 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 }
 
 float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
-    float h1 = hash(id);
-    float h2 = hash(h1);
+    float h1 = hash21(id);
+    float h2 = hash11(h1);
 
     // Define if the area has trees
     float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
@@ -94,11 +94,11 @@ vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
 vec2 cityShape(vec3 p){
     vec3 o=p;
     // Put the city in a box
-    float len = Box(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
+    float len = Box3(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
     if (len > 10.) return vec2(len-5., CITY_ID);
 
     // LJ
-    float seed=hash(floor(o.xz/14.));
+    float seed=hash21(floor(o.xz/14.));
     p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
     float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
     p.xz=mod(o.xz+6.,14.)-7.;
@@ -151,7 +151,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
     float time = iTime;
 #if ENABLE_STOCHASTIC_MOTION_BLUR
-    time += hash(vec3(fragCoord, 1e-3*iTime)) * 0.008;
+    time += hash31(vec3(fragCoord, 1e-3*iTime)) * 0.008;
 #endif
     // orbitalCamera(uv, vec2(0.02 * time, 0.3) /*mouseInput*/, ro, rd);
 

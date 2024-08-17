@@ -107,7 +107,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 
 void GenerateSpline(float maxCurvature, float segmentLength, float seed)
 {
-    vec2 direction = vec2(hash(seed), hash(seed + 1.0)) * 2.0 - 1.0;
+    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
     direction = normalize(direction);
     vec2 point = vec2(0.);
     for(int i = 0; i < SPLINE_SIZE; i++) {
@@ -115,7 +115,7 @@ void GenerateSpline(float maxCurvature, float segmentLength, float seed)
             spline[i] = point + 1.*direction;
             continue;
         }
-        float ha = hash(seed + float(i) * 3.0);
+        float ha = hash11(seed + float(i) * 3.0);
         point += direction * segmentLength;
         float angle = mix(-maxCurvature, maxCurvature, ha);
         direction *= Rotation(angle);
@@ -199,10 +199,10 @@ vec3 roadPattern(vec2 uv, float width, vec2 params)
     vec2 separationTileUV = vec2(fract(uv.x / separationLineParams.x) * separationLineParams.x, tileY);
     vec2 sideTileUV = vec2(fract((uv.x + 0.4) / sideLineParams.x) * sideLineParams.x, uv.y);
 
-    float sideLine1 = Box(sideTileUV - vec2(0.5 * sideLineParams.y, width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
-    float sideLine2 = Box(sideTileUV - vec2(0.5 * sideLineParams.y, -width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
+    float sideLine1 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
+    float sideLine2 = Box2(sideTileUV - vec2(0.5 * sideLineParams.y, -width), vec2(0.5 * sideLineParams.y, 0.10), 0.03);
 
-    float separationLine1 = Box(separationTileUV - vec2(0.5 * separationLineParams.y, 0.0), vec2(0.5 * separationLineParams.y, 0.10), 0.01);
+    float separationLine1 = Box2(separationTileUV - vec2(0.5 * separationLineParams.y, 0.0), vec2(0.5 * separationLineParams.y, 0.10), 0.01);
 
     float pattern = min(min(sideLine1, sideLine2), separationLine1);
 
