@@ -26,21 +26,12 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return material(vec3(0.0), color, 0.5);
     }
 
-    if (mid >= MOTO_ID && mid <= MOTO_EXHAUST_ID)
+    if (IsMoto(mid))
     {
         p = worldToMoto(p, true, iTime);
         N = worldToMoto(N, false, iTime);
         //return material(N * 0.5 + 0.5, vec3(0.), 0.15);
         return motoMaterial(mid, p, N, iTime);
-    }
-
-    if (mid == DRIVER_ID)
-    {
-        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
-    }
-    if (mid == DRIVER_HELMET_ID)
-    {
-        return material(vec3(0.0), vec3(0.), 0.25);
     }
 
     return material(vec3(0.0), fract(p.xyz), 1.0);

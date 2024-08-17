@@ -212,22 +212,33 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
 
         return material(emissive, vec3(0.), 0.15);
     }
-    else if (mid == MOTO_BREAK_LIGHT_ID)
+    if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
         return material(isLight * vec3(1., 0., 0.), vec3(0.), 0.5);
     }
-    else if (mid == MOTO_EXHAUST_ID) {
+    if (mid == MOTO_EXHAUST_ID)
+    {
         return material(vec3(0.0), vec3(0.2), 0.9);
     }
-    else if (mid == MOTO_MOTOR_ID)
+    if (mid == MOTO_MOTOR_ID)
     {
         return material(vec3(0.0), vec3(0.), 0.3);
     }
-    else if (mid == MOTO_WHEEL_ID)
+    if (mid == MOTO_WHEEL_ID)
     {
         return material(vec3(0.0), vec3(0.008), 0.8);
     }
+
+    if (mid == MOTO_DRIVER_ID)
+    {
+        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
+    }
+    if (mid == MOTO_DRIVER_HELMET_ID)
+    {
+        return material(vec3(0.0), vec3(0.), 0.25);
+    }
+
     return material(vec3(0.0), vec3(0.), 0.15);
 }
 
@@ -240,7 +251,7 @@ vec2 driverShape(vec3 p)
 
     float d = length(p);
     if (d > 1.2)
-        return vec2(d, DRIVER_ID);
+        return vec2(d, MOTO_DRIVER_ID);
 
     vec3 simP = p;
     simP.z = abs(simP.z);
@@ -321,11 +332,11 @@ vec2 driverShape(vec3 p)
 
         if (head < d)
         {
-            return vec2(head, DRIVER_HELMET_ID);
+            return vec2(head, MOTO_DRIVER_HELMET_ID);
         }
     }
 
-    return vec2(d, DRIVER_ID);
+    return vec2(d, MOTO_DRIVER_ID);
 }
 
 vec2 motoShape(vec3 p)

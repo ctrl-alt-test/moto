@@ -31,7 +31,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         t += d.x;
         p = ro + t * rd;
 
-        if (d.x < EPSILON)
+        if (d.x < MOTO_EPSILON || (d.x < EPSILON && !IsMoto(d.y)))
         {
             return vec2(t, d.y);
         }
