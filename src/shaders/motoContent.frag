@@ -361,9 +361,9 @@ vec2 motoShape(vec3 p)
 {
     p = worldToMoto(p, true, iTime);
     
-    float aabb = length(p);
-    if (aabb > 2.0)
-        return vec2(aabb - 1.5, MOTO_ID);
+    float boundingSphere = length(p);
+    if (boundingSphere > 2.0)
+        return vec2(boundingSphere - 1.5, MOTO_ID);
 
     vec2 d = vec2(1e6, MOTO_ID);
     float h;
