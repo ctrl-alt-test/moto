@@ -1,10 +1,8 @@
 in vec3 camPos;
 in vec3 camTa;
 in float camMotoSpace;
-in float camFocal;
-in float fishEyeFactor;
-
-const int MAX_HM_STEPS = 50;
+in float camProjectionRatio;
+in float camFishEye;
 
 // -------------------------------------------------------
 // Scene description functions
@@ -125,25 +123,6 @@ vec2 sceneSDF(vec3 p)
 
 // -------------------------------------------------------
 
-void motoCamera(vec2 uv, vec3 relativePos, vec3 relativeTa, out vec3 ro, out vec3 rd)
-{
-    vec3 cameraPosition = motoToWorld(relativePos, true, iTime);
-
-    vec3 cameraTarget = cameraPosition + relativeTa;
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    vec3 cameraUp = vec3(0., 1., 0.);
-    cameraUp = motoToWorld(cameraUp, false, iTime);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    ro = cameraPosition;
-    rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
-}
-
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     ComputeBezierSegmentsLengthAndAABB();
@@ -168,14 +147,17 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     motoDir = normalize(nextPos - motoPos);
 
     // camPos and camTa are passed by the vertex shader
-    vec2 v = uv*2.-1.;
-    vec3 ro = camPos;
+    vec3 ro;
     vec3 rd;
+    vec3 cameraPosition = camPos;
+    vec3 cameraTarget = camTa;
+    vec3 cameraUp = vec3(0., 1., 0.);
     if (camMotoSpace > 0.5) {
-        motoCamera(uv, camPos, camTa, ro, rd);
-    } else {
-        rd = lookat(ro, camTa) * normalize(vec3(v, camFocal - length(v) * fishEyeFactor));
+        cameraPosition = motoToWorld(camPos, true, iTime);
+        cameraTarget = motoToWorld(camTa, true, iTime);
+        //cameraUp = motoToWorld(cameraUp, false, iTime);
     }
+    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, camProjectionRatio, camFishEye, ro, rd);
 
     // View moto from front
     // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);

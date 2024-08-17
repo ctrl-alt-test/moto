@@ -454,12 +454,20 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
 
-mat3 lookat(vec3 ro, vec3 ta)
+void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, float projectionRatio, float camFishEye, out vec3 ro, out vec3 rd)
 {
-    const vec3 up = vec3(0.,1.,0.);
-    vec3 fw = normalize(ta-ro);
-    vec3 rt = normalize(cross(fw, normalize(up)));
-    return mat3(rt, cross(rt, fw), fw);
+    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
+    if (abs(dot(cameraForward, cameraUp)) > 0.99)
+    {
+        cameraUp = vec3(1., 0., 0.);
+    }
+    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
+    cameraUp = normalize(cross(cameraRight, cameraForward));
+
+    // meh. FIXME
+    uv *= mix(1., length(uv), camFishEye);
+    ro = cameraPosition;
+    rd = normalize(cameraForward * projectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
 
 // -------------------------------------------------------
