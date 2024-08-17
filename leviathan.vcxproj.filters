@@ -21,6 +21,7 @@
     <ClInclude Include="src\song.h">
       <Filter>editor</Filter>
     </ClInclude>
+    <ClInclude Include="src\music\music.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\moto.frag">
