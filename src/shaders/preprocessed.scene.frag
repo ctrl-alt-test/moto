@@ -567,6 +567,7 @@ vec3 sky(vec3 V)
     cloud = smoothstep(0., 1., cloud+1.);
 
     color *= mix(0.1, 1., pow(cloud, 2.));
+    color *= smoothstep(-0.1, 0., V.y);
     return color / 197000.;
 }
 // --------------------------------------------------------------------

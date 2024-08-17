@@ -91,6 +91,11 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         return sky(-V);
     }
 
+    if (mid == MOTO_EXHAUST_ID)
+    {
+        return sky(reflect(-V, N));
+    }
+
     material m = computeMaterial(mid, p, N);
 
 
