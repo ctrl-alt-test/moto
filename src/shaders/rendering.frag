@@ -55,9 +55,36 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
     return smoothstep(MAX_SHADOW_DIST/2., MAX_SHADOW_DIST, t.x);
 }
 
+vec3 cityLights(vec2 p)
+{
+    vec3 ctex=vec3(0);
+    for(int i=0;i<3;i++) {
+        float fi=float(i);
+        vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
+        // adjust this value  ↓  based on depth to reduce shimmering
+        float a = smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(
+            smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15)
+            ,pow(valueNoise(xp*.5),10.)
+        );
+        ctex += valueNoise(xp*.5)*mix(
+            mix(vec3(.56,.32,.18)*min(a,.5)*2.,vec3(.88,.81,.54),max(a-.5,0.)*2.),
+            mix(vec3(.45,.44,.6)*min(a,.5)*2.,vec3(.80,.89,.93),max(a-.5,0.)*2.),
+            step(.5,valueNoise(p*2.))
+        );
+    }
+    return ctex*5.;
+}
+
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
     float mid = t.y;
+    if (mid == CITY_ID) {
+        return mix(
+            abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),
+            mix(vec3(0), vec3(.06,.04,.03),V.y),
+            min(t.x*.001,1.));
+    }
+
     if (mid == NO_ID)
     {
         // Background / sky

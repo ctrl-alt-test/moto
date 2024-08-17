@@ -79,6 +79,22 @@ vec2 treesShape(vec3 p, vec4 splineUV) {
     return vec2(tree(localP, p, id, splineUV), GROUND_ID);
 }
 
+vec2 cityShape(vec3 p){
+    vec3 o=p;
+    // Put the city in a box
+    float len = Box(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
+    if (len > 10.) return vec2(len-5., CITY_ID);
+
+    // LJ
+    float seed=hash(floor(o.xz/14.));
+    p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
+    float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
+    p.xz=mod(o.xz+6.,14.)-7.;
+    buildingCutouts = min(buildingCutouts,max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.));
+    return
+        vec2(max(min(buildingCutouts*.5,p.y),o.z),
+            CITY_ID);
+}
 
 vec2 sceneSDF(vec3 p)
 {

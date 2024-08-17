@@ -38,6 +38,7 @@ const float MOTO_MOTOR_ID = 5.;
 const float MOTO_EXHAUST_ID = 6.;
 const float MOTO_DRIVER_ID = 7.;
 const float MOTO_DRIVER_HELMET_ID = 8.;
+const float CITY_ID = 9.;
 
 bool IsMoto(float mid)
 {

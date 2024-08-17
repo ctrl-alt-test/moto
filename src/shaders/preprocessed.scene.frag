@@ -11,14 +11,15 @@ const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
 
-const float EPSILON = 1e-6;
-const float NORMAL_DP = 1e-3;
+const float EPSILON = 2.*1e-3;
+const float MOTO_EPSILON = 1e-3;
+const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 
 const float GAMMA = 2.2;
 
 out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.)/6.;
+const vec2 iResolution = vec2(1920.,1080.);
 vec2 iMouse = vec2(700., 900.);
 uniform float iTime;
 
@@ -495,16 +496,22 @@ mat3 lookat(vec3 ro, vec3 ta)
 
 vec3 motoPos, motoDir;
 
-#define NO_ID              -1.
-#define GROUND_ID           0.
-#define MOTO_ID             1.
-#define MOTO_HEAD_LIGHT_ID  2.
-#define MOTO_BREAK_LIGHT_ID 3.
-#define MOTO_WHEEL_ID       4.
-#define MOTO_MOTOR_ID       5.
-#define MOTO_EXHAUST_ID     6
-#define DRIVER_ID           7.
-#define DRIVER_HELMET_ID    8.
+const float NO_ID = -1.;
+const float GROUND_ID = 0.;
+const float MOTO_ID = 1.;
+const float MOTO_HEAD_LIGHT_ID = 2.;
+const float MOTO_BREAK_LIGHT_ID = 3.;
+const float MOTO_WHEEL_ID = 4.;
+const float MOTO_MOTOR_ID = 5.;
+const float MOTO_EXHAUST_ID = 6.;
+const float MOTO_DRIVER_ID = 7.;
+const float MOTO_DRIVER_HELMET_ID = 8.;
+const float CITY_ID = 9.;
+
+bool IsMoto(float mid)
+{
+    return mid >= MOTO_ID && mid <= MOTO_DRIVER_HELMET_ID;
+}
 
 // Include begin: backgroundContent.frag
 // --------------------------------------------------------------------
@@ -785,7 +792,7 @@ float terrainDetailHeight(vec2 p)
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
-vec2 terrainShape(vec3 p)
+vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
 
@@ -800,7 +807,6 @@ vec2 terrainShape(vec3 p)
     }
 
     
-    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
 
     
@@ -1050,22 +1056,33 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
 
         return material(emissive, vec3(0.), 0.15);
     }
-    else if (mid == MOTO_BREAK_LIGHT_ID)
+    if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
         return material(isLight * vec3(1., 0., 0.), vec3(0.), 0.5);
     }
-    else if (mid == MOTO_EXHAUST_ID) {
+    if (mid == MOTO_EXHAUST_ID)
+    {
         return material(vec3(0.0), vec3(0.2), 0.9);
     }
-    else if (mid == MOTO_MOTOR_ID)
+    if (mid == MOTO_MOTOR_ID)
     {
         return material(vec3(0.0), vec3(0.), 0.3);
     }
-    else if (mid == MOTO_WHEEL_ID)
+    if (mid == MOTO_WHEEL_ID)
     {
         return material(vec3(0.0), vec3(0.008), 0.8);
     }
+
+    if (mid == MOTO_DRIVER_ID)
+    {
+        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
+    }
+    if (mid == MOTO_DRIVER_HELMET_ID)
+    {
+        return material(vec3(0.0), vec3(0.), 0.25);
+    }
+
     return material(vec3(0.0), vec3(0.), 0.15);
 }
 
@@ -1078,7 +1095,7 @@ vec2 driverShape(vec3 p)
 
     float d = length(p);
     if (d > 1.2)
-        return vec2(d, DRIVER_ID);
+        return vec2(d, MOTO_DRIVER_ID);
 
     vec3 simP = p;
     simP.z = abs(simP.z);
@@ -1159,11 +1176,11 @@ vec2 driverShape(vec3 p)
 
         if (head < d)
         {
-            return vec2(head, DRIVER_HELMET_ID);
+            return vec2(head, MOTO_DRIVER_HELMET_ID);
         }
     }
 
-    return vec2(d, DRIVER_ID);
+    return vec2(d, MOTO_DRIVER_ID);
 }
 
 vec2 motoShape(vec3 p)
@@ -1413,7 +1430,7 @@ in float camMotoSpace;
 in float camFocal;
 in float fishEyeFactor;
 
-#define MAX_HM_STEPS 50
+const int MAX_HM_STEPS = 50;
 
 
 
@@ -1435,7 +1452,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return material(vec3(0.0), color, 0.5);
     }
 
-    if (mid >= MOTO_ID && mid <= MOTO_EXHAUST_ID)
+    if (IsMoto(mid))
     {
         p = worldToMoto(p, true, iTime);
         N = worldToMoto(N, false, iTime);
@@ -1443,56 +1460,78 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return motoMaterial(mid, p, N, iTime);
     }
 
-    if (mid == DRIVER_ID)
-    {
-        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
-    }
-    if (mid == DRIVER_HELMET_ID)
-    {
-        return material(vec3(0.0), vec3(0.), 0.25);
-    }
-
     return material(vec3(0.0), fract(p.xyz), 1.0);
 }
 
-float tree(vec3 p, vec3 globalP, vec3 id) {
+float tree(vec3 p, vec3 globalP, vec3 id, vec4 splineUV) {
     float ha = hash(id);
 
     
     if (hash(ha) < .5) return 0.5;
     
-    vec4 splineUV = ToSplineLocalSpace(id.xz, roadWidthInMeters.z);
     if (abs(splineUV.x) < 5.5) return 0.5;
+
     
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
     float y = smoothTerrainHeight(globalP.xz);
     float height = 6. - 4.5*ha;
     p -= vec3(.8*(ha-0.5), y + 0.5, 1.2*(ha-0.5));
     float d = Ellipsoid(p, vec3(0.2, 1., 0.2));
     d = min(d, Ellipsoid(p + vec3(0,-2.- height/2.,0), vec3(0.8, height, 0.8)));
-    d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+    if (d < 1.)
+    {
+        d += fBm(p.xy + p.yz + id.xz, 4, 1., .5) * 0.05;
+    }
 
     return d;
 }
 
-vec2 trees(vec3 p) {
+vec2 treesShape(vec3 p, vec4 splineUV) {
     float spacing = 3.;
 
     
     vec3 lim = vec3(1e8,0,1e8);
     vec3 id = clamp(round(p / spacing), -lim, lim);
     vec3 localP = p - spacing * id;
-    return vec2(tree(localP, p, id), GROUND_ID);
+    return vec2(tree(localP, p, id, splineUV), GROUND_ID);
 }
 
+vec2 cityShape(vec3 p){
+    vec3 o=p;
+    
+    float len = Box(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
+    if (len > 10.) return vec2(len-5., CITY_ID);
+
+    
+    float seed=hash(floor(o.xz/14.));
+    p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
+    float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
+    p.xz=mod(o.xz+6.,14.)-7.;
+    buildingCutouts = min(buildingCutouts,max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.));
+    return
+        vec2(max(min(buildingCutouts*.5,p.y),o.z),
+            CITY_ID);
+}
 
 vec2 sceneSDF(vec3 p)
 {
     vec2 d = vec2(1e6, NO_ID);
 
+    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+
     d = MinDist(d, motoShape(p));
     d = MinDist(d, driverShape(p));
-    d = MinDist(d, terrainShape(p));
-    d = MinDist(d, trees(p));
+    d = MinDist(d, terrainShape(p, splineUV));
+    d = MinDist(d, treesShape(p, splineUV));
 
     return d;
 }
@@ -1533,7 +1572,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         t += d.x;
         p = ro + t * rd;
 
-        if (d.x < EPSILON)
+        if (d.x < MOTO_EPSILON || (d.x < EPSILON && !IsMoto(d.y)))
         {
             return vec2(t, d.y);
         }
@@ -1555,9 +1594,36 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
     return smoothstep(MAX_SHADOW_DIST/2., MAX_SHADOW_DIST, t.x);
 }
 
+vec3 cityLights(vec2 p)
+{
+    vec3 ctex=vec3(0);
+    for(int i=0;i<3;i++) {
+        float fi=float(i);
+        vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
+        
+        float a = smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(
+            smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15)
+            ,pow(valueNoise(xp*.5),10.)
+        );
+        ctex += valueNoise(xp*.5)*mix(
+            mix(vec3(.56,.32,.18)*min(a,.5)*2.,vec3(.88,.81,.54),max(a-.5,0.)*2.),
+            mix(vec3(.45,.44,.6)*min(a,.5)*2.,vec3(.80,.89,.93),max(a-.5,0.)*2.),
+            step(.5,valueNoise(p*2.))
+        );
+    }
+    return ctex*5.;
+}
+
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
     float mid = t.y;
+    if (mid == CITY_ID) {
+        return mix(
+            abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),
+            mix(vec3(0), vec3(.06,.04,.03),V.y),
+            min(t.x*.001,1.));
+    }
+
     if (mid == NO_ID)
     {
         
