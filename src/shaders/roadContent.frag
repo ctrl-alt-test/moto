@@ -67,10 +67,12 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     vec4 splineUV = vec4(1e6, 0, 0, 0);
 
     float d = DistanceFromAABB(p, splineAABB);
-    if (d > splineWidth)
-    {
-        return splineUV;
-    }
+
+    // FIXME: this breaks the road
+    //if (d > splineWidth)
+    //{
+    //    return splineUV;
+    //}
 
     // For each bezier segment
     for (int i = ZERO; i < SPLINE_SIZE - 1; i += 2)
