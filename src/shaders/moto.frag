@@ -3,6 +3,7 @@ in vec3 camTa;
 in float camMotoSpace;
 in float camProjectionRatio;
 in float camFishEye;
+in float camShowDriver;
 
 // -------------------------------------------------------
 // Scene description functions
@@ -104,7 +105,10 @@ vec2 sceneSDF(vec3 p)
     d = MinDist(d, motoShape(p));
 #endif
 #ifndef DISABLE_MOTO_DRIVER
-    d = MinDist(d, driverShape(p));
+    if (camShowDriver > 0.5)
+    {
+        d = MinDist(d, driverShape(p));
+    }
 #endif
 #ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));
