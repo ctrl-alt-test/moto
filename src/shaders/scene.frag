@@ -4,6 +4,7 @@
 #define ENABLE_STOCHASTIC_MOTION_BLUR
 // #define MOUSE_CONTROLS_CAMERA
 // #define ENABLE_STEP_COUNT
+// #define ENABLE_DAY_MODE
 
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
@@ -37,6 +38,7 @@ vec3 motoPos, motoDir;
 #define DRIVER_ID           7.
 #define DRIVER_HELMET_ID    8.
 
+#include "backgroundContent.frag"
 #include "roadContent.frag"
 #include "motoContent.frag"
 #include "moto.frag"

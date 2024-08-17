@@ -578,6 +578,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="src\shaders\backgroundContent.frag" />
     <None Include="src\shaders\common.frag" />
     <None Include="src\shaders\fxaa.frag" />
     <None Include="src\shaders\moto.frag" />
