@@ -131,8 +131,36 @@ void main(void)
         camTa = vec3(10.,2.,1.);
     }
     */
-    if (int(iTime / 4.) % 2 == 0)
-        sideShotFront();
-    else
+
+    float shotDuration = 6.;
+    float numberOfDifferentShots = 6.;
+
+    float t = fract((iTime / shotDuration) / numberOfDifferentShots) * numberOfDifferentShots;
+    float shot = floor(t);
+    float t_in_shot = fract(t);
+
+    if (shot == 0.)
+    {
         sideShotRear();
+    }
+    if (shot == 1.)
+    {
+        sideShotFront();
+    }
+    if (shot == 2.)
+    {
+        frontWheelCloseUpShot();
+    }
+    if (shot == 3.)
+    {
+        overTheHeadShot();
+    }
+    if (shot == 4.)
+    {
+        fpsDashboardShot();
+    }
+    if (shot == 5.)
+    {
+        dashBoardUnderTheShoulderShot(t_in_shot);
+    }
 }
