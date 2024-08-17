@@ -209,21 +209,21 @@ vec3 roadPattern(vec2 uv, float width, vec2 params)
     return mix(test, vec3(fract(uv), separationTileUV.x), 0.0);
 }
 
-const float terrain_fBm_weight_param = 0.5;
+const float terrain_fBm_weight_param = 0.6;
 const float terrain_fBm_frequency_param = 0.5;
 
 float smoothTerrainHeight(vec2 p)
 {
     float hillHeightInMeters = 200.;
-    float hillLengthInMeters = 1000.;
+    float hillLengthInMeters = 2000.;
 
     return 0.5 * hillHeightInMeters * fBm(p * 2. / hillLengthInMeters, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
 float terrainDetailHeight(vec2 p)
 {
-    float detailHeightInMeters = 2.;
-    float detailLengthInMeters = 50.;
+    float detailHeightInMeters = 1.;
+    float detailLengthInMeters = 100.;
 
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
@@ -261,8 +261,8 @@ vec2 terrainShape(vec3 p)
 
         // Get the terrain height at the center line
         roadHeight = smoothTerrainHeight(positionOnSpline);
-        float x = abs(splineUV.x / roadWidthInMeters.x);
-        roadHeight += 0.5 * (1. - x * x * x);
+        float x = clamp(abs(splineUV.x / roadWidthInMeters.x), 0., 1.);
+        roadHeight += 0.2 * (1. - x * x * x);
     }
 
     // Combine terrain height and road heigt
