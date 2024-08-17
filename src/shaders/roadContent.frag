@@ -73,7 +73,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     }
 
     // For each bezier segment
-    for (int i = 0; i < SPLINE_SIZE - 1; i += 2)
+    for (int i = ZERO; i < SPLINE_SIZE - 1; i += 2)
     {
         vec2 A = spline[i + 0];
         vec2 B = spline[i + 1];
@@ -132,7 +132,7 @@ vec2 GetPositionOnCurve(float t)
     
     // Find the segment corresponding to this target length
     int segmentIndex = 0;
-    for (int i = 0; i < SPLINE_SIZE / 2 - 1; ++i) {
+    for (int i = ZERO; i < SPLINE_SIZE / 2 - 1; ++i) {
         if (splineSegmentDistances[i] <= targetLength && splineSegmentDistances[i + 1] > targetLength) {
             segmentIndex = i;
             break;

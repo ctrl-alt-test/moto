@@ -102,10 +102,18 @@ vec2 sceneSDF(vec3 p)
 
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 
+#ifndef DISABLE_MOTO
     d = MinDist(d, motoShape(p));
+#endif
+#ifndef DISABLE_MOTO_DRIVER
     d = MinDist(d, driverShape(p));
+#endif
+#ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));
+#endif
+#ifndef DISABLE_TREES
     d = MinDist(d, treesShape(p, splineUV));
+#endif
 
     return d;
 }

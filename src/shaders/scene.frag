@@ -5,6 +5,10 @@
 // #define MOUSE_CONTROLS_CAMERA
 // #define ENABLE_STEP_COUNT
 // #define ENABLE_DAY_MODE
+// #define DISABLE_MOTO
+// #define DISABLE_MOTO_DRIVER
+// #define DISABLE_TERRAIN
+// #define DISABLE_TREES
 
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
