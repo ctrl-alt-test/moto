@@ -23,10 +23,10 @@ namespace Leviathan
 
 		double handleEvents(Song* track, double position);
 
-		void updateShaders(int* mainShaderPID, bool force_update = false);
+		void updateShaders(int* mainShaderPID, int* ppShaderPID, bool force_update = false);
 
 	private:
-		int reloadShaderSource(const char* filenameVS, const char* filenamePS);
+		void reloadShaderSource(int* mainShaderPID, int* ppShaderPID);
 		char* textFileRead(const char* filename);
 		int compileShader(char *source, GLenum shaderType);
 

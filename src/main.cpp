@@ -18,8 +18,9 @@
 
 // Global defines
 #define SOUND_ON
-#define USE_FXAA
+#define USE_FXAA 1
 #define USE_CREATE_SHADER_PROGRAM // Save almost 40 bytes, require OpenGL 4.1 (Anat : doesn't work on my emulated windows)
+#define USE_POSTPROCESS 1
 
 // Relative path or absolute path to a wav file. Within VS, current path is `Intro`.
 #define TRACK_AS_WAV_FILE L"moto.wav"
@@ -34,6 +35,9 @@
 static int shaderMain;
 #ifdef USE_FXAA
 static int shaderFXAA;
+#endif
+#ifdef USE_POSTPROCESS
+static int shaderPostProcess;
 #endif
 
 // Sound 
@@ -123,6 +127,16 @@ int __cdecl main(int argc, char* argv[])
 	#endif
 #endif
 
+#ifdef USE_POSTPROCESS
+		f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
+		((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &postprocess_frag, 0);
+		((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(f);
+
+		shaderPostProcess = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
+		((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderPostProcess, f);
+		((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(shaderPostProcess);
+#endif
+
 	// init sound
 #ifndef EDITOR_CONTROLS
 #ifdef SOUND_ON
@@ -142,7 +156,7 @@ int __cdecl main(int argc, char* argv[])
 #endif
 #else
 	Leviathan::Editor editor = Leviathan::Editor();
-	editor.updateShaders(&shaderMain, true);
+	editor.updateShaders(&shaderMain, &shaderPostProcess, true);
 
 	#ifdef SOUND_ON
 	Leviathan::Song track(TRACK_AS_WAV_FILE);
@@ -155,7 +169,7 @@ int __cdecl main(int argc, char* argv[])
 #endif
 
 	// because all render passes need exactly the same input, we can do it once for all
-#ifdef USE_FXAA
+#if USE_FXAA || USE_POSTPROCESS
 	((PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture"))(GL_TEXTURE0);
 	glBindTexture(GL_TEXTURE_2D, 1);
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
@@ -201,6 +215,17 @@ int __cdecl main(int argc, char* argv[])
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
 		glRects(-1, -1, 1, 1);
 #endif
+
+#ifdef USE_POSTPROCESS
+		//glBindTexture(GL_TEXTURE_2D, 1);
+		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
+		//((PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture"))(GL_TEXTURE0);
+		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderPostProcess);
+		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0);
+		glRects(-1, -1, 1, 1);
+#endif
+
 		SwapBuffers(hDC);
 
 		// handle functionality of the editor
@@ -208,7 +233,7 @@ int __cdecl main(int argc, char* argv[])
 		editor.endFrame(timeGetTime());
 		position = editor.handleEvents(&track, position);
 		editor.printFrameStatistics();
-		editor.updateShaders(&shaderMain, false);
+		editor.updateShaders(&shaderMain, &shaderPostProcess, false);
 #endif
 
 #ifdef SOUND_ON

@@ -80,7 +80,7 @@ double Editor::handleEvents(Leviathan::Song* track, double position)
 	return position;
 }
 
-void Editor::updateShaders(int* mainShaderPID, bool force_update)
+void Editor::updateShaders(int* mainShaderPID, int* ppShaderPID, bool force_update)
 {
 	if (shaderUpdatePending || force_update)
 	{
@@ -93,12 +93,7 @@ void Editor::updateShaders(int* mainShaderPID, bool force_update)
 			Sleep(100);
 			system("preprocess_shaders.bat");
 
-			int newPID = reloadShaderSource("src/shaders/scene.vert", "src/shaders/preprocessed.scene.frag");
-			if (newPID > 0) {
-				int oldPID = *mainShaderPID;
-				*mainShaderPID = newPID;
-				((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(oldPID);
-			}
+			reloadShaderSource(mainShaderPID, ppShaderPID);
 		}
 
 		previousUpdateTime = timeGetTime();
@@ -106,25 +101,43 @@ void Editor::updateShaders(int* mainShaderPID, bool force_update)
 	}
 }
 
-int Editor::reloadShaderSource(const char* filenameVS, const char* filenamePS)
+void Editor::reloadShaderSource(int* mainShaderPID, int* postShaderPID)
 {
-	char* sourceVS = textFileRead(filenameVS);
-	char* sourcePS = textFileRead(filenamePS);
-	if (!sourceVS || !sourcePS) return -1;
+	char* sourceVS = textFileRead("src/shaders/scene.vert");
+	char* sourcePS = textFileRead("src/shaders/preprocessed.scene.frag");
+	if (!sourceVS || !sourcePS) return;
 
 	int shaderVS = compileShader(sourceVS, GL_VERTEX_SHADER);
 	int shaderPS = compileShader(sourcePS, GL_FRAGMENT_SHADER);
-	if (!shaderVS || !shaderPS) return -1;
+	if (!shaderVS || !shaderPS) return;
 
-	int shaderMain = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
-	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderMain, shaderVS);
-	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderMain, shaderPS);
-	((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(shaderMain);
+	int newMainShaderPID = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
+	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(newMainShaderPID, shaderVS);
+	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(newMainShaderPID, shaderPS);
+	((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(newMainShaderPID);
 
 	((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(shaderVS);
 	((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(shaderPS);
 
-	return shaderMain;
+	if (newMainShaderPID > 0) {
+		((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(*mainShaderPID);
+		*mainShaderPID = newMainShaderPID;
+	}
+
+	// Postprocess shader
+	char* sourcePPS = textFileRead("src/shaders/postprocess.frag");
+	if (!sourcePPS) return;
+	int shaderPPS = compileShader(sourcePPS, GL_FRAGMENT_SHADER);
+	if (!shaderPPS) return;
+	int newPostShaderPID = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
+	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(newPostShaderPID, shaderPPS);
+	((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(newPostShaderPID);
+
+	((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(shaderPPS);
+	if (newPostShaderPID > 0) {
+		((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(*postShaderPID);
+		*postShaderPID = newPostShaderPID;
+	}
 }
 
 
