@@ -1,7 +1,3 @@
-#ifndef ZERO
-#define ZERO 0
-#endif
-
 const bool ENABLE_SMOOTHER_STEP_NOISE = false;
 const float PI = acos(-1.);
 
@@ -191,7 +187,7 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
     float frequency = 1.0;
     float offset = 0.0;
 
-    for (int i = ZERO; i < iterations; ++i)
+    for (int i = ZERO(iTime); i < iterations; ++i)
     {
         float noise = valueNoise(p * frequency + offset) * 2. - 1.;
         v += weight * noise;

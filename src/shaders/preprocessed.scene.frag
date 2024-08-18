@@ -27,12 +27,9 @@ const vec2 iResolution = vec2(1920.,1080.) / 2.;
 vec2 iMouse = vec2(700., 900.);
 uniform float iTime;
 
-#define ZERO min(0, int(iTime))
+#define ZERO(iTime) min(0, int(iTime))
 // Include begin: common.frag
 // --------------------------------------------------------------------
-// Inactive conditional block: #ifndef ZERO
-
-
 const bool ENABLE_SMOOTHER_STEP_NOISE = false;
 const float PI = acos(-1.);
 
@@ -222,7 +219,7 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
     float frequency = 1.0;
     float offset = 0.0;
 
-    for (int i = ZERO; i < iterations; ++i)
+    for (int i = ZERO(iTime); i < iterations; ++i)
     {
         float noise = valueNoise(p * frequency + offset) * 2. - 1.;
         v += weight * noise;
@@ -652,7 +649,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     
 
     
-    for (int i = ZERO; i < SPLINE_SIZE - 1; i += 2)
+    for (int i = ZERO(iTime); i < SPLINE_SIZE - 1; i += 2)
     {
         vec2 A = spline[i + 0];
         vec2 B = spline[i + 1];
@@ -711,7 +708,7 @@ vec2 GetPositionOnCurve(float t)
     
     
     int segmentIndex = 0;
-    for (int i = ZERO; i < SPLINE_SIZE / 2 - 1; ++i) {
+    for (int i = ZERO(iTime); i < SPLINE_SIZE / 2 - 1; ++i) {
         if (splineSegmentDistances[i] <= targetLength && splineSegmentDistances[i + 1] > targetLength) {
             segmentIndex = i;
             break;
@@ -1619,7 +1616,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     float t = 0.;
     vec2 d;
 
-    for (int i = ZERO; i < max_steps; ++i)
+    for (int i = ZERO(iTime); i < max_steps; ++i)
     {
 // Inactive conditional block: #ifdef ENABLE_STEP_COUNT
 
