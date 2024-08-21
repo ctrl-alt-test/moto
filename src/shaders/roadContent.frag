@@ -228,6 +228,20 @@ float terrainDetailHeight(vec2 p)
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
+vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
+	// Traffic barrier
+    vec3 pRoad = vec3(splineUV.x, relativeHeight, splineUV.z);
+    vec3 pObj = vec3(abs(pRoad.x) - 4.2, pRoad.y - 0.8, 0.);
+    float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
+
+    pObj = vec3(abs(pRoad.x) - 4.1, pRoad.y - 0.8, 0.);
+    len = max(len, -Box3(pObj, vec3(0.1, 0.1, 0.1), 0.1));
+
+    pObj = vec3(abs(pRoad.x) - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
+    len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
+    return vec2(len, MOTO_EXHAUST_ID);
+}
+
 vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
@@ -271,5 +285,6 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     
     vec2 d = vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
 
+    d = MinDist(d, roadSideItems(splineUV, relativeHeight));
     return d;
 }
