@@ -51,6 +51,12 @@
     <None Include="src\shaders\backgroundContent.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="src\shaders\postprocess.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\roadContent.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

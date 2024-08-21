@@ -583,7 +583,9 @@
     <None Include="src\shaders\fxaa.frag" />
     <None Include="src\shaders\moto.frag" />
     <None Include="src\shaders\motoContent.frag" />
+    <None Include="src\shaders\postprocess.frag" />
     <None Include="src\shaders\rendering.frag" />
+    <None Include="src\shaders\roadContent.frag" />
     <None Include="src\shaders\scene.frag" />
     <None Include="src\shaders\scene.vert" />
     <None Include="src\shaders\shaders.inl" />
