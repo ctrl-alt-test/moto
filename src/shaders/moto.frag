@@ -142,8 +142,8 @@ vec2 sceneSDF(vec3 p, float current_t)
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
+    GenerateSpline(PI/*curvature*/, 10./*scale*/, 1./*seed*/);
     ComputeBezierSegmentsLengthAndAABB();
-    GenerateSpline(1.2/*curvature*/, 4./*scale*/, 1./*seed*/);
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
     

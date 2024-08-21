@@ -23,7 +23,7 @@ const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
 
 out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.) / 2.;
+const vec2 iResolution = vec2(1920.,1080.);
 vec2 iMouse = vec2(700., 900.);
 uniform float iTime;
 
@@ -574,8 +574,9 @@ vec3 sky(vec3 V)
 // --------------------------------------------------------------------
 const int SPLINE_SIZE = 13;
 
-float splineSegmentDistances[SPLINE_SIZE / 2];
 vec4 splineAABB;
+vec4 splineSegmentAABBs[SPLINE_SIZE / 2];
+float splineSegmentDistances[SPLINE_SIZE / 2];
 
 vec2 spline[SPLINE_SIZE] = vec2[](
     vec2(-5.0, -5.0),
@@ -605,11 +606,10 @@ vec2 spline[SPLINE_SIZE] = vec2[](
 
 void ComputeBezierSegmentsLengthAndAABB()
 {
-    vec2 mi = vec2(1e6);
-    vec2 ma = vec2(-1e6);
-
     float splineLength = 0.0;
-    for (int i = 0; i < SPLINE_SIZE - 1; i += 2)
+    splineAABB = vec4(1e6, 1e6, -1e6, -1e6);
+
+    for (int i = ZERO(iTime); i < SPLINE_SIZE - 1; i += 2)
     {
         vec2 A = spline[i + 0];
         vec2 B = spline[i + 1];
@@ -618,11 +618,11 @@ void ComputeBezierSegmentsLengthAndAABB()
         splineSegmentDistances[i / 2] = splineLength;
         splineLength += segmentLength;
 
-        vec4 aabb = BezierAABB(A, B, C);
-        mi = min(mi, aabb.xy);
-        ma = max(ma, aabb.zw);
+        vec4 AABB = BezierAABB(A, B, C);
+        splineSegmentAABBs[i / 2] = AABB;
+        splineAABB.xy = min(splineAABB.xy, AABB.xy);
+        splineAABB.zw = max(splineAABB.zw, AABB.zw);
     }
-    splineAABB = vec4(mi, ma);
 }
 
 
@@ -640,13 +640,10 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 {
     vec4 splineUV = vec4(1e6, 0, 0, 0);
 
-    float d = DistanceFromAABB(p, splineAABB);
-
-    
-    
-    
-    
-    
+    if (DistanceFromAABB(p, splineAABB) > splineWidth)
+    {
+        return splineUV;
+    }
 
     
     for (int i = ZERO(iTime); i < SPLINE_SIZE - 1; i += 2)
@@ -655,46 +652,29 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
         vec2 B = spline[i + 1];
         vec2 C = spline[i + 2];
 
-        d = DistanceFromAABB(p, BezierAABB(A, B, C));
-        if (d < splineWidth)
+        if (DistanceFromAABB(p, BezierAABB(A, B, C)) > splineWidth)
         {
-            
-            B = mix(B + vec2(1e-4), B, abs(sign(B * 2.0 - A - C))); 
-            
-            vec2 bezierSDF = BezierSDF(A, B, C, p);
+            continue;
+        }
 
-            if (abs(bezierSDF.x) < abs(splineUV.x))
-            {
-                float lengthInSegment = BezierCurveLengthAt(A, B, C, clamp(bezierSDF.y, 0., 1.));
-                float lengthInSpline = splineSegmentDistances[i / 2] + lengthInSegment;
-                splineUV = vec4(
-                    bezierSDF.x,
-                    clamp(bezierSDF.y, 0., 1.),
-                    lengthInSpline,
-                    float(i));
-            }
+        
+        B = mix(B + vec2(1e-4), B, abs(sign(B * 2.0 - A - C))); 
+        
+        vec2 bezierSDF = BezierSDF(A, B, C, p);
+
+        if (abs(bezierSDF.x) < abs(splineUV.x))
+        {
+            float lengthInSegment = BezierCurveLengthAt(A, B, C, clamp(bezierSDF.y, 0., 1.));
+            float lengthInSpline = splineSegmentDistances[i / 2] + lengthInSegment;
+            splineUV = vec4(
+                bezierSDF.x,
+                clamp(bezierSDF.y, 0., 1.),
+                lengthInSpline,
+                float(i));
         }
     }
 
     return splineUV;
-}
-
-void GenerateSpline(float maxCurvature, float segmentLength, float seed)
-{
-    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
-    direction = normalize(direction);
-    vec2 point = vec2(0.);
-    for(int i = 0; i < SPLINE_SIZE; i++) {
-        if (i % 2 == 0) {
-            spline[i] = point + 1.*direction;
-            continue;
-        }
-        float ha = hash11(seed + float(i) * 3.0);
-        point += direction * segmentLength;
-        float angle = mix(-maxCurvature, maxCurvature, ha);
-        direction *= Rotation(angle);
-        spline[i] = point;
-    }
 }
 
 
@@ -744,6 +724,24 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
     vec2 C = spline[i + 2];
 
     return Bezier(A, B, C, t);
+}
+
+void GenerateSpline(float maxCurvature, float segmentLength, float seed)
+{
+    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
+    direction = normalize(direction);
+    vec2 point = vec2(0.);
+    for(int i = 0; i < SPLINE_SIZE; i++) {
+        if (i % 2 == 0) {
+            spline[i] = point + 1.*direction;
+            continue;
+        }
+        float ha = hash11(seed + float(i) * 3.0);
+        point += direction * segmentLength;
+        float angle = mix(-maxCurvature, maxCurvature, ha);
+        direction *= Rotation(angle);
+        spline[i] = point;
+    }
 }
 
 
@@ -1733,8 +1731,8 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
+    GenerateSpline(PI , 10. , 1. );
     ComputeBezierSegmentsLengthAndAABB();
-    GenerateSpline(1.2 , 40. , 1. );
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
     
