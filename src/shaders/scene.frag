@@ -15,17 +15,26 @@ const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
 
-const float EPSILON = 2.*1e-3;
-const float MOTO_EPSILON = 1e-3;
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 
 const float GAMMA = 2.2;
 
+in vec3 camPos;
+in vec3 camTa;
+in float camMotoSpace;
+in float camFoV;
+in float camProjectionRatio;
+in float camFishEye;
+in float camShowDriver;
+
 out vec4 fragColor;
 const vec2 iResolution = vec2(1920.,1080.);
 vec2 iMouse = vec2(700., 900.);
+
 uniform float iTime;
+
+float PIXEL_ANGLE = camFoV / iResolution.x;
 
 #define ZERO(iTime) min(0, int(iTime))
 #include "common.frag"

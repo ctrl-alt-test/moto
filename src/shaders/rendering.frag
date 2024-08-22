@@ -31,7 +31,10 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         t += d.x;
         p = ro + t * rd;
 
-        if (d.x < MOTO_EPSILON || (d.x < EPSILON && !IsMoto(d.y)))
+        // The minimum distance is t.sin(pixel_angle), but the angle is
+        // so small we can safely approximate with sin(x) = x.
+        float epsilon = t * PIXEL_ANGLE;
+        if (d.x < epsilon)
         {
             return vec2(t, d.y);
         }

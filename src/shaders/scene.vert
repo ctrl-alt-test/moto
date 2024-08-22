@@ -5,6 +5,7 @@ in vec4 a_position;
 out vec3 sunDir;
 out vec3 camPos;
 out vec3 camTa;
+out float camFoV;
 out float camProjectionRatio;
 out float camFishEye;
 out float camMotoSpace; // bool - 0. or 1.
@@ -163,4 +164,5 @@ void main(void)
     {
         dashBoardUnderTheShoulderShot(t_in_shot);
     }
+    camFoV = atan(1. / camProjectionRatio);
 }

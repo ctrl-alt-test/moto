@@ -1,10 +1,3 @@
-in vec3 camPos;
-in vec3 camTa;
-in float camMotoSpace;
-in float camProjectionRatio;
-in float camFishEye;
-in float camShowDriver;
-
 // -------------------------------------------------------
 // Scene description functions
 
