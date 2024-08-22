@@ -47,23 +47,24 @@ void Editor::printFrameStatistics()
 
 double Editor::handleEvents(Leviathan::Song* track, double position)
 {
-	if (GetAsyncKeyState(VK_MENU))
+	if (GetAsyncKeyState(VK_MENU) & 0x8000)
 	{
 		double seek = 0.0;
-		if (GetAsyncKeyState(VK_DOWN))
+		if (GetAsyncKeyState(VK_DOWN) & 0x8000)
 		{
 			state = Paused;
 			track->pause();
 		}
-		if (GetAsyncKeyState(VK_UP))
+		if (GetAsyncKeyState(VK_UP) & 0x8000)
 		{
 			state = Playing;
 			track->play();
 		}
-		if (GetAsyncKeyState(VK_RIGHT) && !GetAsyncKeyState(VK_SHIFT)) seek += 1.0;
-		if (GetAsyncKeyState(VK_LEFT)  && !GetAsyncKeyState(VK_SHIFT)) seek -= 1.0;
-		if (GetAsyncKeyState(VK_RIGHT) && GetAsyncKeyState(VK_SHIFT))  seek += 0.1;
-		if (GetAsyncKeyState(VK_LEFT)  && GetAsyncKeyState(VK_SHIFT))  seek -= 0.1;
+		bool shift = GetAsyncKeyState(VK_SHIFT) & 0x8000;
+		if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && !shift) seek += 1.0;
+		if (GetAsyncKeyState(VK_LEFT) & 0x8000 && !shift) seek -= 1.0;
+		if (GetAsyncKeyState(VK_RIGHT) & 0x8000 && shift) seek += 0.1;
+		if (GetAsyncKeyState(VK_LEFT) & 0x8000 && shift) seek -= 0.1;
 		if (position + seek != position)
 		{
 			position += seek;
