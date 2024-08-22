@@ -9,3 +9,4 @@ Debug
 out
 Release
 moto.wav
+src/shaders/shaders.inl
