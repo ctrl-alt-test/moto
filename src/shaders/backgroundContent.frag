@@ -43,3 +43,23 @@ vec3 sky(vec3 V)
     color *= smoothstep(-0.1, 0., V.y);
     return color / 197000.;
 }
+
+vec3 cityLights(vec2 p)
+{
+    vec3 ctex=vec3(0);
+    for(int i=0;i<3;i++) {
+        float fi=float(i);
+        vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
+        // adjust this value  ↓  based on depth to reduce shimmering
+        float a = smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(
+            smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15)
+            ,pow(valueNoise(xp*.5),10.)
+        );
+        ctex += valueNoise(xp*.5)*mix(
+            mix(vec3(.56,.32,.18)*min(a,.5)*2.,vec3(.88,.81,.54),max(a-.5,0.)*2.),
+            mix(vec3(.45,.44,.6)*min(a,.5)*2.,vec3(.80,.89,.93),max(a-.5,0.)*2.),
+            step(.5,valueNoise(p*2.))
+        );
+    }
+    return ctex*5.;
+}
