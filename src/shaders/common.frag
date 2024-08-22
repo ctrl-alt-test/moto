@@ -74,10 +74,14 @@ struct light
     float luminance;
 };
 
+const int MATERIAL_TYPE_DIELECTRIC = 0;
+const int MATERIAL_TYPE_METALLIC = 1;
+const int MATERIAL_TYPE_EMISSIVE = 2;
+
 struct material
 {
-    vec3 emissive;
-    vec3 albedo;
+    int type;
+    vec3 color; // Albedo for dielectric, metallic and retroreflective, luminance for emissive.
     float roughness;
 };
 
@@ -129,7 +133,7 @@ vec3 coneLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.albedo;
+    vec3 diff = m.color;
     vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
 
     return radiance * (diff + spec);
@@ -188,7 +192,7 @@ vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.albedo;
+    vec3 diff = m.color;
     vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
 
     return irradiance * (diff + spec);

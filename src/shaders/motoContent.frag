@@ -221,45 +221,45 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, N.x);
-        vec3 emissive = isLight * vec3(1., 0.95, 0.9);
+        vec3 luminance = isLight * vec3(1., 0.95, 0.9);
 
         float isDashboard = smoothstep(0.9, 0.95, -N.x + 0.4 * N.y - 0.07);
         if (isDashboard > 0.)
         {
             vec3 color = motoDashboard(p.zy * 5.5 + vec2(0.5, -5.));
-            emissive = mix(vec3(0), color, isDashboard);
+            luminance = mix(vec3(0), color, isDashboard);
         }
 
-        return material(emissive, vec3(0), 0.15);
+        return material(MATERIAL_TYPE_EMISSIVE, luminance, 0.15);
     }
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
-        return material(isLight * vec3(1., 0., 0.), vec3(0.), 0.5);
+        return material(MATERIAL_TYPE_EMISSIVE, isLight * vec3(1., 0., 0.), 0.5);
     }
     if (mid == MOTO_EXHAUST_ID)
     {
-        return material(vec3(0.0), vec3(0.2), 0.9);
+        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.9);
     }
     if (mid == MOTO_MOTOR_ID)
     {
-        return material(vec3(0.0), vec3(0.), 0.3);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.3);
     }
     if (mid == MOTO_WHEEL_ID)
     {
-        return material(vec3(0.0), vec3(0.008), 0.8);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.008), 0.8);
     }
 
     if (mid == MOTO_DRIVER_ID)
     {
-        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.02, 0.025, 0.04), 0.6);
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
-        return material(vec3(0.0), vec3(0.), 0.25);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.25);
     }
 
-    return material(vec3(0.0), vec3(0.), 0.15);
+    return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.15);
 }
 
 vec2 driverShape(vec3 p)

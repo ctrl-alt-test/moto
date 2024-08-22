@@ -15,18 +15,18 @@ material computeMaterial(float mid, vec3 p, vec3 N)
             roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
         }
         color = mix(color, roadColor, isRoad);
-        return material(vec3(0.0), color, 0.5);
+        return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
     }
 
     if (IsMoto(mid))
     {
         p = worldToMoto(p, true, iTime);
         N = worldToMoto(N, false, iTime);
-        //return material(N * 0.5 + 0.5, vec3(0.), 0.15);
+        //return material(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 0.15);
         return motoMaterial(mid, p, N, iTime);
     }
 
-    return material(vec3(0.0), fract(p.xyz), 1.0);
+    return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);
 }
 
 vec2 sceneSDF(vec3 p, float current_t)
@@ -133,13 +133,25 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         return sky(-V);
     }
 
-    if (mid == MOTO_EXHAUST_ID)
-    {
-        return sky(reflect(-V, N));
-    }
-
     material m = computeMaterial(mid, p, N);
 
+    vec3 emissive = vec3(0.);
+    if (m.type == MATERIAL_TYPE_EMISSIVE)
+    {
+        emissive = m.color;
+    }
+
+    vec3 albedo = vec3(0.);
+    if (m.type == MATERIAL_TYPE_DIELECTRIC)
+    {
+        albedo = m.color;
+    }
+
+    vec3 f0 = vec3(0.04);
+    if (m.type == MATERIAL_TYPE_METALLIC)
+    {
+        f0 = m.color;
+    }
 
     // Global illumination coming from the sky dome:
 
@@ -163,14 +175,17 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     vec3 H = normalize(L2 + V);
 	float x = 1.0 - dot(V, H);
 	x = x*x*x*x*x;
-	float F = x + 0.04 * (1.0 - x);
-
-    //vec3 I2 = texture(iChannel0, worldToCubeMap(L2)).rgb;
+	vec3 F = x + f0 * (1.0 - x);
 
     vec3 radiance = vec3(0.);
-    radiance += m.emissive;
-    radiance += (I0 + I1) * m.albedo;
-    //radiance += F * I2;
+    radiance += emissive;
+    radiance += (I0 + I1) * albedo;
+
+    // Brutal if until there's a roughness dependent reflection.
+    if (m.roughness < 0.25)
+    {
+        radiance += F * sky(reflect(-V, N));
+    }
 
     float fogAmount = 1.0 - exp(-t.x*0.03);
     vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
