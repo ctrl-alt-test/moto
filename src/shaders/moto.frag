@@ -133,6 +133,53 @@ vec2 sceneSDF(vec3 p, float current_t)
 
 // -------------------------------------------------------
 
+#ifdef ENABLE_STEP_COUNT
+vec3 stepsToColor(int steps)
+{
+    vec3 colorCodedCount = vec3(0.);
+
+    vec3 colorCodes[] = vec3[](
+        vec3(0.),
+        vec3(0., 0., 1.),
+        vec3(0., 1., 1.),
+        vec3(0., 1., 0.),
+        vec3(1., 1., 0.),
+        vec3(1., 0., 0.),
+        vec3(1., 0.4, 1.)
+    );
+    if (steps <= 10)
+    {
+        colorCodedCount = mix(colorCodes[0], colorCodes[1], clamp(float(steps) / 10, 0., 1.));
+    }
+    else if (steps <= 50)
+    {
+        colorCodedCount = mix(colorCodes[1], colorCodes[2], clamp(float(steps - 10) / 40, 0., 1.));
+    }
+    else if (steps <= 100)
+    {
+        colorCodedCount = mix(colorCodes[2], colorCodes[3], clamp(float(steps - 50) / 50, 0., 1.));
+    }
+    else if (steps <= 150)
+    {
+        colorCodedCount = mix(colorCodes[2], colorCodes[3], clamp(float(steps - 100) / 50, 0., 1.));
+    }
+    else if (steps <= 200)
+    {
+        colorCodedCount = mix(colorCodes[3], colorCodes[4], clamp(float(steps - 150) / 50, 0., 1.));
+    }
+    else if (steps <= 250)
+    {
+        colorCodedCount = mix(colorCodes[4], colorCodes[5], clamp(float(steps - 200) / 50, 0., 1.));
+    }
+    else
+    {
+        colorCodedCount = mix(colorCodes[5], colorCodes[6], clamp(float(steps - 250) / 50, 0., 1.));
+    }
+
+    return colorCodedCount;
+}
+#endif
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     GenerateSpline(PI/*curvature*/, 10./*scale*/, 1./*seed*/);
@@ -180,7 +227,14 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 
     vec3 p;
+#ifdef ENABLE_STEP_COUNT
+    int steps = 0;
+    vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p, steps);
+    fragColor = vec4(stepsToColor(steps), 1.);
+    return;
+#else
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
+#endif
     vec3 N = evalNormal(p, t.x);
 
     vec3 radiance = evalRadiance(t, p, -rd, N);
