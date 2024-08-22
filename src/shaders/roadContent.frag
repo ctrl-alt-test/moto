@@ -288,3 +288,58 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     d = MinDist(d, roadSideItems(splineUV, relativeHeight));
     return d;
 }
+
+float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
+    float h1 = hash21(id);
+    float h2 = hash11(h1);
+
+    // Define if the area has trees
+    float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
+    if (h1 < presence)
+    {
+        return 1e6;
+    }
+
+    // Clear trees close to the road
+    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
+
+    //
+    // FIXME: the splineUV is relative to the current position, not relative
+    // to the tree position.
+    // This will probably need some coordinate trickery to know if there is
+    // a tree or not.
+    // But if that doesn't work, we can still use splineUV to ignore cases in
+    // which we are sure there is or there is no tree. Then for cases in
+    // between, we can evaluate the spline relative to the tree position.
+    // That should still be a lot fewer spline evaluations.
+    //
+
+    float treeHeight = mix(5., 20., 1.-h1*h1);
+    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
+    float terrainHeight = smoothTerrainHeight(id);
+
+    localP.y -= terrainHeight + 0.5 * treeHeight;
+    localP.xz += (vec2(h1, h2)*2. - 1.) * 2.;
+
+    float d = Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth));
+
+    float leaves = 1. - smoothstep(50., 200., current_t);
+    if (d < 2. && leaves > 0.)
+    {
+        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
+    }
+
+    return d;
+}
+
+vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
+{
+    float spacing = 10.;
+
+    // iq - repeated_ONLY_SYMMETRIC_SDFS (https://iquilezles.org/articles/sdfrepetition/)
+    //vec3 lim = vec3(1e8,0,1e8);
+    vec2 id = round(p.xz / spacing) * spacing;
+    vec3 localP = p;
+    localP.xz -= id;
+    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
+}

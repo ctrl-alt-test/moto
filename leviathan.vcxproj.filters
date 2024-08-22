@@ -24,9 +24,6 @@
     <ClInclude Include="src\music\music.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\shaders\moto.frag">
-      <Filter>shaders</Filter>
-    </None>
     <None Include="src\shaders\fxaa.frag">
       <Filter>shaders</Filter>
     </None>
@@ -55,6 +52,9 @@
       <Filter>shaders</Filter>
     </None>
     <None Include="src\shaders\roadContent.frag">
+      <Filter>shaders</Filter>
+    </None>
+    <None Include="src\shaders\ids.frag">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

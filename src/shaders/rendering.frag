@@ -1,3 +1,62 @@
+// -------------------------------------------------------
+// Scene description functions
+
+material computeMaterial(float mid, vec3 p, vec3 N)
+{
+    if (mid == GROUND_ID)
+    {
+        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
+
+        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+        float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
+        vec3 roadColor = vec3(0.0);
+        if (isRoad > 0.0)
+        {
+            roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
+        }
+        color = mix(color, roadColor, isRoad);
+        return material(vec3(0.0), color, 0.5);
+    }
+
+    if (IsMoto(mid))
+    {
+        p = worldToMoto(p, true, iTime);
+        N = worldToMoto(N, false, iTime);
+        //return material(N * 0.5 + 0.5, vec3(0.), 0.15);
+        return motoMaterial(mid, p, N, iTime);
+    }
+
+    return material(vec3(0.0), fract(p.xyz), 1.0);
+}
+
+vec2 sceneSDF(vec3 p, float current_t)
+{
+    vec2 d = vec2(1e6, NO_ID);
+
+    vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+
+#ifndef DISABLE_MOTO
+    d = MinDist(d, motoShape(p));
+#endif
+#ifndef DISABLE_MOTO_DRIVER
+    if (camShowDriver > 0.5)
+    {
+        d = MinDist(d, driverShape(p));
+    }
+#endif
+#ifndef DISABLE_TERRAIN
+    d = MinDist(d, terrainShape(p, splineUV));
+#endif
+#ifndef DISABLE_TREES
+    d = MinDist(d, treesShape(p, splineUV, current_t));
+#endif
+
+    return d;
+}
+
+// -------------------------------------------------------
+// Rendering functions
+
 vec3 evalNormal(vec3 p, float t)
 {
     // TODO: Ideally h would depend on the screen space projected size.
