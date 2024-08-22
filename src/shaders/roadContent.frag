@@ -239,7 +239,13 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 
     pObj = vec3(abs(pRoad.x) - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
     len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
-    return vec2(len, MOTO_EXHAUST_ID);
+
+    float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
+
+    if (len < reflector)
+        return vec2(len, MOTO_EXHAUST_ID);
+    else
+        return vec2(reflector, ROAD_REFLECTOR_ID);
 }
 
 vec2 terrainShape(vec3 p, vec4 splineUV)

@@ -10,15 +10,19 @@
 
 
 
+const int MAX_LIGHTS = 3;
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
-
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
-
 const float GAMMA = 2.2;
+const vec2 iResolution = vec2(1920.,1080.);
+
+
+uniform float iTime;
+
 
 in vec3 camPos;
 in vec3 camTa;
@@ -28,15 +32,13 @@ in float camProjectionRatio;
 in float camFishEye;
 in float camShowDriver;
 
-out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.);
-vec2 iMouse = vec2(700., 900.);
 
-uniform float iTime;
+out vec4 fragColor;
+
 
 float PIXEL_ANGLE = camFoV / iResolution.x;
-
 #define ZERO(iTime) min(0, int(iTime))
+
 // Include begin: common.frag
 // --------------------------------------------------------------------
 const bool ENABLE_SMOOTHER_STEP_NOISE = false;
@@ -55,20 +57,31 @@ vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
 
 
 
+// Inactive conditional block: #ifdef ENABLE_STEP_COUNT
+
+
+
+
+
 struct light
 {
     vec3 p0;
-    vec3 p1;
+    vec3 p1; 
     vec3 color;
-    float cosAngle;
+    float cosAngle; 
     float collimation;
     float luminance;
 };
 
+const int MATERIAL_TYPE_DIELECTRIC = 0;
+const int MATERIAL_TYPE_METALLIC = 1;
+const int MATERIAL_TYPE_EMISSIVE = 2;
+const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
+
 struct material
 {
-    vec3 emissive;
-    vec3 albedo;
+    int type;
+    vec3 color; 
     float roughness;
 };
 
@@ -115,12 +128,19 @@ vec3 coneLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
     intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
     vec3 radiance = intensity * NdotL;
 
+    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        float exponent = 1e3;
+        float normalisationFactor = (exponent + 2.) / 2.;
+        return 0.1*radiance * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
+    }
+
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.albedo;
+    vec3 diff = m.color;
     vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
 
     return radiance * (diff + spec);
@@ -174,12 +194,19 @@ vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
     vec3 L = normalize(Lmrp);
     float NdotL = clamp(dot(N, L), 0., 1.);
 
+    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        float exponent = 100.;
+        float normalisationFactor = (exponent + 2.) / 2.;
+        return irradiance * NdotL * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
+    }
+
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.albedo;
+    vec3 diff = m.color;
     vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
 
     return irradiance * (diff + spec);
@@ -511,9 +538,8 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
 // --------------------------------------------------------------------
 // Include end: common.frag
 
-
-vec3 motoPos, motoDir;
-
+// Include begin: ids.frag
+// --------------------------------------------------------------------
 const float NO_ID = -1.;
 const float GROUND_ID = 0.;
 const float MOTO_ID = 1.;
@@ -525,18 +551,21 @@ const float MOTO_EXHAUST_ID = 6.;
 const float MOTO_DRIVER_ID = 7.;
 const float MOTO_DRIVER_HELMET_ID = 8.;
 const float CITY_ID = 9.;
+const float ROAD_REFLECTOR_ID = 10.;
 
 bool IsMoto(float mid)
 {
     return mid >= MOTO_ID && mid <= MOTO_DRIVER_HELMET_ID;
 }
+// --------------------------------------------------------------------
+// Include end: ids.frag
 
 // Include begin: backgroundContent.frag
 // --------------------------------------------------------------------
 // Inactive conditional block: #ifdef ENABLE_DAY_MODE
 // Active conditional block: #else
 vec3 nightHorizonLight = 0.01 * vec3(0.07, 0.1, 1.0);
-vec3 moonLight = 0.02 * vec3(0.2, 0.8, 1.0);
+vec3 moonLightColor = vec3(0.2, 0.8, 1.0);
 // End of active block.
 
 vec3 moonDirection = normalize(vec3(-1., 0.3, 0.4));
@@ -595,6 +624,23 @@ vec3 cityLights(vec2 p)
         );
     }
     return ctex*5.;
+}
+
+vec2 cityShape(vec3 p){
+    vec3 o=p;
+    
+    float len = Box3(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
+    if (len > 10.) return vec2(len-5., CITY_ID);
+
+    
+    float seed=hash21(floor(o.xz/14.));
+    p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
+    float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
+    p.xz=mod(o.xz+6.,14.)-7.;
+    buildingCutouts = min(buildingCutouts,max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.));
+    return
+        vec2(max(min(buildingCutouts*.5,p.y),o.z),
+            CITY_ID);
 }
 // --------------------------------------------------------------------
 // Include end: backgroundContent.frag
@@ -842,7 +888,13 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 
     pObj = vec3(abs(pRoad.x) - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
     len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
-    return vec2(len, MOTO_EXHAUST_ID);
+
+    float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
+
+    if (len < reflector)
+        return vec2(len, MOTO_EXHAUST_ID);
+    else
+        return vec2(reflector, ROAD_REFLECTOR_ID);
 }
 
 vec2 terrainShape(vec3 p, vec4 splineUV)
@@ -891,13 +943,72 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     d = MinDist(d, roadSideItems(splineUV, relativeHeight));
     return d;
 }
+
+float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
+    float h1 = hash21(id);
+    float h2 = hash11(h1);
+
+    
+    float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
+    if (h1 < presence)
+    {
+        return 1e6;
+    }
+
+    
+    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
+    float treeHeight = mix(5., 20., 1.-h1*h1);
+    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
+    float terrainHeight = smoothTerrainHeight(id);
+
+    localP.y -= terrainHeight + 0.5 * treeHeight;
+    localP.xz += (vec2(h1, h2)*2. - 1.) * 2.;
+
+    float d = Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth));
+
+    float leaves = 1. - smoothstep(50., 200., current_t);
+    if (d < 2. && leaves > 0.)
+    {
+        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
+    }
+
+    return d;
+}
+
+vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
+{
+    float spacing = 10.;
+
+    
+    
+    vec2 id = round(p.xz / spacing) * spacing;
+    vec3 localP = p;
+    localP.xz -= id;
+    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
+}
 // --------------------------------------------------------------------
 // Include end: roadContent.frag
 
 // Include begin: motoContent.frag
 // --------------------------------------------------------------------
+vec3 motoPos;
+vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
+vec3 dirHeadLight = normalize(vec3(1.0, -0.4, 0.0));
+vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 
 
 vec3 motoToWorld(vec3 v, bool isPos, float time)
@@ -1117,45 +1228,45 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, N.x);
-        vec3 emissive = isLight * vec3(1., 0.95, 0.9);
+        vec3 luminance = isLight * vec3(1., 0.95, 0.9);
 
         float isDashboard = smoothstep(0.9, 0.95, -N.x + 0.4 * N.y - 0.07);
         if (isDashboard > 0.)
         {
             vec3 color = motoDashboard(p.zy * 5.5 + vec2(0.5, -5.));
-            emissive = mix(vec3(0), color, isDashboard);
+            luminance = mix(vec3(0), color, isDashboard);
         }
 
-        return material(emissive, vec3(0), 0.15);
+        return material(MATERIAL_TYPE_EMISSIVE, luminance, 0.15);
     }
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
-        return material(isLight * vec3(1., 0., 0.), vec3(0.), 0.5);
+        return material(MATERIAL_TYPE_EMISSIVE, isLight * vec3(1., 0., 0.), 0.5);
     }
     if (mid == MOTO_EXHAUST_ID)
     {
-        return material(vec3(0.0), vec3(0.2), 0.9);
+        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.2);
     }
     if (mid == MOTO_MOTOR_ID)
     {
-        return material(vec3(0.0), vec3(0.), 0.3);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.3);
     }
     if (mid == MOTO_WHEEL_ID)
     {
-        return material(vec3(0.0), vec3(0.008), 0.8);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.008), 0.8);
     }
 
     if (mid == MOTO_DRIVER_ID)
     {
-        return material(vec3(0.0), vec3(0.02, 0.025, 0.04), 0.6);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.02, 0.025, 0.04), 0.6);
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
-        return material(vec3(0.0), vec3(0.), 0.25);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.25);
     }
 
-    return material(vec3(0.0), vec3(0.), 0.15);
+    return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.15);
 }
 
 vec2 driverShape(vec3 p)
@@ -1494,8 +1605,10 @@ vec2 motoShape(vec3 p)
 // --------------------------------------------------------------------
 // Include end: motoContent.frag
 
-// Include begin: moto.frag
+// Include begin: rendering.frag
 // --------------------------------------------------------------------
+light lights[MAX_LIGHTS];
+
 
 
 
@@ -1513,7 +1626,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
             roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
         }
         color = mix(color, roadColor, isRoad);
-        return material(vec3(0.0), color, 0.5);
+        return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
     }
 
     if (IsMoto(mid))
@@ -1524,79 +1637,12 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return motoMaterial(mid, p, N, iTime);
     }
 
-    return material(vec3(0.0), fract(p.xyz), 1.0);
-}
-
-float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
-    float h1 = hash21(id);
-    float h2 = hash11(h1);
-
-    
-    float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
-    if (h1 < presence)
+    if (mid == ROAD_REFLECTOR_ID)
     {
-        return 1e6;
+        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.), 0.2);
     }
 
-    
-    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-
-    float treeHeight = mix(5., 20., 1.-h1*h1);
-    float treeWidth = treeHeight * mix(0.3, 0.5, h2*h2);
-    float terrainHeight = smoothTerrainHeight(id);
-
-    localP.y -= terrainHeight + 0.5 * treeHeight;
-    localP.xz += (vec2(h1, h2)*2. - 1.) * 2.;
-
-    float d = Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth));
-
-    float leaves = 1. - smoothstep(50., 200., current_t);
-    if (d < 2. && leaves > 0.)
-    {
-        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
-    }
-
-    return d;
-}
-
-vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
-{
-    float spacing = 10.;
-
-    
-    
-    vec2 id = round(p.xz / spacing) * spacing;
-    vec3 localP = p;
-    localP.xz -= id;
-    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
-}
-
-vec2 cityShape(vec3 p){
-    vec3 o=p;
-    
-    float len = Box3(p - vec3(150, 0, 0), vec3(1., 200., 200.), 0.01);
-    if (len > 10.) return vec2(len-5., CITY_ID);
-
-    
-    float seed=hash21(floor(o.xz/14.));
-    p.xz=mod(p.xz*Rotation(.7)+seed*(6.-3.)*5.,14.)-7.;
-    float buildingCutouts = max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.);
-    p.xz=mod(o.xz+6.,14.)-7.;
-    buildingCutouts = min(buildingCutouts,max(max(abs(p.x),abs(p.z))-2.,p.y-seed*5.));
-    return
-        vec2(max(min(buildingCutouts*.5,p.y),o.z),
-            CITY_ID);
+    return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);
 }
 
 vec2 sceneSDF(vec3 p, float current_t)
@@ -1624,11 +1670,28 @@ vec2 sceneSDF(vec3 p, float current_t)
     return d;
 }
 
+void setLights()
+{
+// Inactive conditional block: #ifdef ENABLE_DAY_MODE
+// Active conditional block: #else
+    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 1e10, 0.02);
+// End of active block.
+
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot, true, iTime);
+    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
+    dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
+    dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
+
+    vec3 luminanceHeadLight = vec3(1.);
+    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.9, 10.0, 10.);
+
+    vec3 luminanceBreakLight = vec3(1., 0., 0.);
+    lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);
+}
 
 
 
-// Include begin: rendering.frag
-// --------------------------------------------------------------------
+
 vec3 evalNormal(vec3 p, float t)
 {
     
@@ -1701,41 +1764,60 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         return sky(-V);
     }
 
-    if (mid == MOTO_EXHAUST_ID)
-    {
-        return sky(reflect(-V, N));
-    }
-
     material m = computeMaterial(mid, p, N);
 
+    vec3 emissive = vec3(0.);
+    if (m.type == MATERIAL_TYPE_EMISSIVE)
+    {
+        emissive = m.color;
+    }
+
+    vec3 albedo = vec3(0.);
+    if (m.type == MATERIAL_TYPE_DIELECTRIC)
+    {
+        albedo = m.color;
+    }
+
+    vec3 f0 = vec3(0.04);
+    if (m.type == MATERIAL_TYPE_METALLIC || m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        f0 = m.color;
+    }
+
+    vec3 radiance = vec3(0.);
+    radiance += emissive;
 
     
-
-    
-    vec3 L1 = normalize(vec3(0.4, 0.6*1.0, 0.8));
-    float NdotL1 = clamp(dot(N, L1), 0.0, 1.0);
-    float visibility_L1 = castShadowRay(p, N, L1);
-
 // Inactive conditional block: #ifdef ENABLE_DAY_MODE
 // Active conditional block: #else
     
     vec3 I0 = nightHorizonLight * mix(1.0, 0.1, N.y * N.y) * (N.x * 0.5 + 0.5);
-    vec3 I1 = moonLight * NdotL1 * visibility_L1;
 // End of active block.
+    radiance += I0 * albedo;
 
     
-    vec3 L2 = reflect(-V, N);
-    vec3 H = normalize(L2 + V);
-	float x = 1.0 - dot(V, H);
-	x = x*x*x*x*x;
-	float F = x + 0.04 * (1.0 - x);
+    if (m.roughness < 0.25) 
+    {
+        vec3 L = reflect(-V, N);
+        vec3 H = normalize(L + V);
+	    float x = 1.0 - dot(V, H);
+	    x = x*x*x*x*x;
+	    vec3 F = x + f0 * (1.0 - x);
+        radiance += f0 * sky(L);
+    }
 
     
-
-    vec3 radiance = vec3(0.);
-    radiance += m.emissive;
-    radiance += (I0 + I1) * m.albedo;
-    
+    for (int i = 0; i < MAX_LIGHTS; ++i)
+    {
+        if (lights[i].cosAngle == -1.0)
+        {
+            radiance += rodLightContribution(m, lights[i], p, N, V);
+        }
+        else
+        {
+            radiance += coneLightContribution(m, lights[i], p, N, V);
+        }
+    }
 
     float fogAmount = 1.0 - exp(-t.x*0.03);
     vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
@@ -1746,10 +1828,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 // --------------------------------------------------------------------
 // Include end: rendering.frag
 
-
-
-
-// Inactive conditional block: #ifdef ENABLE_STEP_COUNT
+// Include begin: moto.frag
+// --------------------------------------------------------------------
+// --------------------------------------------------------------------
+// Include end: moto.frag
 
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
@@ -1758,13 +1840,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     ComputeBezierSegmentsLengthAndAABB();
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
-    
-    vec2 mouseInput = iMouse.xy / iResolution.xy;
 
     float time = iTime;
 // Inactive conditional block: #if ENABLE_STOCHASTIC_MOTION_BLUR
 
-    
 
     float ti = fract(iTime * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);
@@ -1773,6 +1852,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     nextPos.xz = GetPositionOnCurve(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
+
+    setLights();
 
     
     vec3 ro;
@@ -1810,10 +1891,6 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     fragColor = vec4(color, 1.);
 }
 
-
 void main() {
     mainImage(fragColor, gl_FragCoord.xy);
 }
-// --------------------------------------------------------------------
-// Include end: moto.frag
-

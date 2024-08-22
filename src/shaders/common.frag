@@ -77,6 +77,7 @@ struct light
 const int MATERIAL_TYPE_DIELECTRIC = 0;
 const int MATERIAL_TYPE_METALLIC = 1;
 const int MATERIAL_TYPE_EMISSIVE = 2;
+const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
 
 struct material
 {
@@ -127,6 +128,13 @@ vec3 coneLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
     intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
     intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
     vec3 radiance = intensity * NdotL;
+
+    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        float exponent = 1e3;
+        float normalisationFactor = (exponent + 2.) / 2.;
+        return 0.1*radiance * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
+    }
 
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
@@ -186,6 +194,13 @@ vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
 
     vec3 L = normalize(Lmrp);
     float NdotL = clamp(dot(N, L), 0., 1.);
+
+    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        float exponent = 100.;
+        float normalisationFactor = (exponent + 2.) / 2.;
+        return irradiance * NdotL * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
+    }
 
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);

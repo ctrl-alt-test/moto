@@ -2,19 +2,59 @@
 
 #define ENABLE_STOCHASTIC_MOTION_BLUR
 
+const vec2 iResolution=vec2(1920,1080);
+uniform float iTime;
 in vec3 camPos,camTa;
 in float camMotoSpace,camFoV,camProjectionRatio,camFishEye,camShowDriver;
 out vec4 fragColor;
-const vec2 iResolution=vec2(1920,1080);
-vec2 iMouse=vec2(700,900);
-uniform float iTime;
 float PIXEL_ANGLE=camFoV/iResolution.x;
 
 #define ZERO(iTime)min(0,int(iTime))
 
 const float PI=acos(-1.);
 struct light{vec3 p0;vec3 p1;vec3 color;float cosAngle;float collimation;float luminance;};
-struct material{vec3 emissive;vec3 albedo;float roughness;};
+struct material{int type;vec3 color;float roughness;};
+vec3 cookTorrance(float roughness,vec3 NcrossH,float VdotH,float NdotL,float NdotV)
+{
+  roughness*=roughness;
+  roughness*=roughness;
+  float distribution=dot(NcrossH,NcrossH)*(1.-roughness)+roughness;
+  VdotH=1.-VdotH;
+  VdotH*=VdotH*VdotH*VdotH*VdotH;
+  NcrossH=VdotH+vec3(.04)*(1.-VdotH);
+  return NcrossH*(roughness/(PI*distribution*distribution)*(2.*NdotL/max(1e-8,NdotL+sqrt(NdotL*NdotL*(1.-roughness)+roughness))*(2.*NdotV/max(1e-8,NdotV+sqrt(NdotV*NdotV*(1.-roughness)+roughness))))*.25/max(1e-8,NdotV*NdotL));
+}
+vec3 coneLightContribution(material m,light l,vec3 p,vec3 N,vec3 V)
+{
+  p=l.p0-p;
+  float d0=length(p);
+  p/=d0;
+  float NdotL=dot(N,p);
+  if(NdotL<=0.)
+    return vec3(0);
+  vec3 radiance=l.color*l.luminance*smoothstep(l.cosAngle,mix(l.cosAngle,1.,.5),dot(p,-l.p1))*((1.+l.collimation)/(l.collimation+d0*d0))*NdotL;
+  if(m.type==3)
+    return.1*radiance*m.color*pow(clamp(dot(V,p),0.,1.),1e3)*501.;
+  p=normalize(p+V);
+  return radiance*(m.color+cookTorrance(m.roughness,cross(N,p),clamp(dot(V,p),0.,1.),NdotL,clamp(dot(N,V),0.,1.)));
+}
+vec3 rodLightContribution(material m,light l,vec3 p,vec3 N,vec3 V)
+{
+  vec3 L0=l.p0-p;
+  p=l.p1-p;
+  float d0=length(L0),d1=length(p);
+  d0=2.*clamp((dot(N,L0)/d0+dot(N,p)/d1)/2.,0.,1.)/(d0*d1+dot(L0,p));
+  if(d0<=0.)
+    return vec3(0);
+  vec3 irradiance=l.color*l.luminance*d0,Ld=l.p1-l.p0,R=reflect(-V,N);
+  d0=dot(R,Ld);
+  Ld=normalize(mix(L0,p,clamp((dot(R,L0)*d0-dot(L0,Ld))/(dot(Ld,Ld)-d0*d0),0.,1.)));
+  d0=clamp(dot(N,Ld),0.,1.);
+  if(m.type==3)
+    return irradiance*d0*m.color*pow(clamp(dot(V,Ld),0.,1.),1e2)*51.;
+  Ld=normalize(Ld+V);
+  return irradiance*(m.color+cookTorrance(m.roughness,cross(N,Ld),clamp(dot(V,Ld),0.,1.),d0,clamp(dot(N,V),0.,1.)));
+}
 float hash11(float x)
 {
   return fract(sin(x)*43758.5453);
@@ -173,12 +213,11 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,float projectionR
   ro=cameraPosition;
   rd=normalize(cameraTarget*projectionRatio+uv.x*cameraRight+uv.y*cameraUp);
 }
-vec3 motoPos,motoDir;
 bool IsMoto(float mid)
 {
   return mid>=1.&&mid<=8.;
 }
-vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLight=.02*vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
+vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 vec3 sky(vec3 V)
 {
   vec3 clearest=vec3(34,728,1910);
@@ -312,7 +351,10 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   relativeHeight=max(relativeHeight,-Box3(pObj,vec3(.1),.1));
   pObj=vec3(abs(pRoad.x)-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
   relativeHeight=min(relativeHeight,Box3(pObj,vec3(.05,.5,.05),.01));
-  return vec2(relativeHeight,6);
+  float reflector=Box3(pObj-vec3(-.1,.3,0),vec3(.04,.06,.03),.01);
+  return relativeHeight<reflector?
+    vec2(relativeHeight,6):
+    vec2(reflector,10);
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
@@ -333,12 +375,38 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
   relativeHeight=p.y-roadHeight;
   return MinDist(vec2(.75*relativeHeight,0),roadSideItems(splineUV,relativeHeight));
 }
-vec3 headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0);
-vec3 motoToWorld(vec3 v,float time)
+float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
+{
+  float h1=hash21(id),h2=hash11(h1),presence=smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3));
+  if(h1<presence)
+    return 1e6;
+  if(abs(splineUV.x)<roadWidthInMeters.y)
+    return 1e6;
+  presence=mix(5.,20.,1.-h1*h1);
+  float treeWidth=presence*mix(.3,.5,h2*h2),terrainHeight=smoothTerrainHeight(id);
+  localP.y-=terrainHeight+.5*presence;
+  localP.xz+=(vec2(h1,h2)*2.-1.)*2.;
+  treeWidth=Ellipsoid(localP,.5*vec3(treeWidth,presence,treeWidth));
+  terrainHeight=1.-smoothstep(50.,2e2,current_t);
+  if(treeWidth<2.&&terrainHeight>0.)
+    treeWidth+=terrainHeight*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
+  return treeWidth;
+}
+vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
+{
+  vec2 id=round(p.xz/10.)*10.;
+  vec3 localP=p;
+  localP.xz-=id;
+  return vec2(tree(p,localP,id,splineUV,current_t),0);
+}
+vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.4,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
   time=atan(motoDir.z,motoDir.x);
   v.xz*=Rotation(-time);
-  return v+motoPos;
+  if(isPos)
+    v+=motoPos;
+  return v;
 }
 vec3 worldToMoto(vec3 v,bool isPos,float time)
 {
@@ -435,25 +503,25 @@ material motoMaterial(float mid,vec3 p,vec3 N,float time)
 {
   if(mid==2.)
     {
-      vec3 emissive=smoothstep(.9,.95,N.x)*vec3(1,.95,.9);
+      vec3 luminance=smoothstep(.9,.95,N.x)*vec3(1,.95,.9);
       float isDashboard=smoothstep(.9,.95,-N.x+.4*N.y-.07);
       if(isDashboard>0.)
-        emissive=mix(vec3(0),motoDashboard(p.zy*5.5+vec2(.5,-5)),isDashboard);
-      return material(emissive,vec3(0),.15);
+        luminance=mix(vec3(0),motoDashboard(p.zy*5.5+vec2(.5,-5)),isDashboard);
+      return material(2,luminance,.15);
     }
   return mid==3.?
-    material(smoothstep(.9,.95,-N.x)*vec3(1,0,0),vec3(0),.5):
+    material(2,smoothstep(.9,.95,-N.x)*vec3(1,0,0),.5):
     mid==6.?
-      material(vec3(0),vec3(.2),.9):
+      material(1,vec3(1),.2):
       mid==5.?
-        material(vec3(0),vec3(0),.3):
+        material(0,vec3(0),.3):
         mid==4.?
-          material(vec3(0),vec3(.008),.8):
+          material(0,vec3(.008),.8):
           mid==7.?
-            material(vec3(0),vec3(.02,.025,.04),.6):
+            material(0,vec3(.02,.025,.04),.6):
             mid==8.?
-              material(vec3(0),vec3(0),.25):
-              material(vec3(0),vec3(0),.15);
+              material(0,vec3(0),.25):
+              material(0,vec3(0),.15);
 }
 vec2 driverShape(vec3 p)
 {
@@ -651,6 +719,7 @@ vec2 motoShape(vec3 p)
   }
   return d;
 }
+light lights[3];
 material computeMaterial(float mid,vec3 p,vec3 N)
 {
   if(mid==0.)
@@ -662,35 +731,13 @@ material computeMaterial(float mid,vec3 p,vec3 N)
       if(isRoad>0.)
         roadColor=roadPattern(splineUV.zx);
       color=mix(color,roadColor,isRoad);
-      return material(vec3(0),color,.5);
+      return material(0,color,.5);
     }
   return IsMoto(mid)?
     p=worldToMoto(p,true,iTime),N=worldToMoto(N,false,iTime),motoMaterial(mid,p,N,iTime):
-    material(vec3(0),fract(p.xyz),1.);
-}
-float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
-{
-  float h1=hash21(id),h2=hash11(h1),presence=smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3));
-  if(h1<presence)
-    return 1e6;
-  if(abs(splineUV.x)<roadWidthInMeters.y)
-    return 1e6;
-  presence=mix(5.,20.,1.-h1*h1);
-  float treeWidth=presence*mix(.3,.5,h2*h2),terrainHeight=smoothTerrainHeight(id);
-  localP.y-=terrainHeight+.5*presence;
-  localP.xz+=(vec2(h1,h2)*2.-1.)*2.;
-  treeWidth=Ellipsoid(localP,.5*vec3(treeWidth,presence,treeWidth));
-  terrainHeight=1.-smoothstep(50.,2e2,current_t);
-  if(treeWidth<2.&&terrainHeight>0.)
-    treeWidth+=terrainHeight*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
-  return treeWidth;
-}
-vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
-{
-  vec2 id=round(p.xz/10.)*10.;
-  vec3 localP=p;
-  localP.xz-=id;
-  return vec2(tree(p,localP,id,splineUV,current_t),0);
+    mid==10.?
+      material(3,vec3(1,.4,0),.2):
+      material(0,fract(p.xyz),1.);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
@@ -702,17 +749,26 @@ vec2 sceneSDF(vec3 p,float current_t)
   d=MinDist(d,terrainShape(p,splineUV));
   return MinDist(d,treesShape(p,splineUV,current_t));
 }
+void setLights()
+{
+  lights[0]=light(moonDirection*1e3,moonDirection,moonLightColor,-2.,1e10,.02);
+  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot,true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
+  dirHeadLight=motoToWorld(dirHeadLight,false,iTime);
+  dirBreakLight=motoToWorld(dirBreakLight,false,iTime);
+  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.9,10.,10.);
+  lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.7,2.,.1);
+}
 vec3 evalNormal(vec3 p,float t)
 {
   const vec2 k=vec2(1,-1);
   return normalize(k.xyy*sceneSDF(p+k.xyy*.002,t).x+k.yyx*sceneSDF(p+k.yyx*.002,t).x+k.yxy*sceneSDF(p+k.yxy*.002,t).x+k.xxx*sceneSDF(p+k.xxx*.002,t).x);
 }
-vec2 rayMarchScene(vec3 ro,vec3 rd,float tMax,int max_steps,out vec3 p)
+vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
 {
   p=ro;
   float t=0.;
   vec2 d;
-  for(int i=ZERO(iTime);i<max_steps;++i)
+  for(int i=ZERO(iTime);i<200;++i)
     {
       d=sceneSDF(p,t);
       t+=d.x;
@@ -720,15 +776,10 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,float tMax,int max_steps,out vec3 p)
       float epsilon=t*PIXEL_ANGLE;
       if(d.x<epsilon)
         return vec2(t,d.y);
-      if(t>=tMax)
+      if(t>=1e2)
         return vec2(t,-1);
     }
   return vec2(t,d.y);
-}
-float castShadowRay(vec3 p,vec3 N,vec3 rd)
-{
-  vec2 t=rayMarchScene(p+.001*N,rd,5.,30,p);
-  return smoothstep(2.5,5.,t.x);
 }
 vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 {
@@ -739,14 +790,29 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       vec3(0),mix(vec3(0),vec3(.06,.04,.03),V.y),min(t.x*.001,1.));
   if(mid==-1.)
     return sky(-V);
-  if(mid==6.)
-    return sky(reflect(-V,N));
   material m=computeMaterial(mid,p,N);
-  vec3 L1=normalize(vec3(.4,.6,.8));
-  mid=castShadowRay(p,N,L1);
-  float x=1.-dot(V,normalize(reflect(-V,N)+V));
-  x*=x*x*x*x;
-  return mix(vec3(0)+m.emissive+(nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5)+moonLight*clamp(dot(N,L1),0.,1.)*mid)*m.albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.03));
+  vec3 emissive=vec3(0);
+  if(m.type==2)
+    emissive=m.color;
+  vec3 albedo=vec3(0);
+  if(m.type==0)
+    albedo=m.color;
+  vec3 f0=vec3(.04);
+  if(m.type==1||m.type==3)
+    f0=m.color;
+  albedo=vec3(0)+emissive+nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5)*albedo;
+  if(m.roughness<.25)
+    {
+      vec3 L=reflect(-V,N);
+      float x=1.-dot(V,normalize(L+V));
+      x*=x*x*x*x;
+      albedo+=f0*sky(L);
+    }
+  for(int i=0;i<3;++i)
+    albedo=lights[i].cosAngle==-1.?
+      albedo+rodLightContribution(m,lights[i],p,N,V):
+      albedo+coneLightContribution(m,lights[i],p,N,V);
+  return mix(albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.03));
 }
 void mainImage(out vec4 fragColor,vec2 fragCoord)
 {
@@ -759,11 +825,12 @@ void mainImage(out vec4 fragColor,vec2 fragCoord)
   nextPos.xz=GetPositionOnCurve(ti+.01);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
+  setLights();
   vec3 rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
-    cameraPosition=motoToWorld(camPos,iTime),cameraTarget=motoToWorld(camTa,iTime);
+    cameraPosition=motoToWorld(camPos,true,iTime),cameraTarget=motoToWorld(camTa,true,iTime);
   setupCamera((fragCoord/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,camProjectionRatio,camFishEye,nextPos,rd);
-  vec2 t=rayMarchScene(nextPos,rd,1e2,200,cameraPosition);
+  vec2 t=rayMarchScene(nextPos,rd,cameraPosition);
   cameraTarget=evalNormal(cameraPosition,t.x);
   rd=evalRadiance(t,cameraPosition,-rd,cameraTarget);
   fragColor=vec4(pow(rd,vec3(1./2.2)),1);

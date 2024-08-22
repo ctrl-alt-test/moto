@@ -28,6 +28,11 @@ material computeMaterial(float mid, vec3 p, vec3 N)
         return motoMaterial(mid, p, N, iTime);
     }
 
+    if (mid == ROAD_REFLECTOR_ID)
+    {
+        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.), 0.2);
+    }
+
     return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);
 }
 
@@ -170,7 +175,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     }
 
     vec3 f0 = vec3(0.04);
-    if (m.type == MATERIAL_TYPE_METALLIC)
+    if (m.type == MATERIAL_TYPE_METALLIC || m.type == MATERIAL_TYPE_RETROREFLECTIVE)
     {
         f0 = m.color;
     }
