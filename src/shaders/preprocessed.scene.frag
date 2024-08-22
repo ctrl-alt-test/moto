@@ -15,17 +15,26 @@ const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
 
-const float EPSILON = 2.*1e-3;
-const float MOTO_EPSILON = 1e-3;
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 
 const float GAMMA = 2.2;
 
+in vec3 camPos;
+in vec3 camTa;
+in float camMotoSpace;
+in float camFoV;
+in float camProjectionRatio;
+in float camFishEye;
+in float camShowDriver;
+
 out vec4 fragColor;
 const vec2 iResolution = vec2(1920.,1080.);
 vec2 iMouse = vec2(700., 900.);
+
 uniform float iTime;
+
+float PIXEL_ANGLE = camFoV / iResolution.x;
 
 #define ZERO(iTime) min(0, int(iTime))
 // Include begin: common.frag
@@ -567,6 +576,26 @@ vec3 sky(vec3 V)
     color *= smoothstep(-0.1, 0., V.y);
     return color / 197000.;
 }
+
+vec3 cityLights(vec2 p)
+{
+    vec3 ctex=vec3(0);
+    for(int i=0;i<3;i++) {
+        float fi=float(i);
+        vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
+        
+        float a = smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(
+            smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15)
+            ,pow(valueNoise(xp*.5),10.)
+        );
+        ctex += valueNoise(xp*.5)*mix(
+            mix(vec3(.56,.32,.18)*min(a,.5)*2.,vec3(.88,.81,.54),max(a-.5,0.)*2.),
+            mix(vec3(.45,.44,.6)*min(a,.5)*2.,vec3(.80,.89,.93),max(a-.5,0.)*2.),
+            step(.5,valueNoise(p*2.))
+        );
+    }
+    return ctex*5.;
+}
 // --------------------------------------------------------------------
 // Include end: backgroundContent.frag
 
@@ -1058,8 +1087,8 @@ vec3 glowy(float d)
     vec3 bg = vec3(0.);
     vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
 
-    vec3 innerColor = segment; mix(segment, vec3(0.2), 1. - clamp(0., 1., 1. / exp(50. * max(0., -d))));
-    vec3 outerColor = mix(bg, segment, clamp(0., 1., 1. / exp(200. * max(0., d))));
+    vec3 innerColor = mix(segment, vec3(0.2), 1. - clamp(1. / exp(50. * max(0., -d)), 0., 1.));
+    vec3 outerColor = mix(bg, segment, clamp(1. / exp(200. * max(0., d)), 0., 1.));
     return mix(innerColor, outerColor, brightness);
 }
 
@@ -1467,13 +1496,6 @@ vec2 motoShape(vec3 p)
 
 // Include begin: moto.frag
 // --------------------------------------------------------------------
-in vec3 camPos;
-in vec3 camTa;
-in float camMotoSpace;
-in float camProjectionRatio;
-in float camFishEye;
-in float camShowDriver;
-
 
 
 
@@ -1638,7 +1660,10 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
         t += d.x;
         p = ro + t * rd;
 
-        if (d.x < MOTO_EPSILON || (d.x < EPSILON && !IsMoto(d.y)))
+        
+        
+        float epsilon = t * PIXEL_ANGLE;
+        if (d.x < epsilon)
         {
             return vec2(t, d.y);
         }
@@ -1658,26 +1683,6 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 // End of active block.
 
     return smoothstep(MAX_SHADOW_DIST/2., MAX_SHADOW_DIST, t.x);
-}
-
-vec3 cityLights(vec2 p)
-{
-    vec3 ctex=vec3(0);
-    for(int i=0;i<3;i++) {
-        float fi=float(i);
-        vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
-        
-        float a = smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(
-            smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15)
-            ,pow(valueNoise(xp*.5),10.)
-        );
-        ctex += valueNoise(xp*.5)*mix(
-            mix(vec3(.56,.32,.18)*min(a,.5)*2.,vec3(.88,.81,.54),max(a-.5,0.)*2.),
-            mix(vec3(.45,.44,.6)*min(a,.5)*2.,vec3(.80,.89,.93),max(a-.5,0.)*2.),
-            step(.5,valueNoise(p*2.))
-        );
-    }
-    return ctex*5.;
 }
 
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
@@ -1744,6 +1749,9 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
 
 
+// Inactive conditional block: #ifdef ENABLE_STEP_COUNT
+
+
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
     GenerateSpline(PI , 10. , 1. );
@@ -1790,7 +1798,10 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
 
 
     vec3 p;
+// Inactive conditional block: #ifdef ENABLE_STEP_COUNT
+// Active conditional block: #else
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
+// End of active block.
     vec3 N = evalNormal(p, t.x);
 
     vec3 radiance = evalRadiance(t, p, -rd, N);

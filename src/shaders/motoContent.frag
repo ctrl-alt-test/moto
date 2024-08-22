@@ -189,8 +189,8 @@ vec3 glowy(float d)
     vec3 bg = vec3(0.);
     vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
 
-    vec3 innerColor = segment; mix(segment, vec3(0.2), 1. - clamp(0., 1., 1. / exp(50. * max(0., -d))));
-    vec3 outerColor = mix(bg, segment, clamp(0., 1., 1. / exp(200. * max(0., d))));
+    vec3 innerColor = mix(segment, vec3(0.2), 1. - clamp(1. / exp(50. * max(0., -d)), 0., 1.));
+    vec3 outerColor = mix(bg, segment, clamp(1. / exp(200. * max(0., d)), 0., 1.));
     return mix(innerColor, outerColor, brightness);
 }
 
