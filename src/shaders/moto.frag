@@ -186,14 +186,11 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     ComputeBezierSegmentsLengthAndAABB();
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
-    
-    vec2 mouseInput = iMouse.xy / iResolution.xy;
 
     float time = iTime;
 #if ENABLE_STOCHASTIC_MOTION_BLUR
     time += hash31(vec3(fragCoord, 1e-3*iTime)) * 0.008;
 #endif
-    // orbitalCamera(uv, vec2(0.02 * time, 0.3) /*mouseInput*/, ro, rd);
 
     float ti = fract(iTime * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);

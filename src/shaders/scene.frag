@@ -2,7 +2,6 @@
 
 //#define DEBUG 1
 #define ENABLE_STOCHASTIC_MOTION_BLUR
-// #define MOUSE_CONTROLS_CAMERA
 // #define ENABLE_STEP_COUNT
 // #define ENABLE_DAY_MODE
 // #define DISABLE_MOTO
@@ -30,7 +29,6 @@ in float camShowDriver;
 
 out vec4 fragColor;
 const vec2 iResolution = vec2(1920.,1080.);
-vec2 iMouse = vec2(700., 900.);
 
 uniform float iTime;
 
