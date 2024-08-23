@@ -2,6 +2,8 @@ vec3 motoPos;
 vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
+vec3 dirHeadLight = normalize(vec3(1.0, -0.4, 0.0));
+vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 
 // Moto position functions
 vec3 motoToWorld(vec3 v, bool isPos, float time)
@@ -239,7 +241,7 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     }
     if (mid == MOTO_EXHAUST_ID)
     {
-        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.9);
+        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.2);
     }
     if (mid == MOTO_MOTOR_ID)
     {

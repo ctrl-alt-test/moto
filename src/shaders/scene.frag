@@ -10,6 +10,7 @@
 // #define DISABLE_TREES
 
 // Constants:
+const int MAX_LIGHTS = 3;
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
@@ -65,6 +66,8 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     nextPos.xz = GetPositionOnCurve(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
+
+    setLights();
 
     // camPos and camTa are passed by the vertex shader
     vec3 ro;

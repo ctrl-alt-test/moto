@@ -67,9 +67,9 @@ vec3 stepsToColor(int steps)
 struct light
 {
     vec3 p0;
-    vec3 p1;
+    vec3 p1; // End position for rod light, direction for cone light.
     vec3 color;
-    float cosAngle;
+    float cosAngle; // -1 for rod light.
     float collimation;
     float luminance;
 };

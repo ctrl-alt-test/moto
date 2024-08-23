@@ -1,9 +1,9 @@
 #ifdef ENABLE_DAY_MODE
 vec3 daySkyDomeLight = 0.5 * vec3(0.25, 0.5, 1.0);
-vec3 sunLight = vec3(1.0, 0.85, 0.7);
+vec3 sunLightColor = vec3(1.0, 0.85, 0.7);
 #else
 vec3 nightHorizonLight = 0.01 * vec3(0.07, 0.1, 1.0);
-vec3 moonLight = 0.02 * vec3(0.2, 0.8, 1.0);
+vec3 moonLightColor = vec3(0.2, 0.8, 1.0);
 #endif
 
 vec3 moonDirection = normalize(vec3(-1., 0.3, 0.4));

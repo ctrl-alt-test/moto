@@ -1,3 +1,5 @@
+light lights[MAX_LIGHTS];
+
 // -------------------------------------------------------
 // Scene description functions
 
@@ -52,6 +54,26 @@ vec2 sceneSDF(vec3 p, float current_t)
 #endif
 
     return d;
+}
+
+void setLights()
+{
+#ifdef ENABLE_DAY_MODE
+    lights[0] = light(moonDirection * 1e3, moonDirection, sunLightColor, 0., 1e3, 10.);
+#else
+    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 1e10, 0.02);
+#endif
+
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot, true, iTime);
+    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
+    dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
+    dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
+
+    vec3 luminanceHeadLight = vec3(1.);
+    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.9, 10.0, 10.);
+
+    vec3 luminanceBreakLight = vec3(1., 0., 0.);
+    lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);
 }
 
 // -------------------------------------------------------
@@ -153,38 +175,41 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         f0 = m.color;
     }
 
-    // Global illumination coming from the sky dome:
+    vec3 radiance = vec3(0.);
+    radiance += emissive;
 
-    // Direct light:
-    vec3 L1 = normalize(vec3(0.4, 0.6*1.0, 0.8));
-    float NdotL1 = clamp(dot(N, L1), 0.0, 1.0);
-    float visibility_L1 = castShadowRay(p, N, L1);
-
+    // Crude global illumination coming from the sky dome:
 #ifdef ENABLE_DAY_MODE
     // Day version:
     vec3 I0 = daySkyDomeLight * (N.y * 0.5 + 0.5);
-    vec3 I1 = sunLight * NdotL1 * visibility_L1;
 #else
     // Night version:
     vec3 I0 = nightHorizonLight * mix(1.0, 0.1, N.y * N.y) * (N.x * 0.5 + 0.5);
-    vec3 I1 = moonLight * NdotL1 * visibility_L1;
 #endif
+    radiance += I0 * albedo;
 
     // Env map:
-    vec3 L2 = reflect(-V, N);
-    vec3 H = normalize(L2 + V);
-	float x = 1.0 - dot(V, H);
-	x = x*x*x*x*x;
-	vec3 F = x + f0 * (1.0 - x);
-
-    vec3 radiance = vec3(0.);
-    radiance += emissive;
-    radiance += (I0 + I1) * albedo;
-
-    // Brutal if until there's a roughness dependent reflection.
-    if (m.roughness < 0.25)
+    if (m.roughness < 0.25) // Brutal if until there's a roughness dependent reflection.
     {
-        radiance += F * sky(reflect(-V, N));
+        vec3 L = reflect(-V, N);
+        vec3 H = normalize(L + V);
+	    float x = 1.0 - dot(V, H);
+	    x = x*x*x*x*x;
+	    vec3 F = x + f0 * (1.0 - x);
+        radiance += f0 * sky(L);
+    }
+
+    // Direct lighting:
+    for (int i = 0; i < MAX_LIGHTS; ++i)
+    {
+        if (lights[i].cosAngle == -1.0)
+        {
+            radiance += rodLightContribution(m, lights[i], p, N, V);
+        }
+        else
+        {
+            radiance += coneLightContribution(m, lights[i], p, N, V);
+        }
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.03);
