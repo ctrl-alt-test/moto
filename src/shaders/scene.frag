@@ -19,6 +19,7 @@ const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
 const vec2 iResolution = vec2(1920.,1080.);
+const int SPLINE_SIZE = 13;
 
 // Uniforms:
 uniform float iTime;
@@ -31,6 +32,7 @@ in float camFoV;
 in float camProjectionRatio;
 in float camFishEye;
 in float camShowDriver;
+in vec2 spline[SPLINE_SIZE];
 
 // Outputs:
 out vec4 fragColor;
@@ -49,7 +51,6 @@ float PIXEL_ANGLE = camFoV / iResolution.x;
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    GenerateSpline(1.8/*curvature*/, 40./*scale*/, 1./*seed*/);
     ComputeBezierSegmentsLengthAndAABB();
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);

@@ -11,12 +11,22 @@ out float camFishEye;
 out float camMotoSpace; // bool - 0. or 1.
 out float camShowDriver; // bool - 0. or 1.
 
+const int SPLINE_SIZE = 13;
+out vec2 spline[SPLINE_SIZE];
+
 uniform float iTime;
 
 const float INFINITE = 9e7;
 
 float hash11(float x) { return fract(sin(x) * 43758.5453); }
 vec2 hash12(float x) { float h = hash11(x); return vec2(h, hash11(h)); }
+
+mat2 Rotation(float angle)
+{
+    float c = cos(angle);
+    float s = sin(angle);
+    return mat2(c, s, -s, c);
+}
 
 vec2 valueNoise(float p)
 {
@@ -30,6 +40,24 @@ vec2 valueNoise(float p)
     fp = fp*fp * (3.0 - 2.0 * fp);
 
     return mix(v0, v1, fp);
+}
+
+void GenerateSpline(float maxCurvature, float segmentLength, float seed)
+{
+    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
+    direction = normalize(direction);
+    vec2 point = vec2(0.);
+    for(int i = 0; i < SPLINE_SIZE; i++) {
+        if (i % 2 == 0) {
+            spline[i] = point + 0.5*segmentLength*direction;
+            continue;
+        }
+        float ha = hash11(seed + float(i) * 3.0);
+        point += direction * segmentLength;
+        float angle = mix(-maxCurvature, maxCurvature, ha);
+        direction *= Rotation(angle);
+        spline[i] = point;
+    }
 }
 
 float verticalBump()
@@ -115,6 +143,7 @@ void main(void)
 {
     gl_Position = a_position;
     float time = iTime;
+    GenerateSpline(1.8/*curvature*/, 40./*scale*/, 1./*seed*/);
 
     camProjectionRatio = 1.;
     camFishEye = 0.1;

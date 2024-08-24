@@ -1,30 +1,7 @@
-const int SPLINE_SIZE = 13;
-
 vec4 splineAABB;
 vec4 splineSegmentAABBs[SPLINE_SIZE / 2];
 float splineSegmentDistances[SPLINE_SIZE / 2];
 
-vec2 spline[SPLINE_SIZE] = vec2[](
-    vec2(-5.0, -5.0),
-    vec2(-3.0, -2.0),
-
-    vec2(-5.0,  0.0),
-    vec2(-7.0,  2.0),
-
-    vec2(-5.0,  5.0),
-    vec2(-3.0,  7.0),
-
-    vec2( 0.0,  5.0),
-    vec2( 1.0,  4.0),
-
-    vec2( 2.0,  5.0),
-    vec2( 4.0,  6.0),
-
-    vec2( 4.0,  3.0),
-    vec2( 4.0, -2.0),
-
-    vec2( 8.0, 3.0)
-);
 
 // Piece of code copy-pasted from:
 // https://www.shadertoy.com/view/NltBRB
@@ -150,24 +127,6 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
     vec2 C = spline[i + 2];
 
     return Bezier(A, B, C, t);
-}
-
-void GenerateSpline(float maxCurvature, float segmentLength, float seed)
-{
-    vec2 direction = vec2(hash11(seed), hash11(seed + 1.0)) * 2.0 - 1.0;
-    direction = normalize(direction);
-    vec2 point = vec2(0.);
-    for(int i = 0; i < SPLINE_SIZE; i++) {
-        if (i % 2 == 0) {
-            spline[i] = point + 0.5*segmentLength*direction;
-            continue;
-        }
-        float ha = hash11(seed + float(i) * 3.0);
-        point += direction * segmentLength;
-        float angle = mix(-maxCurvature, maxCurvature, ha);
-        direction *= Rotation(angle);
-        spline[i] = point;
-    }
 }
 
 // x: actual width

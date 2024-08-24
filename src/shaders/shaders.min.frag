@@ -6,6 +6,7 @@ const vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 in vec3 camPos,camTa;
 in float camMotoSpace,camFoV,camProjectionRatio,camFishEye,camShowDriver;
+in vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x;
 
@@ -54,10 +55,6 @@ vec3 rodLightContribution(material m,light l,vec3 p,vec3 N,vec3 V)
     return irradiance*d0*m.color*pow(clamp(dot(V,Ld),0.,1.),1e2)*51.;
   Ld=normalize(Ld+V);
   return irradiance*(m.color+cookTorrance(m.roughness,cross(N,Ld),clamp(dot(V,Ld),0.,1.),d0,clamp(dot(N,V),0.,1.)));
-}
-float hash11(float x)
-{
-  return fract(sin(x)*43758.5453);
 }
 float hash21(vec2 xy)
 {
@@ -258,7 +255,6 @@ vec3 cityLights(vec2 p)
 }
 vec4 splineAABB,splineSegmentAABBs[6];
 float splineSegmentDistances[6];
-vec2 spline[13]=vec2[](vec2(-5),vec2(-3,-2),vec2(-5,0),vec2(-7,2),vec2(-5,5),vec2(-3,7),vec2(0,5),vec2(1,4),vec2(2,5),vec2(4,6),vec2(4,3),vec2(4,-2),vec2(8,3));
 void ComputeBezierSegmentsLengthAndAABB()
 {
   float splineLength=0.;
@@ -311,24 +307,7 @@ vec2 GetPositionOnCurve(float t)
 vec2 GetPositionOnSpline(vec2 spline_t_and_index)
 {
   int i=int(spline_t_and_index.y);
-  vec2 A=spline[i],B=spline[i+1],C=spline[i+2];
-  return Bezier(A,B,C,spline_t_and_index.x);
-}
-void GenerateSpline()
-{
-  vec2 direction=normalize(vec2(hash11(1.),hash11(2.))*2.-1.),point=vec2(0);
-  for(int i=0;i<13;i++)
-    {
-      if(i%2==0)
-        {
-          spline[i]=point+20.*direction;
-          continue;
-        }
-      float ha=hash11(1.+float(i)*3.);
-      point+=direction*40.;
-      direction*=Rotation(mix(-1.8,1.8,ha));
-      spline[i]=point;
-    }
+  return Bezier(spline[i],spline[i+1],spline[i+2],spline_t_and_index.x);
 }
 vec3 roadWidthInMeters=vec3(4,8,8);
 vec3 roadPattern(vec2 uv)
@@ -385,7 +364,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
-  float h1=hash21(id),h2=hash11(h1),presence=smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3));
+  float h1=hash21(id),h2=fract(sin(h1)*43758.5453),presence=smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3));
   if(h1<presence)
     return 1e6;
   if(abs(splineUV.x)<roadWidthInMeters.y)
@@ -822,7 +801,6 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 }
 void mainImage(out vec4 fragColor,vec2 fragCoord)
 {
-  GenerateSpline();
   ComputeBezierSegmentsLengthAndAABB();
   float ti=fract(iTime*.1);
   motoPos.xz=GetPositionOnCurve(ti);
@@ -851,6 +829,7 @@ void main()
 in vec4 a_position;
 out vec3 sunDir,camPos,camTa;
 out float camFoV,camProjectionRatio,camFishEye,camMotoSpace,camShowDriver;
+out vec2 spline[13];
 uniform float iTime;
 float hash11(float x)
 {
@@ -861,12 +840,34 @@ vec2 hash12(float x)
   x=hash11(x);
   return vec2(x,hash11(x));
 }
+mat2 Rotation(float angle)
+{
+  float c=cos(angle);
+  angle=sin(angle);
+  return mat2(c,angle,-angle,c);
+}
 vec2 valueNoise(float p)
 {
   float p0=floor(p);
   p-=p0;
   p=p*p*(3.-2.*p);
   return mix(hash12(p0),hash12(p0+1.),p);
+}
+void GenerateSpline()
+{
+  vec2 direction=normalize(vec2(hash11(1.),hash11(2.))*2.-1.),point=vec2(0);
+  for(int i=0;i<13;i++)
+    {
+      if(i%2==0)
+        {
+          spline[i]=point+20.*direction;
+          continue;
+        }
+      float ha=hash11(1.+float(i)*3.);
+      point+=direction*40.;
+      direction*=Rotation(mix(-1.8,1.8,ha));
+      spline[i]=point;
+    }
 }
 float verticalBump()
 {
@@ -928,6 +929,7 @@ void overTheHeadShot()
 void main()
 {
   gl_Position=a_position;
+  GenerateSpline();
   camProjectionRatio=1.;
   camFishEye=.1;
   camMotoSpace=1.;
