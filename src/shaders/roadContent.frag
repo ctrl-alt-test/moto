@@ -159,7 +159,7 @@ void GenerateSpline(float maxCurvature, float segmentLength, float seed)
     vec2 point = vec2(0.);
     for(int i = 0; i < SPLINE_SIZE; i++) {
         if (i % 2 == 0) {
-            spline[i] = point + 1.*direction;
+            spline[i] = point + 0.5*segmentLength*direction;
             continue;
         }
         float ha = hash11(seed + float(i) * 3.0);

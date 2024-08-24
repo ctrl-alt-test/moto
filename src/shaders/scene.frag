@@ -49,7 +49,7 @@ float PIXEL_ANGLE = camFoV / iResolution.x;
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    GenerateSpline(PI/*curvature*/, 10./*scale*/, 1./*seed*/);
+    GenerateSpline(1.8/*curvature*/, 40./*scale*/, 1./*seed*/);
     ComputeBezierSegmentsLengthAndAABB();
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);

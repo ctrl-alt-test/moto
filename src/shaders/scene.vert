@@ -101,6 +101,16 @@ void overTheHeadShot()
     camProjectionRatio = 2.;
 }
 
+void topDownView() // useful for debugging & visualizing the spline
+{
+    camPos = vec3(-5., 37., 0.);
+    camTa = vec3(1.05, 1.45, 0.);
+    float bump = 0.01 * verticalBump();
+    camPos.y += bump;
+    camTa.y += bump;
+    camProjectionRatio = 0.5;
+}
+
 void main(void)
 {
     gl_Position = a_position;
@@ -164,5 +174,6 @@ void main(void)
     {
         dashBoardUnderTheShoulderShot(t_in_shot);
     }
-    camFoV = atan(1. / camProjectionRatio);
+
+     camFoV = atan(1. / camProjectionRatio);
 }

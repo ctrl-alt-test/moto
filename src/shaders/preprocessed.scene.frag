@@ -808,7 +808,7 @@ void GenerateSpline(float maxCurvature, float segmentLength, float seed)
     vec2 point = vec2(0.);
     for(int i = 0; i < SPLINE_SIZE; i++) {
         if (i % 2 == 0) {
-            spline[i] = point + 1.*direction;
+            spline[i] = point + 0.5*segmentLength*direction;
             continue;
         }
         float ha = hash11(seed + float(i) * 3.0);
@@ -1811,7 +1811,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         }
     }
 
-    float fogAmount = 1.0 - exp(-t.x*0.03);
+    float fogAmount = 1.0 - exp(-t.x*0.01);
     vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
     radiance = mix(radiance, fogColor, fogAmount);
 
@@ -1828,7 +1828,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
 void mainImage( out vec4 fragColor, in vec2 fragCoord )
 {
-    GenerateSpline(PI , 10. , 1. );
+    GenerateSpline(1.8 , 40. , 1. );
     ComputeBezierSegmentsLengthAndAABB();
 
     vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);

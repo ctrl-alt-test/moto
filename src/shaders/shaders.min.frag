@@ -314,19 +314,19 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
   vec2 A=spline[i],B=spline[i+1],C=spline[i+2];
   return Bezier(A,B,C,spline_t_and_index.x);
 }
-void GenerateSpline(float maxCurvature)
+void GenerateSpline()
 {
   vec2 direction=normalize(vec2(hash11(1.),hash11(2.))*2.-1.),point=vec2(0);
   for(int i=0;i<13;i++)
     {
       if(i%2==0)
         {
-          spline[i]=point+direction;
+          spline[i]=point+20.*direction;
           continue;
         }
       float ha=hash11(1.+float(i)*3.);
-      point+=direction*10.;
-      direction*=Rotation(mix(-maxCurvature,maxCurvature,ha));
+      point+=direction*40.;
+      direction*=Rotation(mix(-1.8,1.8,ha));
       spline[i]=point;
     }
 }
@@ -818,11 +818,11 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     albedo=lights[i].cosAngle==-1.?
       albedo+rodLightContribution(m,lights[i],p,N,V):
       albedo+coneLightContribution(m,lights[i],p,N,V);
-  return mix(albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.03));
+  return mix(albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.01));
 }
 void mainImage(out vec4 fragColor,vec2 fragCoord)
 {
-  GenerateSpline(PI);
+  GenerateSpline();
   ComputeBezierSegmentsLengthAndAABB();
   float ti=fract(iTime*.1);
   motoPos.xz=GetPositionOnCurve(ti);

@@ -217,7 +217,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         }
     }
 
-    float fogAmount = 1.0 - exp(-t.x*0.03);
+    float fogAmount = 1.0 - exp(-t.x*0.01);
     vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
     radiance = mix(radiance, fogColor, fogAmount);
 
