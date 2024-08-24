@@ -297,14 +297,6 @@ float Ellipsoid( in vec3 p, in vec3 r )
     return k0*(k0-1.0)/k1;
 }
 
-float Segment2(vec2 p, vec2 a, vec2 b, out float h)
-{
-	vec2 ap = p - a;
-	vec2 ab = b - a;
-	h = clamp(dot(ap, ab) / dot(ab, ab), 0., 1.);
-	return length(ap - ab * h);
-}
-
 float Segment3(vec3 p, vec3 a, vec3 b, out float h)
 {
 	vec3 ap = p - a;
@@ -1052,7 +1044,7 @@ vec3 meter4(vec2 uv, float value) {
   value = (value * 1.5 - 1.) * PI;
   vec2 point = vec2(sin(value), cos(value)) * 0.07;
   float dummy;
-  float line = smoothstep(0.004, 0.002, Segment2(uv, vec2(0), point, dummy));
+  float line = smoothstep(0.004, 0.002, Segment3(uv.xyy, vec3(0), point.xyy, dummy));
   vec3 col = vec3(0.36, 0.16, 0.12) * lines;
   col += vec3(0.7) * line;
   return col;

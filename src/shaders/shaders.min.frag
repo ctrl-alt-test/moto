@@ -100,14 +100,6 @@ float Ellipsoid(vec3 p,vec3 r)
   float k0=length(p/r);
   return k0*(k0-1.)/length(p/(r*r));
 }
-float Segment2(vec2 p,vec2 b,out float h)
-{
-  vec2 a=vec2(0);
-  p-=a;
-  a=b-a;
-  h=clamp(dot(p,a)/dot(a,a),0.,1.);
-  return length(p-a*h);
-}
 float Segment3(vec3 p,vec3 a,vec3 b,out float h)
 {
   p-=a;
@@ -420,7 +412,7 @@ vec3 meter4(vec2 uv)
   float value=.4,angle=atan(uv.y,uv.x);
   value=(value*1.5-1.)*PI;
   vec2 point=vec2(sin(value),cos(value))*.07;
-  value=smoothstep(.004,.002,Segment2(uv,point,value));
+  value=smoothstep(.004,.002,Segment3(uv.xyy,vec3(0),point.xyy,value));
   return smoothstep(.7,1.,mod(angle,.25)/.25)*smoothstep(0.,.01,abs(angle+.7)-.7)*smoothstep(0.,.01,.1-length(uv))*smoothstep(0.,.01,length(uv)-.06)*vec3(.36,.16,.12)+vec3(.7)*value;
 }
 float digit(int n,vec2 p)
