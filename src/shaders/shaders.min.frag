@@ -332,21 +332,25 @@ float smoothTerrainHeight(vec2 p)
 }
 vec2 roadSideItems(vec4 splineUV,float relativeHeight)
 {
-  vec3 pRoad=vec3(splineUV.x,relativeHeight,splineUV.z),pObj=vec3(abs(pRoad.x)-4.2,pRoad.y-.8,0);
+  vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z),pObj=vec3(pRoad.x-4.2,pRoad.y-.8,0);
   relativeHeight=Box3(pObj,vec3(.1,.2,.1),.05);
-  pObj=vec3(abs(pRoad.x)-4.1,pRoad.y-.8,0);
+  pObj=vec3(pRoad.x-4.1,pRoad.y-.8,0);
   relativeHeight=max(relativeHeight,-Box3(pObj,vec3(.1),.1));
-  pObj=vec3(abs(pRoad.x)-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
+  pObj=vec3(pRoad.x-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
   relativeHeight=min(relativeHeight,Box3(pObj,vec3(.05,.5,.05),.01));
   float reflector=Box3(pObj-vec3(-.1,.3,0),vec3(.04,.06,.03),.01);
-  return relativeHeight<reflector?
-    vec2(relativeHeight,6):
-    vec2(reflector,10);
+  vec2 res=MinDist(vec2(relativeHeight,6),vec2(reflector,10));
+  pObj=vec3(pRoad.x-4.5,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
+  relativeHeight=Box3(pObj,vec3(.1,3,.1),.1);
+  res=MinDist(res,vec2(relativeHeight,6));
+  pObj=vec3(pRoad.x-4.3,pRoad.y-4.,pObj.z);
+  relativeHeight=Box3(pObj,vec3(.2,.1,.1),.1);
+  return MinDist(res,vec2(relativeHeight,3));
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
   float terrainHeight=smoothTerrainHeight(p.xz),relativeHeight=p.y-terrainHeight;
-  if(relativeHeight>4.)
+  if(relativeHeight>5.5)
     return vec2(.75*relativeHeight,0);
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
   if(isRoad<1.)
@@ -358,9 +362,9 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
       float x=clamp(abs(splineUV.x/roadWidthInMeters.x),0.,1.);
       roadHeight+=.2*(1.-x*x*x);
     }
-  roadHeight=mix(terrainHeight,roadHeight,isRoad);
-  relativeHeight=p.y-roadHeight;
-  return MinDist(vec2(.75*relativeHeight,0),roadSideItems(splineUV,relativeHeight));
+  isRoad=mix(terrainHeight,roadHeight,isRoad);
+  relativeHeight=p.y-isRoad;
+  return MinDist(vec2(.75*relativeHeight,0),roadSideItems(splineUV,p.y-roadHeight));
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {

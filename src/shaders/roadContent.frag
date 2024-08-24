@@ -188,23 +188,31 @@ float terrainDetailHeight(vec2 p)
 }
 
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
+    vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
+
 	// Traffic barrier
-    vec3 pRoad = vec3(splineUV.x, relativeHeight, splineUV.z);
-    vec3 pObj = vec3(abs(pRoad.x) - 4.2, pRoad.y - 0.8, 0.);
+    vec3 pObj = vec3(pRoad.x - 4.2, pRoad.y - 0.8, 0.);
     float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
 
-    pObj = vec3(abs(pRoad.x) - 4.1, pRoad.y - 0.8, 0.);
+    pObj = vec3(pRoad.x - 4.1, pRoad.y - 0.8, 0.);
     len = max(len, -Box3(pObj, vec3(0.1, 0.1, 0.1), 0.1));
 
-    pObj = vec3(abs(pRoad.x) - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
+    pObj = vec3(pRoad.x - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
     len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
 
     float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
+    vec2 res = MinDist(vec2(len, MOTO_EXHAUST_ID), vec2(reflector, ROAD_REFLECTOR_ID));
 
-    if (len < reflector)
-        return vec2(len, MOTO_EXHAUST_ID);
-    else
-        return vec2(reflector, ROAD_REFLECTOR_ID);
+    // street lamp
+    pObj = vec3(pRoad.x - 4.5, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
+    len = Box3(pObj, vec3(0.1, 3., 0.1), 0.1);
+    res = MinDist(res, vec2(len, MOTO_EXHAUST_ID));
+
+    pObj = vec3(pRoad.x - 4.3, pRoad.y - 4., pObj.z);
+    len = Box3(pObj, vec3(0.2, 0.1, 0.1), 0.1);
+    res = MinDist(res, vec2(len, MOTO_BREAK_LIGHT_ID)); // TODO: proper light
+
+    return res;
 }
 
 vec2 terrainShape(vec3 p, vec4 splineUV)
@@ -216,7 +224,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     float relativeHeight = p.y - terrainHeight;
 
     // If the distance is sufficiently large, stop there
-    if (relativeHeight > 4.)
+    if (relativeHeight > 5.5)
     {
         return vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
     }
@@ -250,7 +258,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     
     vec2 d = vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
 
-    d = MinDist(d, roadSideItems(splineUV, relativeHeight));
+    d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
     return d;
 }
 
