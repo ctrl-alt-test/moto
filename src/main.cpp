@@ -236,11 +236,17 @@ int __cdecl main(int argc, char* argv[])
 		editor.updateShaders(&shaderMain, &shaderPostProcess, false);
 #endif
 
-#ifdef SOUND_ON
-	} while(mmtime.u.sample < SU_LENGTH_IN_SAMPLES && !GetAsyncKeyState(VK_ESCAPE));
-#else
-	} while (!GetAsyncKeyState(VK_ESCAPE));
+#define ESC GetAsyncKeyState(VK_ESCAPE)
+#ifdef EDITOR_CONTROLS // disable escape in editor mode
+	#define ESC false
 #endif
+
+#ifdef SOUND_ON
+	} while(mmtime.u.sample < SU_LENGTH_IN_SAMPLES && !ESC);
+#else
+	} while (!ESC);
+#endif
+
 
 	ExitProcess(0);
 }
