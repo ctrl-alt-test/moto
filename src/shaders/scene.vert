@@ -16,7 +16,7 @@ out vec2 spline[SPLINE_SIZE];
 
 uniform float iTime;
 
-const float INFINITE = 9e7;
+const float INF = 1e6;
 
 float hash11(float x) { return fract(sin(x) * 43758.5453); }
 vec2 hash12(float x) { float h = hash11(x); return vec2(h, hash11(h)); }

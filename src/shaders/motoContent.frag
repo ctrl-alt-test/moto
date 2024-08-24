@@ -104,7 +104,7 @@ float digit(int n, vec2 p)
     p.x -= p.y * slant;
     float boundingBox = Box2(p, size, size.x * roundOuterCorners);
     float innerBox = -Box2(p, size - thickness, size.x * roundInterCorners);
-    float d = 1e6;
+    float d = INF;
 
     // Segment A
     if (A)
@@ -361,7 +361,7 @@ vec2 motoShape(vec3 p)
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
-    vec2 d = vec2(1e6, MOTO_ID);
+    vec2 d = vec2(INF, MOTO_ID);
     float h;
     float cyl;
 

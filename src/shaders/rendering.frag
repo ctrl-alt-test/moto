@@ -38,7 +38,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
 vec2 sceneSDF(vec3 p, float current_t)
 {
-    vec2 d = vec2(1e6, NO_ID);
+    vec2 d = vec2(INF, NO_ID);
 
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 

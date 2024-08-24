@@ -20,6 +20,7 @@ const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
 const vec2 iResolution = vec2(1920.,1080.);
 const int SPLINE_SIZE = 13;
+const float INF = 1e6;
 
 
 uniform float iTime;
@@ -661,7 +662,7 @@ float splineSegmentDistances[SPLINE_SIZE / 2];
 void ComputeBezierSegmentsLengthAndAABB()
 {
     float splineLength = 0.0;
-    splineAABB = vec4(1e6, 1e6, -1e6, -1e6);
+    splineAABB = vec4(INF, INF, -INF, -INF);
 
     for (int i = ZERO(iTime); i < SPLINE_SIZE - 1; i += 2)
     {
@@ -692,7 +693,7 @@ void ComputeBezierSegmentsLengthAndAABB()
 
 vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 {
-    vec4 splineUV = vec4(1e6, 0, 0, 0);
+    vec4 splineUV = vec4(INF, 0, 0, 0);
 
     if (DistanceFromAABB(p, splineAABB) > splineWidth)
     {
@@ -921,11 +922,11 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
     if (h1 < presence)
     {
-        return 1e6;
+        return INF;
     }
 
     
-    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
+    if (abs(splineUV.x) < roadWidthInMeters.y) return INF;
 
     
     
@@ -976,7 +977,7 @@ vec3 motoPos;
 vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
-vec3 dirHeadLight = normalize(vec3(1.0, -0.4, 0.0));
+vec3 dirHeadLight = normalize(vec3(1.0, -0.22, 0.0));
 vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 
 
@@ -1078,7 +1079,7 @@ float digit(int n, vec2 p)
     p.x -= p.y * slant;
     float boundingBox = Box2(p, size, size.x * roundOuterCorners);
     float innerBox = -Box2(p, size - thickness, size.x * roundInterCorners);
-    float d = 1e6;
+    float d = INF;
 
     
     if (A)
@@ -1335,7 +1336,7 @@ vec2 motoShape(vec3 p)
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
-    vec2 d = vec2(1e6, MOTO_ID);
+    vec2 d = vec2(INF, MOTO_ID);
     float h;
     float cyl;
 
@@ -1608,7 +1609,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
 vec2 sceneSDF(vec3 p, float current_t)
 {
-    vec2 d = vec2(1e6, NO_ID);
+    vec2 d = vec2(INF, NO_ID);
 
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 
@@ -1644,7 +1645,7 @@ void setLights()
     dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
 
     vec3 luminanceHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.9, 10.0, 10.);
+    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.93, 10.0, 20.);
 
     vec3 luminanceBreakLight = vec3(1., 0., 0.);
     lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);

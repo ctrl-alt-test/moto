@@ -20,6 +20,7 @@ const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
 const vec2 iResolution = vec2(1920.,1080.);
 const int SPLINE_SIZE = 13;
+const float INF = 1e6;
 
 // Uniforms:
 uniform float iTime;

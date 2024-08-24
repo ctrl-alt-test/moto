@@ -10,7 +10,7 @@ float splineSegmentDistances[SPLINE_SIZE / 2];
 void ComputeBezierSegmentsLengthAndAABB()
 {
     float splineLength = 0.0;
-    splineAABB = vec4(1e6, 1e6, -1e6, -1e6);
+    splineAABB = vec4(INF, INF, -INF, -INF);
 
     for (int i = ZERO(iTime); i < SPLINE_SIZE - 1; i += 2)
     {
@@ -41,7 +41,7 @@ void ComputeBezierSegmentsLengthAndAABB()
 //
 vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 {
-    vec4 splineUV = vec4(1e6, 0, 0, 0);
+    vec4 splineUV = vec4(INF, 0, 0, 0);
 
     if (DistanceFromAABB(p, splineAABB) > splineWidth)
     {
@@ -270,11 +270,11 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     float presence = smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
     if (h1 < presence)
     {
-        return 1e6;
+        return INF;
     }
 
     // Clear trees close to the road
-    if (abs(splineUV.x) < roadWidthInMeters.y) return 1e6;
+    if (abs(splineUV.x) < roadWidthInMeters.y) return INF;
 
     //
     // FIXME: the splineUV is relative to the current position, not relative

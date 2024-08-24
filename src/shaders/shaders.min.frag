@@ -390,7 +390,7 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV,current_t),0);
 }
-vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.4,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.22,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
   time=atan(motoDir.z,motoDir.x);
@@ -744,7 +744,7 @@ void setLights()
   vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot,true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
   dirHeadLight=motoToWorld(dirHeadLight,false,iTime);
   dirBreakLight=motoToWorld(dirBreakLight,false,iTime);
-  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.9,10.,10.);
+  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.93,10.,20.);
   lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.7,2.,.1);
 }
 vec3 evalNormal(vec3 p,float t)
