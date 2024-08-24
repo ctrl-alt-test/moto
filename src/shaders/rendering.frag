@@ -75,7 +75,7 @@ void setLights()
     dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
 
     vec3 luminanceHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.9, 10.0, 10.);
+    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.93, 10.0, 20.);
 
     vec3 luminanceBreakLight = vec3(1., 0., 0.);
     lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);
