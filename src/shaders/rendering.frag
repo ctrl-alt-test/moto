@@ -88,7 +88,7 @@ vec3 evalNormal(vec3 p, float t)
 {
     // TODO: Ideally h would depend on the screen space projected size.
     const float h = NORMAL_DP;
-    const vec2 k = vec2(1., -1.);
+    vec2 k = vec2(1., -1.);
     return normalize(
         k.xyy * sceneSDF(p + k.xyy * h, t).x + 
         k.yyx * sceneSDF(p + k.yyx * h, t).x + 

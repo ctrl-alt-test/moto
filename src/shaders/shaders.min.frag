@@ -417,7 +417,7 @@ vec3 meter4(vec2 uv)
 }
 float digit(int n,vec2 p)
 {
-  const vec2 size=vec2(.2,.35);
+  vec2 size=vec2(.2,.35);
   bool A=n!=1&&n!=4,B=n!=5&&n!=6,C=n!=2,D=A&&n!=7,E=A&&n%2==0,F=n!=1&&n!=2&&n!=3&&n!=7,G=n>1&&n!=7;
   p.x-=p.y*.15;
   float boundingBox=Box2(p,size,size.x*.5),innerBox=-Box2(p,size-.065,size.x*.15),d=1e6;
@@ -462,7 +462,7 @@ vec3 glowy(float d)
 {
   float dd=fwidth(d);
   vec3 segment=vec3(.67,.9,.8)*.5;
-  return mix(mix(segment,vec3(.2),1.-clamp(1./exp(50.*max(0.,-d)),0.,1.)),mix(vec3(0),segment,clamp(1./exp(2e2*max(0.,d)),0.,1.)),smoothstep(-dd,dd,d));
+  return mix(mix(segment,vec3(.2),1.-1./exp(50.*max(0.,-d))),mix(vec3(0),segment,1./exp(2e2*max(0.,d))),smoothstep(-dd,dd,d));
 }
 vec3 motoDashboard(vec2 uv)
 {
@@ -741,7 +741,7 @@ void setLights()
 }
 vec3 evalNormal(vec3 p,float t)
 {
-  const vec2 k=vec2(1,-1);
+  vec2 k=vec2(1,-1);
   return normalize(k.xyy*sceneSDF(p+k.xyy*.002,t).x+k.yyx*sceneSDF(p+k.yyx*.002,t).x+k.yxy*sceneSDF(p+k.yxy*.002,t).x+k.xxx*sceneSDF(p+k.xxx*.002,t).x);
 }
 vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)

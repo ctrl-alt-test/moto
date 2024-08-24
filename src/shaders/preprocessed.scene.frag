@@ -1052,7 +1052,7 @@ vec3 meter4(vec2 uv, float value) {
 
 float digit(int n, vec2 p)
 {
-    const vec2 size = vec2(0.2, 0.35);
+    vec2 size = vec2(0.2, 0.35);
     const float thickness = 0.065;
     const float gap = 0.0125;
     const float slant = 0.15;
@@ -1152,8 +1152,8 @@ vec3 glowy(float d)
     vec3 bg = vec3(0.);
     vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
 
-    vec3 innerColor = mix(segment, vec3(0.2), 1. - clamp(1. / exp(50. * max(0., -d)), 0., 1.));
-    vec3 outerColor = mix(bg, segment, clamp(1. / exp(200. * max(0., d)), 0., 1.));
+    vec3 innerColor = mix(segment, vec3(0.2), 1. - 1. / exp(50. * max(0., -d)));
+    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
     return mix(innerColor, outerColor, brightness);
 }
 
@@ -1650,7 +1650,7 @@ vec3 evalNormal(vec3 p, float t)
 {
     
     const float h = NORMAL_DP;
-    const vec2 k = vec2(1., -1.);
+    vec2 k = vec2(1., -1.);
     return normalize(
         k.xyy * sceneSDF(p + k.xyy * h, t).x + 
         k.yyx * sceneSDF(p + k.yyx * h, t).x + 
