@@ -103,6 +103,14 @@ float Ellipsoid(vec3 p,vec3 r)
   float k0=length(p/r);
   return k0*(k0-1.)/length(p/(r*r));
 }
+float Segment2(vec2 p,vec2 b,out float h)
+{
+  vec2 a=vec2(0);
+  p-=a;
+  a=b-a;
+  h=clamp(dot(p,a)/dot(a,a),0.,1.);
+  return length(p-a*h);
+}
 float Segment3(vec3 p,vec3 a,vec3 b,out float h)
 {
   p-=a;
@@ -424,19 +432,13 @@ vec3 meter3(vec2 uv,float value)
   baseCol=smoothstep(.5,.7,fract(uv.x*30.))*smoothstep(.1,.3,fract(uv.y/verticalLength*2.))*mix(vec3(.01),baseCol,.15+.85*smoothstep(0.,.001,value-uv.x));
   return smoothstep(.001,0.,Box2(uv,vec2(.5,verticalLength),.01))*float(uv.y>0.)*baseCol;
 }
-float segment(vec2 uv,vec2 B)
-{
-  vec2 A=vec2(0);
-  B-=A;
-  A=uv-A;
-  return smoothstep(.004,.002,length(A-B*clamp(dot(B,A)/dot(B,B),0.,1.)));
-}
 vec3 meter4(vec2 uv)
 {
   float value=.4,angle=atan(uv.y,uv.x);
   value=(value*1.5-1.)*PI;
   vec2 point=vec2(sin(value),cos(value))*.07;
-  return smoothstep(.7,1.,mod(angle,.25)/.25)*smoothstep(0.,.01,abs(angle+.7)-.7)*smoothstep(0.,.01,.1-length(uv))*smoothstep(0.,.01,length(uv)-.06)*vec3(.36,.16,.12)+vec3(.7,.1,.1)*segment(uv,point);
+  value=smoothstep(.004,.002,Segment2(uv,point,value));
+  return smoothstep(.7,1.,mod(angle,.25)/.25)*smoothstep(0.,.01,abs(angle+.7)-.7)*smoothstep(0.,.01,.1-length(uv))*smoothstep(0.,.01,length(uv)-.06)*vec3(.36,.16,.12)+vec3(.7)*value;
 }
 float digit(int n,vec2 p)
 {
@@ -489,10 +491,11 @@ vec3 glowy(float d)
 }
 vec3 motoDashboard(vec2 uv)
 {
-  vec3 color=meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5))+meter4(uv*.7-vec2(.6,.45));
+  vec3 color=meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5));
+  color+=meter4(uv*.7-vec2(.6,.45));
   int speed=105+int(sin(iTime*.5)*10.);
   {
-    vec2 uvSpeed=uv*3.-vec2(.4,1.9);
+    vec2 uvSpeed=uv*3.-vec2(.4,1.95);
     if(speed>=100)
       color+=glowy(digit(speed/100,uvSpeed));
     color=color+glowy(digit(speed/10%10,uvSpeed-vec2(.5,0)))+glowy(digit(speed%10,uvSpeed-vec2(1,0)));
@@ -506,7 +509,10 @@ material motoMaterial(float mid,vec3 p,vec3 N,float time)
       vec3 luminance=smoothstep(.9,.95,N.x)*vec3(1,.95,.9);
       float isDashboard=smoothstep(.9,.95,-N.x+.4*N.y-.07);
       if(isDashboard>0.)
-        luminance=mix(vec3(0),motoDashboard(p.zy*5.5+vec2(.5,-5)),isDashboard);
+        {
+          vec3 color=motoDashboard(p.zy*5.5+vec2(.5,-5));
+          luminance=mix(vec3(0),color,isDashboard);
+        }
       return material(2,luminance,.15);
     }
   return mid==3.?

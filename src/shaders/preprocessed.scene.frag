@@ -1069,15 +1069,6 @@ vec3 meter3(vec2 uv, float value) {
     return smoothstep(0.001, 0., r) * float(uv.y > 0.) * col;
 }
 
-
-float segment(vec2 uv, vec2 A, vec2 B, float r) 
-{
-    vec2 g = B - A;
-    vec2 h = uv - A;
-    float d = length(h - g * clamp(dot(g, h) / dot(g,g), 0.0, 1.0));
-	return smoothstep(r, 0.5*r, d);
-}
-
 vec3 meter4(vec2 uv, float value) {
   float len = length(uv);
   float angle = atan(uv.y, uv.x);
@@ -1090,9 +1081,10 @@ vec3 meter4(vec2 uv, float value) {
 
   value = (value * 1.5 - 1.) * PI;
   vec2 point = vec2(sin(value), cos(value)) * 0.07;
-  float line = segment(uv, vec2(0), point, 0.004);
+  float dummy;
+  float line = smoothstep(0.004, 0.002, Segment2(uv, vec2(0), point, dummy));
   vec3 col = vec3(0.36, 0.16, 0.12) * lines;
-  col += vec3(0.7, 0.1, 0.1) * line;
+  col += vec3(0.7) * line;
   return col;
 }
 
@@ -1211,7 +1203,7 @@ vec3 motoDashboard(vec2 uv)
 
     int speed = 105 + int(sin(iTime*.5) * 10.);
     {
-        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.9);
+        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
         if (speed>=100) color += glowy(digit(speed/100, uvSpeed));
         color += glowy(digit((speed/10)%10, uvSpeed - vec2(.5,0)));
         color += glowy(digit(speed%10, uvSpeed - vec2(1.,0)));
