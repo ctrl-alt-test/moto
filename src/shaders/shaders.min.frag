@@ -418,7 +418,7 @@ vec3 meter4(vec2 uv)
 float digit(int n,vec2 p)
 {
   vec2 size=vec2(.2,.35);
-  bool A=n!=1&&n!=4,B=n!=5&&n!=6,C=n!=2,D=A&&n!=7,E=A&&n%2==0,F=n!=1&&n!=2&&n!=3&&n!=7,G=n>1&&n!=7;
+  bool A=n!=1&&n!=4;
   p.x-=p.y*.15;
   float boundingBox=Box2(p,size,size.x*.5),innerBox=-Box2(p,size-.065,size.x*.15),d=1e6;
   if(A)
@@ -426,32 +426,32 @@ float digit(int n,vec2 p)
       float sA=max(max(innerBox,.0125+p.x-p.y-size.x+size.y),.0125-p.x-p.y-size.x+size.y);
       d=min(d,sA);
     }
-  if(B)
+  if(n!=5&&n!=6)
     {
       float sB=max(max(max(innerBox,.0125-p.x+p.y+size.x-size.y),.0125-p.x-p.y-size.x+size.y),p.x-p.y-(size.x+.065)/2.);
       d=min(d,sB);
     }
-  if(C)
+  if(n!=2)
     {
       float sC=max(max(max(innerBox,.0125-p.x+p.y-size.x+size.y),.0125-p.x-p.y+size.x-size.y),p.x+p.y-(size.x+.065)/2.);
       d=min(d,sC);
     }
-  if(D)
+  if(A&&n!=7)
     {
       float sD=max(max(innerBox,.0125-p.x+p.y-size.x+size.y),.0125+p.x+p.y-size.x+size.y);
       d=min(d,sD);
     }
-  if(E)
+  if(A&&n%2==0)
     {
       float sE=max(max(max(innerBox,.0125+p.x-p.y+size.x-size.y),.0125+p.x+p.y-size.x+size.y),-p.x+p.y-(size.x+.065)/2.);
       d=min(d,sE);
     }
-  if(F)
+  if(n!=1&&n!=2&&n!=3&&n!=7)
     {
       float sF=max(max(max(innerBox,.0125+p.x-p.y-size.x+size.y),.0125+p.x+p.y+size.x-size.y),-p.x-p.y-(size.x+.065)/2.);
       d=min(d,sF);
     }
-  if(G)
+  if(n>1&&n!=7)
     {
       float sG=max(max(max(max(-.065+abs(p.y)*2.,.0125+p.x-p.y+size.x-size.y),.0125-p.x+p.y+size.x-size.y),.0125+p.x+p.y+size.x-size.y),.0125-p.x-p.y+size.x-size.y);
       d=min(d,sG);

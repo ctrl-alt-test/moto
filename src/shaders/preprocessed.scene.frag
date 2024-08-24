@@ -1061,12 +1061,12 @@ float digit(int n, vec2 p)
     const float spacing = 0.67;
 
     bool A = (n != 1 && n != 4);
-    bool B = (n != 5 && n != 6);
-    bool C = (n != 2);
-    bool D = (A && n != 7);
-    bool E = (A && n % 2 == 0);
-    bool F = (n != 1 && n != 2 && n != 3 && n != 7);
-    bool G = (n > 1 && n != 7);
+    bool i_B = (n != 5 && n != 6);
+    bool i_C = (n != 2);
+    bool i_D = (A && n != 7);
+    bool i_E = (A && n % 2 == 0);
+    bool i_F = (n != 1 && n != 2 && n != 3 && n != 7);
+    bool i_G = (n > 1 && n != 7);
 
     p.x -= p.y * slant;
     float boundingBox = Box2(p, size, size.x * roundOuterCorners);
@@ -1083,7 +1083,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (B)
+    if (i_B)
     {
         float sB = innerBox;
         sB = max(sB, gap - (p.x - p.y - size.x + size.y));
@@ -1093,7 +1093,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (C)
+    if (i_C)
     {
         float sC = innerBox;
         sC = max(sC, gap - (p.x - p.y + size.x - size.y));
@@ -1103,7 +1103,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (D)
+    if (i_D)
     {
         float sD = innerBox;
         sD = max(sD, gap - (p.x - p.y + size.x - size.y));
@@ -1112,7 +1112,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (E)
+    if (i_E)
     {
         float sE = innerBox;
         sE = max(sE, gap + (p.x - p.y + size.x - size.y));
@@ -1122,7 +1122,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (F)
+    if (i_F)
     {
         float sF = innerBox;
         sF = max(sF, gap + (p.x - p.y - size.x + size.y));
@@ -1132,7 +1132,7 @@ float digit(int n, vec2 p)
     }
 
     
-    if (G)
+    if (i_G)
     {
         float sG = -(thickness - abs(p.y) * 2.);
         sG = max(sG, gap + (p.x - p.y + size.x - size.y));
