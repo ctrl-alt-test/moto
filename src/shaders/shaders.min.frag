@@ -60,6 +60,10 @@ float hash21(vec2 xy)
 {
   return fract(sin(dot(xy,vec2(12.9898,78.233)))*43758.5453);
 }
+float hash31(vec3 xyz)
+{
+  return hash21(vec2(hash21(xyz.xy),xyz.z));
+}
 float valueNoise(vec2 p)
 {
   vec2 p00=floor(p);
@@ -798,11 +802,11 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 void mainImage(out vec4 fragColor,vec2 fragCoord)
 {
   ComputeBezierSegmentsLengthAndAABB();
-  float ti=fract(iTime*.1);
-  motoPos.xz=GetPositionOnCurve(ti);
+  float time=fract((iTime+hash31(vec3(fragCoord,.001*iTime))*.008)*.1);
+  motoPos.xz=GetPositionOnCurve(time);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
   vec3 nextPos;
-  nextPos.xz=GetPositionOnCurve(ti+.01);
+  nextPos.xz=GetPositionOnCurve(time+.01);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
   setLights();
@@ -922,6 +926,18 @@ void overTheHeadShot()
   camTa.y+=bump;
   camProjectionRatio=2.;
 }
+void viewFromBehind(float t_in_shot)
+{
+  camTa=vec3(1,1,0);
+  camPos=vec3(-2.-4.*t_in_shot,.5,sin(t_in_shot));
+  camProjectionRatio=1.;
+}
+void faceView(float t_in_shot)
+{
+  camTa=vec3(1,1.5,0);
+  camPos=vec3(1.+3.*t_in_shot,1.5,1);
+  camProjectionRatio=1.;
+}
 void main()
 {
   gl_Position=a_position;
@@ -930,7 +946,7 @@ void main()
   camFishEye=.1;
   camMotoSpace=1.;
   camShowDriver=1.;
-  float t=fract(iTime/6./6.)*6.,shot=floor(t);
+  float t=fract(iTime/6./8.)*8.,shot=floor(t);
   t=fract(t);
   if(shot==0.)
     sideShotRear();
@@ -944,6 +960,10 @@ void main()
     fpsDashboardShot();
   if(shot==5.)
     dashBoardUnderTheShoulderShot(t);
+  if(shot==6.)
+    viewFromBehind(t);
+  if(shot==7.)
+    faceView(t);
   camFoV=atan(1./camProjectionRatio);
 }
 

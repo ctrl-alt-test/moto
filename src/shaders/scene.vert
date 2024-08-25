@@ -139,6 +139,20 @@ void topDownView() // useful for debugging & visualizing the spline
     camProjectionRatio = 0.5;
 }
 
+void viewFromBehind(float t_in_shot)
+{
+    camTa = vec3(1., 1., 0.);
+    camPos = vec3(-2. - 4.*t_in_shot, 0.5, sin(t_in_shot));
+    camProjectionRatio = 1.;
+}
+
+void faceView(float t_in_shot)
+{
+    camTa = vec3(1., 1.5, 0.);
+    camPos = vec3(1. + 3.*t_in_shot, 1.5, 1);
+    camProjectionRatio = 1.;
+}
+
 void main(void)
 {
     gl_Position = a_position;
@@ -173,7 +187,7 @@ void main(void)
     */
 
     float shotDuration = 6.;
-    float numberOfDifferentShots = 6.;
+    float numberOfDifferentShots = 8.;
 
     float t = fract((iTime / shotDuration) / numberOfDifferentShots) * numberOfDifferentShots;
     float shot = floor(t);
@@ -203,6 +217,13 @@ void main(void)
     {
         dashBoardUnderTheShoulderShot(t_in_shot);
     }
-
-     camFoV = atan(1. / camProjectionRatio);
+    if (shot == 6.)
+    {
+        viewFromBehind(t_in_shot);
+    }
+    if (shot == 7.)
+    {
+        faceView(t_in_shot);
+    }
+    camFoV = atan(1. / camProjectionRatio);
 }
