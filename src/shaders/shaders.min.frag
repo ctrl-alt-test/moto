@@ -389,16 +389,16 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.22,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
-  time=atan(motoDir.z,motoDir.x);
-  v.xz*=Rotation(-time);
+  float angle=atan(motoDir.z,motoDir.x);
+  v.xz*=Rotation(-angle);
   if(isPos)
-    v+=motoPos;
+    v+=motoPos,v.z+=2.+.5*sin(time);
   return v;
 }
 vec3 worldToMoto(vec3 v,bool isPos,float time)
 {
   if(isPos)
-    v-=motoPos;
+    v-=motoPos,v.z-=2.+.5*sin(time);
   time=atan(motoDir.z,motoDir.x);
   v.xz*=Rotation(time);
   return v;

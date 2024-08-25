@@ -982,6 +982,7 @@ vec3 motoToWorld(vec3 v, bool isPos, float time)
     if (isPos)
     {
         v += motoPos;
+        v.z += 2. + 0.5*sin(time);
         
     }
     return v;
@@ -992,7 +993,7 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     if (isPos)
     {
         v -= motoPos;
-        
+        v.z -= 2. + 0.5*sin(time);
     }
     float angle = atan(motoDir.z, motoDir.x);
     
