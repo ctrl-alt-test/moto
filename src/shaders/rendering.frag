@@ -180,8 +180,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         f0 = m.color;
     }
 
-    vec3 radiance = vec3(0.);
-    radiance += emissive;
+    vec3 radiance = emissive;
 
     // Crude global illumination coming from the sky dome:
 #ifdef ENABLE_DAY_MODE
@@ -197,10 +196,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     if (m.roughness < 0.25) // Brutal if until there's a roughness dependent reflection.
     {
         vec3 L = reflect(-V, N);
-        vec3 H = normalize(L + V);
-	    float x = 1.0 - dot(V, H);
-	    x = x*x*x*x*x;
-	    vec3 F = x + f0 * (1.0 - x);
+        // vec3 H = normalize(L + V);
+	    // float x = 1.0 - dot(V, H);
+	    // x = x*x*x*x*x;
+	    // vec3 F = x + f0 * (1.0 - x);
         radiance += f0 * sky(L);
     }
 
@@ -218,7 +217,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);
-    vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
+    vec3 fogColor = vec3(0.001,0.001,0.005);
     radiance = mix(radiance, fogColor, fogAmount);
 
     return radiance;

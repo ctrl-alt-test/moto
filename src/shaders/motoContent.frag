@@ -196,12 +196,13 @@ vec3 motoDashboard(vec2 uv)
     vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
     float numbers =
+        min(min(min(
         // gear
-        digit(5, uv * 8. - vec2(0.7,2.4)) +
+        digit(5, uv * 8. - vec2(0.7,2.4)),
         // speed
-        (float(speed>=100) * digit(speed/100, uvSpeed)) +
-        digit((speed/10)%10, uvSpeed - vec2(.5,0)) +
-        digit(speed%10, uvSpeed - vec2(1.,0));
+        (float(speed<100) + digit(speed/100, uvSpeed))),
+        digit((speed/10)%10, uvSpeed - vec2(.5,0))),
+        digit(speed%10, uvSpeed - vec2(1.,0)));
 
     return
         meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +

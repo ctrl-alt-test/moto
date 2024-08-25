@@ -457,15 +457,7 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
     return res;
 }
 
-float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
-{
-    vec4 aabb = BezierAABB(A, B, C);
-
-    vec2 center = (aabb.xy + aabb.zw) / 2.0;
-    vec2 size = aabb.zw - aabb.xy;
-
-    return Box2(p - center, size / 2.0, 0.0);
-}
+ 
 
 
 
@@ -480,37 +472,7 @@ vec2 MinDist(vec2 d1, vec2 d2)
 
 
 
-vec3 sphericalToCartesian(float r, float phi, float theta)
-{
-    float cosTheta = cos(theta);
-    float x = cosTheta * cos(phi);
-    float y = sin(theta);
-    float z = cosTheta * sin(phi);
-    return r * vec3(x, y, z);
-}
-
-vec3 worldToCubeMap(vec3 v)
-{
-    return vec3(v.x, v.y, -v.z);
-}
-
-void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out vec3 rd)
-{
-    lat = clamp(lat, -PI, PI);
-    vec3 cameraPosition = sphericalToCartesian(dist, lon, lat);
-    vec3 cameraTarget = vec3(0.);
-    vec3 cameraForward = normalize(cameraTarget - cameraPosition);
-    vec3 cameraUp = vec3(0., 1., 0.);
-    if (abs(dot(cameraForward, cameraUp)) > 0.99)
-    {
-        cameraUp = vec3(1., 0., 0.);
-    }
-    vec3 cameraRight = normalize(cross(cameraForward, cameraUp));
-    cameraUp = normalize(cross(cameraRight, cameraForward));
-
-    ro = cameraPosition;
-    rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
-}
+ 
 
 void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
 {
@@ -1162,12 +1124,13 @@ vec3 motoDashboard(vec2 uv)
     vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
     float numbers =
+        min(min(min(
         
-        digit(5, uv * 8. - vec2(0.7,2.4)) +
+        digit(5, uv * 8. - vec2(0.7,2.4)),
         
-        (float(speed>=100) * digit(speed/100, uvSpeed)) +
-        digit((speed/10)%10, uvSpeed - vec2(.5,0)) +
-        digit(speed%10, uvSpeed - vec2(1.,0));
+        (float(speed<100) + digit(speed/100, uvSpeed))),
+        digit((speed/10)%10, uvSpeed - vec2(.5,0))),
+        digit(speed%10, uvSpeed - vec2(1.,0)));
 
     return
         meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +
@@ -1736,8 +1699,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         f0 = m.color;
     }
 
-    vec3 radiance = vec3(0.);
-    radiance += emissive;
+    vec3 radiance = emissive;
 
     
 // Inactive conditional block: #ifdef ENABLE_DAY_MODE
@@ -1751,10 +1713,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     if (m.roughness < 0.25) 
     {
         vec3 L = reflect(-V, N);
-        vec3 H = normalize(L + V);
-	    float x = 1.0 - dot(V, H);
-	    x = x*x*x*x*x;
-	    vec3 F = x + f0 * (1.0 - x);
+        
+	    
+	    
+	    
         radiance += f0 * sky(L);
     }
 
@@ -1772,7 +1734,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);
-    vec3 fogColor = vec3(0,0,0.005)+vec3(0.01,0.01,0.02)*0.1;
+    vec3 fogColor = vec3(0.001,0.001,0.005);
     radiance = mix(radiance, fogColor, fogAmount);
 
     return radiance;

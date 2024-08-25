@@ -455,6 +455,7 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
     return res;
 }
 
+/*
 float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
 {
     vec4 aabb = BezierAABB(A, B, C);
@@ -464,6 +465,7 @@ float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
 
     return Box2(p - center, size / 2.0, 0.0);
 }
+*/
 
 // -------------------------------------------------------
 // Raymarching functions
@@ -478,6 +480,7 @@ vec2 MinDist(vec2 d1, vec2 d2)
 // -------------------------------------------------------
 // Camera functions
 
+/*
 vec3 sphericalToCartesian(float r, float phi, float theta)
 {
     float cosTheta = cos(theta);
@@ -509,6 +512,7 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
     ro = cameraPosition;
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
+*/
 
 void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
 {

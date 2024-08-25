@@ -472,7 +472,7 @@ vec3 motoDashboard(vec2 uv)
 {
   int speed=105+int(sin(iTime*.5)*10.);
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
-  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(digit(5,uv*8.-vec2(.7,2.4))+float(speed>=100)*digit(speed/100,uvSpeed)+digit(speed/10%10,uvSpeed-vec2(.5,0))+digit(speed%10,uvSpeed-vec2(1,0)));
+  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
 material motoMaterial(float mid,vec3 p,vec3 N,float time)
 {
@@ -778,19 +778,14 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
   vec3 f0=vec3(.04);
   if(m.type==1||m.type==3)
     f0=m.color;
-  albedo=vec3(0)+emissive+nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5)*albedo;
+  albedo=emissive+nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5)*albedo;
   if(m.roughness<.25)
-    {
-      vec3 L=reflect(-V,N);
-      float x=1.-dot(V,normalize(L+V));
-      x*=x*x*x*x;
-      albedo+=f0*sky(L);
-    }
+    albedo+=f0*sky(reflect(-V,N));
   for(int i=0;i<3;++i)
     albedo=lights[i].cosAngle==-1.?
       albedo+rodLightContribution(m,lights[i],p,N,V):
       albedo+coneLightContribution(m,lights[i],p,N,V);
-  return mix(albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.01));
+  return mix(albedo,vec3(.001,.001,.005),1.-exp(-t.x*.01));
 }
 void main()
 {
