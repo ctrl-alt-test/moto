@@ -183,32 +183,30 @@ vec3 glowy(float d)
 {
     float dd = fwidth(d);
     float brightness = smoothstep(-dd, +dd, d);
-    vec3 bg = vec3(0.);
-    vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
+    vec3 segment = vec3(0.3, 0.5, 0.4);
 
-    vec3 innerColor = mix(segment, vec3(0.2), 1. - 1. / exp(50. * max(0., -d)));
-    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
+    vec3 innerColor = mix(vec3(0.2), segment, 1. / exp(50. * max(0., -d)));
+    vec3 outerColor = mix(vec3(0.), segment, 1. / exp(200. * max(0., d)));
     return mix(innerColor, outerColor, brightness);
 }
 
 vec3 motoDashboard(vec2 uv)
 {
-    vec3 color;
-    color = meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5));
-    color += meter4(uv * .7 - vec2(0.6, 0.45), 0.4);
-
     int speed = 105 + int(sin(iTime*.5) * 10.);
-    {
-        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
-        if (speed>=100) color += glowy(digit(speed/100, uvSpeed));
-        color += glowy(digit((speed/10)%10, uvSpeed - vec2(.5,0)));
-        color += glowy(digit(speed%10, uvSpeed - vec2(1.,0)));
-    }
+    vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
-    // gear number
-    color += glowy(digit(5, uv * 8. - vec2(0.7,2.4)));
+    float numbers =
+        // gear
+        digit(5, uv * 8. - vec2(0.7,2.4)) +
+        // speed
+        (float(speed>=100) * digit(speed/100, uvSpeed)) +
+        digit((speed/10)%10, uvSpeed - vec2(.5,0)) +
+        digit(speed%10, uvSpeed - vec2(1.,0));
 
-    return color;
+    return
+        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +
+        meter4(uv * .7 - vec2(0.6, 0.45), 0.4) +
+        glowy(numbers);
 }
 
 material motoMaterial(float mid, vec3 p, vec3 N, float time)

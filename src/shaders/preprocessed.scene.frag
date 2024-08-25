@@ -436,12 +436,11 @@ float BezierCurveLengthAt(vec2 A, vec2 B, vec2 C, float t)
 vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
 {
     
-    vec2 mi = min(A, C);
-    vec2 ma = max(A, C);
+    vec4 res = vec4(min(A, C), max(A, C));
 
     
-    if (B.x < mi.x || B.x > ma.x ||
-        B.y < mi.y || B.y > ma.y)
+    if (B.x < res.x || B.x > res.z ||
+        B.y < res.y || B.y > res.w)
     {
         
         
@@ -451,11 +450,11 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
         vec2 s = 1.0 - t;
         vec2 q = s*s*A + 2.0*s*t*B + t*t*C;
         
-        mi = min(mi, q);
-        ma = max(ma, q);
+        res.xy = min(res.xy, q);
+        res.zw = max(res.zw, q);
     }
     
-    return vec4(mi, ma);
+    return res;
 }
 
 float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
@@ -513,7 +512,7 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
 
-void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, float projectionRatio, float camFishEye, out vec3 ro, out vec3 rd)
+void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
 {
     vec3 cameraForward = normalize(cameraTarget - cameraPosition);
     if (abs(dot(cameraForward, cameraUp)) > 0.99)
@@ -526,7 +525,7 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
     
     uv *= mix(1., length(uv), camFishEye);
     ro = cameraPosition;
-    rd = normalize(cameraForward * projectionRatio + uv.x * cameraRight + uv.y * cameraUp);
+    rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
 
 
@@ -1150,32 +1149,30 @@ vec3 glowy(float d)
 {
     float dd = fwidth(d);
     float brightness = smoothstep(-dd, +dd, d);
-    vec3 bg = vec3(0.);
-    vec3 segment = vec3(0.67, 0.9, 0.8) * 0.5;
+    vec3 segment = vec3(0.3, 0.5, 0.4);
 
-    vec3 innerColor = mix(segment, vec3(0.2), 1. - 1. / exp(50. * max(0., -d)));
-    vec3 outerColor = mix(bg, segment, 1. / exp(200. * max(0., d)));
+    vec3 innerColor = mix(vec3(0.2), segment, 1. / exp(50. * max(0., -d)));
+    vec3 outerColor = mix(vec3(0.), segment, 1. / exp(200. * max(0., d)));
     return mix(innerColor, outerColor, brightness);
 }
 
 vec3 motoDashboard(vec2 uv)
 {
-    vec3 color;
-    color = meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5));
-    color += meter4(uv * .7 - vec2(0.6, 0.45), 0.4);
-
     int speed = 105 + int(sin(iTime*.5) * 10.);
-    {
-        vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
-        if (speed>=100) color += glowy(digit(speed/100, uvSpeed));
-        color += glowy(digit((speed/10)%10, uvSpeed - vec2(.5,0)));
-        color += glowy(digit(speed%10, uvSpeed - vec2(1.,0)));
-    }
+    vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
-    
-    color += glowy(digit(5, uv * 8. - vec2(0.7,2.4)));
+    float numbers =
+        
+        digit(5, uv * 8. - vec2(0.7,2.4)) +
+        
+        (float(speed>=100) * digit(speed/100, uvSpeed)) +
+        digit((speed/10)%10, uvSpeed - vec2(.5,0)) +
+        digit(speed%10, uvSpeed - vec2(1.,0));
 
-    return color;
+    return
+        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +
+        meter4(uv * .7 - vec2(0.6, 0.45), 0.4) +
+        glowy(numbers);
 }
 
 material motoMaterial(float mid, vec3 p, vec3 N, float time)
@@ -1789,15 +1786,15 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 // Include end: moto.frag
 
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
 
-    vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
+    vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     float time = iTime;
 // Active conditional block: #ifdef ENABLE_STOCHASTIC_MOTION_BLUR
-    time += hash31(vec3(fragCoord, 1e-3*iTime)) * 0.008;
+    time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
 // End of active block.
 
     float ti = fract(time * 0.1);
@@ -1821,7 +1818,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         cameraTarget = motoToWorld(camTa, true, iTime);
         
     }
-    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, camProjectionRatio, camFishEye, ro, rd);
+    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
 
     
     
@@ -1844,8 +1841,4 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     vec3 color = pow(radiance, vec3(1. / GAMMA));
     fragColor = vec4(color, 1.);
-}
-
-void main() {
-    mainImage(fragColor, gl_FragCoord.xy);
 }

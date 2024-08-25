@@ -50,15 +50,15 @@ float PIXEL_ANGLE = camFoV / iResolution.x;
 #include "rendering.frag"
 #include "moto.frag"
 
-void mainImage( out vec4 fragColor, in vec2 fragCoord )
+void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
 
-    vec2 uv = (fragCoord/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
+    vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     float time = iTime;
 #ifdef ENABLE_STOCHASTIC_MOTION_BLUR
-    time += hash31(vec3(fragCoord, 1e-3*iTime)) * 0.008;
+    time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
 #endif
 
     float ti = fract(time * 0.1);
@@ -82,7 +82,7 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
         cameraTarget = motoToWorld(camTa, true, iTime);
         //cameraUp = motoToWorld(cameraUp, false, iTime);
     }
-    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, camProjectionRatio, camFishEye, ro, rd);
+    setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
 
     // View moto from front
     // motoCamera(uv, vec3(1.26, 1.07, 0.05), vec3(-10.,0.,0), ro, rd);
@@ -109,8 +109,4 @@ void mainImage( out vec4 fragColor, in vec2 fragCoord )
     
     vec3 color = pow(radiance, vec3(1. / GAMMA));
     fragColor = vec4(color, 1.);
-}
-
-void main() {
-    mainImage(fragColor, gl_FragCoord.xy);
 }

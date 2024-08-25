@@ -433,13 +433,12 @@ float BezierCurveLengthAt(vec2 A, vec2 B, vec2 C, float t)
 // https://www.shadertoy.com/view/XdVBWd
 vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
 {
-    // extremes
-    vec2 mi = min(A, C);
-    vec2 ma = max(A, C);
+    // extremes (min: xy, max: zw)
+    vec4 res = vec4(min(A, C), max(A, C));
 
     // maxima/minima point, if p1 is outside the current bbox/hull
-    if (B.x < mi.x || B.x > ma.x ||
-        B.y < mi.y || B.y > ma.y)
+    if (B.x < res.x || B.x > res.z ||
+        B.y < res.y || B.y > res.w)
     {
         // p = (1-t)^2*p0 + 2(1-t)t*p1 + t^2*p2
         // dp/dt = 2(t-1)*p0 + 2(1-2t)*p1 + 2t*p2 = t*(2*p0-4*p1+2*p2) + 2*(p1-p0)
@@ -449,11 +448,11 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
         vec2 s = 1.0 - t;
         vec2 q = s*s*A + 2.0*s*t*B + t*t*C;
         
-        mi = min(mi, q);
-        ma = max(ma, q);
+        res.xy = min(res.xy, q);
+        res.zw = max(res.zw, q);
     }
     
-    return vec4(mi, ma);
+    return res;
 }
 
 float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
@@ -511,7 +510,7 @@ void orbitalCamera(vec2 uv, float dist, float lat, float lon, out vec3 ro, out v
     rd = normalize(cameraForward + uv.x * cameraRight + uv.y * cameraUp);
 }
 
-void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, float projectionRatio, float camFishEye, out vec3 ro, out vec3 rd)
+void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp, out vec3 ro, out vec3 rd)
 {
     vec3 cameraForward = normalize(cameraTarget - cameraPosition);
     if (abs(dot(cameraForward, cameraUp)) > 0.99)
@@ -524,7 +523,7 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
     // meh. FIXME
     uv *= mix(1., length(uv), camFishEye);
     ro = cameraPosition;
-    rd = normalize(cameraForward * projectionRatio + uv.x * cameraRight + uv.y * cameraUp);
+    rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
 
 // -------------------------------------------------------

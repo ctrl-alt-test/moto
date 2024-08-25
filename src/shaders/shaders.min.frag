@@ -186,15 +186,15 @@ float BezierCurveLengthAt(vec2 A,vec2 B,vec2 C,float t)
 }
 vec4 BezierAABB(vec2 A,vec2 B,vec2 C)
 {
-  vec2 mi=min(A,C),ma=max(A,C);
-  if(B.x<mi.x||B.x>ma.x||B.y<mi.y||B.y>ma.y)
+  vec4 res=vec4(min(A,C),max(A,C));
+  if(B.x<res.x||B.x>res.z||B.y<res.y||B.y>res.w)
     {
       vec2 t=clamp((A-B)/(A-2.*B+C),0.,1.),s=1.-t;
       t=s*s*A+2.*s*t*B+t*t*C;
-      mi=min(mi,t);
-      ma=max(ma,t);
+      res.xy=min(res.xy,t);
+      res.zw=max(res.zw,t);
     }
-  return vec4(mi,ma);
+  return res;
 }
 vec2 MinDist(vec2 d1,vec2 d2)
 {
@@ -202,7 +202,7 @@ vec2 MinDist(vec2 d1,vec2 d2)
     d1:
     d2;
 }
-void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,float projectionRatio,float camFishEye,out vec3 ro,out vec3 rd)
+void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out vec3 rd)
 {
   vec3 cameraUp=vec3(0,1,0);
   cameraTarget=normalize(cameraTarget-cameraPosition);
@@ -212,7 +212,7 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,float projectionR
   cameraUp=normalize(cross(cameraRight,cameraTarget));
   uv*=mix(1.,length(uv),camFishEye);
   ro=cameraPosition;
-  rd=normalize(cameraTarget*projectionRatio+uv.x*cameraRight+uv.y*cameraUp);
+  rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
 }
 bool IsMoto(float mid)
 {
@@ -465,21 +465,14 @@ float digit(int n,vec2 p)
 vec3 glowy(float d)
 {
   float dd=fwidth(d);
-  vec3 segment=vec3(.67,.9,.8)*.5;
-  return mix(mix(segment,vec3(.2),1.-1./exp(50.*max(0.,-d))),mix(vec3(0),segment,1./exp(2e2*max(0.,d))),smoothstep(-dd,dd,d));
+  vec3 segment=vec3(.3,.5,.4);
+  return mix(mix(vec3(.2),segment,1./exp(50.*max(0.,-d))),mix(vec3(0),segment,1./exp(2e2*max(0.,d))),smoothstep(-dd,dd,d));
 }
 vec3 motoDashboard(vec2 uv)
 {
-  vec3 color=meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5));
-  color+=meter4(uv*.7-vec2(.6,.45));
   int speed=105+int(sin(iTime*.5)*10.);
-  {
-    vec2 uvSpeed=uv*3.-vec2(.4,1.95);
-    if(speed>=100)
-      color+=glowy(digit(speed/100,uvSpeed));
-    color=color+glowy(digit(speed/10%10,uvSpeed-vec2(.5,0)))+glowy(digit(speed%10,uvSpeed-vec2(1,0)));
-  }
-  return color+glowy(digit(5,uv*8.-vec2(.7,2.4)));
+  vec2 uvSpeed=uv*3.-vec2(.4,1.95);
+  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(digit(5,uv*8.-vec2(.7,2.4))+float(speed>=100)*digit(speed/100,uvSpeed)+digit(speed/10%10,uvSpeed-vec2(.5,0))+digit(speed%10,uvSpeed-vec2(1,0)));
 }
 material motoMaterial(float mid,vec3 p,vec3 N,float time)
 {
@@ -799,10 +792,11 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       albedo+coneLightContribution(m,lights[i],p,N,V);
   return mix(albedo,vec3(0,0,.005)+vec3(.01,.01,.02)*.1,1.-exp(-t.x*.01));
 }
-void mainImage(out vec4 fragColor,vec2 fragCoord)
+void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
-  float time=fract((iTime+hash31(vec3(fragCoord,.001*iTime))*.008)*.1);
+  vec2 uv=(gl_FragCoord.xy/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x);
+  float time=fract((iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008)*.1);
   motoPos.xz=GetPositionOnCurve(time);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
   vec3 nextPos;
@@ -813,15 +807,11 @@ void mainImage(out vec4 fragColor,vec2 fragCoord)
   vec3 rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true,iTime),cameraTarget=motoToWorld(camTa,true,iTime);
-  setupCamera((fragCoord/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,camProjectionRatio,camFishEye,nextPos,rd);
-  vec2 t=rayMarchScene(nextPos,rd,cameraPosition);
-  cameraTarget=evalNormal(cameraPosition,t.x);
-  rd=evalRadiance(t,cameraPosition,-rd,cameraTarget);
+  setupCamera(uv,cameraPosition,cameraTarget,nextPos,rd);
+  uv=rayMarchScene(nextPos,rd,cameraPosition);
+  cameraTarget=evalNormal(cameraPosition,uv.x);
+  rd=evalRadiance(uv,cameraPosition,-rd,cameraTarget);
   fragColor=vec4(pow(rd,vec3(1./2.2)),1);
-}
-void main()
-{
-  mainImage(fragColor,gl_FragCoord.xy);
 }
 
 // src\shaders\scene.vert#version 150
