@@ -1281,6 +1281,26 @@ vec2 driverShape(vec3 p)
     return vec2(d, MOTO_DRIVER_ID);
 }
 
+vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
+{
+    vec2 d = vec2(1e6, MOTO_WHEEL_ID);
+    float frontWheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
+
+    if (frontWheel < 0.25)
+    {
+        p.z = abs(p.z);
+        float h;
+        float cyl = Segment3(p, vec3(0.0), vec3(0.0, 0.0, 1.0), h);
+        frontWheel = -smin(-frontWheel, cyl - innerRadius, 0.01);
+
+         
+        
+        frontWheel = min(frontWheel, -min(min(min(0.15 - cyl, cyl - 0.08), p.z - 0.04), -p.z + 0.05));
+         
+    }
+    return vec2(frontWheel, MOTO_WHEEL_ID);
+}
+
 vec2 motoShape(vec3 p)
 {
     p = worldToMoto(p, true, iTime);
@@ -1289,52 +1309,26 @@ vec2 motoShape(vec3 p)
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
-    vec2 d = vec2(INF, MOTO_ID);
+    vec2 d = vec2(1e6, MOTO_ID);
     float h;
     float cyl;
 
-    float frontWheelThickness = 0.14/2.0;
-    float frontWheelRadius = 0.33 - frontWheelThickness;
-    float rearWheelThickness = 0.18/2.0;
-    float rearWheelRadius = 0.32 - rearWheelThickness;
-    vec3 frontWheelPos = vec3(0.9, frontWheelRadius + frontWheelThickness, 0.0);
+    float frontWheelTireRadius = 0.14/2.0;
+    float frontWheelRadius = 0.33 - frontWheelTireRadius;
+    float rearWheelTireRadius = 0.3/2.0;
+    float rearWheelRadius = 0.32 - rearWheelTireRadius;
+    vec3 frontWheelPos = vec3(0.9, frontWheelRadius + frontWheelTireRadius, 0.0);
 
     
     if (true)
     {
-        vec3 pFrontWheel = p - frontWheelPos;
-        float frontWheel = Torus(pFrontWheel.yzx, vec2(frontWheelRadius, frontWheelThickness));
-        
-        if (frontWheel < 0.25)
-        {
-            pFrontWheel.z = abs(pFrontWheel.z);
-            cyl = Segment3(pFrontWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
-            float frontBreak = cyl - 0.15;
-            frontBreak = -min(-frontBreak, -pFrontWheel.z + 0.05);
-            frontBreak = -min(-frontBreak, pFrontWheel.z - 0.04);
-            frontBreak = -min(-frontBreak, (cyl - 0.08));
-            frontWheel = min(frontWheel, frontBreak);
-        }
-        d = MinDist(d, vec2(frontWheel, MOTO_WHEEL_ID));
+        d = MinDist(d, wheelShape(p - frontWheelPos, frontWheelRadius, frontWheelTireRadius, 0.22));
     }
 
     
     if (true)
     {
-        vec3 pRearWheel = p - vec3(-0.85, rearWheelRadius + rearWheelThickness, 0.0);
-        float rearWheel = Torus(pRearWheel.yzx, vec2(rearWheelRadius, rearWheelThickness));
-
-        if (rearWheel < 0.25)
-        {
-            pRearWheel.z = abs(pRearWheel.z);
-            cyl = Segment3(pRearWheel, vec3(0.0, 0.0, -1.0), vec3(0.0, 0.0, 1.0), h);
-            float rearBreak = cyl - 0.15;
-            rearBreak = -min(-rearBreak, -pRearWheel.z + 0.05);
-            rearBreak = -min(-rearBreak, pRearWheel.z - 0.04);
-            rearBreak = -min(-rearBreak, (cyl - 0.08));
-            rearWheel = min(rearWheel, rearBreak);
-        }
-        d = MinDist(d, vec2(rearWheel, MOTO_WHEEL_ID));
+        d = MinDist(d, wheelShape(p - vec3(-0.85, rearWheelRadius + rearWheelTireRadius, 0.0), rearWheelRadius, rearWheelTireRadius, 0.18));
     
         
         if (true)
@@ -1353,7 +1347,7 @@ vec2 motoShape(vec3 p)
         vec3 pForkTop = vec3(-0.48, 0.66, 0.0);
         vec3 pForkAngle = pForkTop + vec3(-0.14, 0.04, 0.05);
         pFork.z = abs(pFork.z);
-        pFork -= frontWheelPos + vec3(0.0, 0.0, frontWheelThickness + 2. * forkThickness);
+        pFork -= frontWheelPos + vec3(0.0, 0.0, frontWheelTireRadius + 2. * forkThickness);
         float fork = Segment3(pFork, pForkTop, vec3(0.0), h) - forkThickness;
 
         
@@ -1478,7 +1472,7 @@ vec2 motoShape(vec3 p)
     if (true)
     {
         vec3 pExhaust = p;
-        pExhaust -= vec3(0.0, 0.0, rearWheelThickness + 0.05);
+        pExhaust -= vec3(0.0, 0.0, rearWheelTireRadius + 0.05);
         float exhaust = Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(-0.7, 0.3, 0.05), h);
 
         if (exhaust < 0.6)
@@ -1488,7 +1482,7 @@ vec2 motoShape(vec3 p)
             exhaust = min(exhaust, Segment3(pExhaust, vec3(0.24, 0.25, 0.0), vec3(0.32, 0.55, -0.02), h) - 0.04);
             exhaust = min(exhaust, Segment3(pExhaust, vec3(0.22, 0.32, -0.02), vec3(-0.4, 0.37, 0.02), h) - 0.04);
         }
-        d = MinDist(d, vec2(exhaust, MOTO_EXHAUST_ID));
+        d = MinDist(d, vec2(exhaust, MOTO_ID));
     }
 
     

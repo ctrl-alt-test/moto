@@ -566,6 +566,18 @@ vec2 driverShape(vec3 p)
   }
   return vec2(d,7);
 }
+vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius)
+{
+  wheelRadius=Torus(p.yzx,vec2(wheelRadius,tireRadius));
+  if(wheelRadius<.25)
+    {
+      p.z=abs(p.z);
+      float h;
+      h=Segment3(p,vec3(0),vec3(0,0,1),h);
+      wheelRadius=min(-smin(-wheelRadius,h-innerRadius,.01),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05));
+    }
+  return vec2(wheelRadius,4);
+}
 vec2 motoShape(vec3 p)
 {
   p=worldToMoto(p,true,iTime);
@@ -573,35 +585,12 @@ vec2 motoShape(vec3 p)
   if(boundingSphere>2.)
     return vec2(boundingSphere-1.5,1);
   vec2 d=vec2(1e6,1);
-  float cyl;
   vec3 frontWheelPos=vec3(.9,.33,0);
+  d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22));
+  d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18));
   {
-    vec3 pFrontWheel=p-frontWheelPos;
-    float frontWheel=Torus(pFrontWheel.yzx,vec2(.26,.07));
-    if(frontWheel<.25)
-      {
-        pFrontWheel.z=abs(pFrontWheel.z);
-        cyl=Segment3(pFrontWheel,vec3(0,0,-1),vec3(0,0,1),boundingSphere);
-        float frontBreak=-min(min(min(-cyl+.15,-pFrontWheel.z+.05),pFrontWheel.z-.04),cyl-.08);
-        frontWheel=min(frontWheel,frontBreak);
-      }
-    d=MinDist(d,vec2(frontWheel,4));
-  }
-  {
-    vec3 pRearWheel=p-vec3(-.85,.32,0);
-    float rearWheel=Torus(pRearWheel.yzx,vec2(.23,.09));
-    if(rearWheel<.25)
-      {
-        pRearWheel.z=abs(pRearWheel.z);
-        cyl=Segment3(pRearWheel,vec3(0,0,-1),vec3(0,0,1),boundingSphere);
-        float rearBreak=-min(min(min(-cyl+.15,-pRearWheel.z+.05),pRearWheel.z-.04),cyl-.08);
-        rearWheel=min(rearWheel,rearBreak);
-      }
-    d=MinDist(d,vec2(rearWheel,4));
-    {
-      vec3 pBreak=p-breakLightOffsetFromMotoRoot;
-      d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),3));
-    }
+    vec3 pBreak=p-breakLightOffsetFromMotoRoot;
+    d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),3));
   }
   {
     vec3 pFork=p,pForkTop=vec3(-.48,.66,0),pForkAngle=pForkTop+vec3(-.14,.04,.05);
@@ -672,11 +661,11 @@ vec2 motoShape(vec3 p)
     d=MinDist(d,vec2(motorBlock,5));
   }
   {
-    vec3 pExhaust=p-vec3(0,0,.14);
+    vec3 pExhaust=p-vec3(0,0,.2);
     float exhaust=Segment3(pExhaust,vec3(.24,.25,0),vec3(-.7,.3,.05),boundingSphere);
     if(exhaust<.6)
       exhaust=-min(-exhaust+mix(.04,.08,mix(boundingSphere,smoothstep(.5,.7,boundingSphere),.5)),p.x-.7*p.y+.9),exhaust=min(exhaust,Segment3(pExhaust,vec3(.24,.25,0),vec3(.32,.55,-.02),boundingSphere)-.04),exhaust=min(exhaust,Segment3(pExhaust,vec3(.22,.32,-.02),vec3(-.4,.37,.02),boundingSphere)-.04);
-    d=MinDist(d,vec2(exhaust,6));
+    d=MinDist(d,vec2(exhaust,1));
   }
   {
     vec3 pSeat=p-vec3(-.44,.44,0);
