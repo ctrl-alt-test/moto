@@ -738,8 +738,9 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
 
 
 vec3 roadWidthInMeters = vec3(4.0, 8.0, 8.0);
+const float laneWidth = 3.5;
 
-vec3 roadPattern(vec2 uv, float width, vec2 params)
+float roadMarkings(vec2 uv, float width, vec2 params)
 {
     
     vec2 t1  = vec2(26.0 / 2.0, 3.0);
@@ -768,9 +769,35 @@ vec3 roadPattern(vec2 uv, float width, vec2 params)
 
     float pattern = min(min(sideLine1, sideLine2), separationLine1);
 
-    float duv = length(fwidth(uv));
-    vec3 test =   vec3(1.0 - smoothstep(-duv, 0.0, pattern));  ;
-    return mix(test, vec3(fract(uv), separationTileUV.x), 0.0);
+    return 1.-smoothstep(-0.01, 0.01, pattern);
+}
+
+material roadMaterial(vec2 uv, float width, vec2 params)
+{
+    vec2 laneUV = uv / laneWidth;
+
+    float tireTrails = sin((laneUV.x-0.125) * 4. * PI) * 0.5 + 0.5;
+    tireTrails = mix(tireTrails, smoothstep(0., 1., tireTrails), 0.25);
+
+    float largeScaleNoise = smoothstep(-0.25, 1., fBm(laneUV * vec2(15., 0.1), 2, .7, .4));
+    tireTrails = mix(tireTrails, largeScaleNoise, 0.2);
+
+    float highFreqNoise = fBm(laneUV * vec2(150., 6.), 1, 1., 1.);
+    tireTrails = mix(tireTrails, highFreqNoise, 0.1);
+
+    float roughness = mix(0.8, 0.4, tireTrails);
+    vec3 color = vec3(mix(vec3(0.11, 0.105, 0.1), vec3(0.15), tireTrails));
+
+
+    float paint = roadMarkings(uv.yx, width, params);
+    color = mix(color, vec3(0.5), paint);
+    roughness = mix(roughness, 0.7, paint);
+
+    
+     
+    
+
+    return material(MATERIAL_TYPE_DIELECTRIC, color, roughness);
 }
 
 const float terrain_fBm_weight_param = 0.6;
@@ -1525,16 +1552,14 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == GROUND_ID)
     {
-        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
-
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
-        vec3 roadColor = vec3(0.0);
         if (isRoad > 0.0)
         {
-            roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
+            return roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
         }
-        color = mix(color, roadColor, isRoad);
+        
+        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
         return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
     }
 

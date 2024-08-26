@@ -7,16 +7,14 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == GROUND_ID)
     {
-        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
-
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
-        vec3 roadColor = vec3(0.0);
         if (isRoad > 0.0)
         {
-            roadColor = roadPattern(splineUV.zx, 3.5, vec2(0.7, 0.0));
+            return roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
         }
-        color = mix(color, roadColor, isRoad);
+        // Terrain
+        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
         return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
     }
 

@@ -306,7 +306,7 @@ vec2 GetPositionOnSpline(vec2 spline_t_and_index)
   return Bezier(spline[i],spline[i+1],spline[i+2],spline_t_and_index.x);
 }
 vec3 roadWidthInMeters=vec3(4,8,8);
-vec3 roadPattern(vec2 uv)
+float roadMarkings(vec2 uv)
 {
   vec2 params=vec2(.7,0),t1b=vec2(6.5,1.5),t3=vec2(26./6.,3),t3b=vec2(26,20),continuous=vec2(100);
   t3b=vec2(13,3);
@@ -317,10 +317,26 @@ vec3 roadPattern(vec2 uv)
   if(params.x>.75)
     t3b=continuous;
   continuous=vec2(6.5,3);
-  params=vec2(fract(uv.x/t3b.x)*t3b.x,uv.y-floor(clamp(uv.y,0.,3.5)/3.5)*3.5);
-  t1b=vec2(fract((uv.x+.4)/continuous.x)*continuous.x,uv.y);
-  float sideLine1=Box2(t1b-vec2(.5*continuous.y,3.5),vec2(.5*continuous.y,.1),.03),sideLine2=Box2(t1b-vec2(.5*continuous.y,-3.5),vec2(.5*continuous.y,.1),.03),separationLine1=Box2(params-vec2(.5*t3b.y,0),vec2(.5*t3b.y,.1),.01);
-  return mix(vec3(1.-smoothstep(-length(fwidth(uv)),0.,min(min(sideLine1,sideLine2),separationLine1))),vec3(fract(uv),params.x),0.);
+  t1b=vec2(fract(uv.x/t3b.x)*t3b.x,uv.y-floor(clamp(uv.y,0.,3.5)/3.5)*3.5);
+  params=vec2(fract((uv.x+.4)/continuous.x)*continuous.x,uv.y);
+  float sideLine1=Box2(params-vec2(.5*continuous.y,3.5),vec2(.5*continuous.y,.1),.03),sideLine2=Box2(params-vec2(.5*continuous.y,-3.5),vec2(.5*continuous.y,.1),.03),separationLine1=Box2(t1b-vec2(.5*t3b.y,0),vec2(.5*t3b.y,.1),.01);
+  return 1.-smoothstep(-.01,.01,min(min(sideLine1,sideLine2),separationLine1));
+}
+material roadMaterial(vec2 uv)
+{
+  vec2 laneUV=uv/3.5;
+  float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
+  tireTrails=mix(tireTrails,smoothstep(0.,1.,tireTrails),.25);
+  float largeScaleNoise=smoothstep(-.25,1.,fBm(laneUV*vec2(15,.1),2,.7,.4));
+  tireTrails=mix(tireTrails,largeScaleNoise,.2);
+  largeScaleNoise=fBm(laneUV*vec2(150,6),1,1.,1.);
+  tireTrails=mix(tireTrails,largeScaleNoise,.1);
+  largeScaleNoise=mix(.8,.4,tireTrails);
+  vec3 color=vec3(mix(vec3(.11,.105,.1),vec3(.15),tireTrails));
+  tireTrails=roadMarkings(uv.yx);
+  color=mix(color,vec3(.5),tireTrails);
+  largeScaleNoise=mix(largeScaleNoise,.7,tireTrails);
+  return material(0,color,largeScaleNoise);
 }
 float smoothTerrainHeight(vec2 p)
 {
@@ -691,14 +707,10 @@ material computeMaterial(float mid,vec3 p,vec3 N)
 {
   if(mid==0.)
     {
-      vec3 color=pow(vec3(67,81,70)/255.*1.5,vec3(2.2));
       vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
-      float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
-      vec3 roadColor=vec3(0);
-      if(isRoad>0.)
-        roadColor=roadPattern(splineUV.zx);
-      color=mix(color,roadColor,isRoad);
-      return material(0,color,.5);
+      return 1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x))>0.?
+        roadMaterial(splineUV.xz):
+        material(0,pow(vec3(67,81,70)/255.*1.5,vec3(2.2)),.5);
     }
   return IsMoto(mid)?
     p=worldToMoto(p,true,iTime),N=worldToMoto(N,false,iTime),motoMaterial(mid,p,N,iTime):
