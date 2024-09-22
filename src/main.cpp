@@ -236,9 +236,10 @@ int __cdecl main(int argc, char* argv[])
 		editor.updateShaders(&shaderMain, &shaderPostProcess, false);
 #endif
 
-#define ESC GetAsyncKeyState(VK_ESCAPE)
 #ifdef EDITOR_CONTROLS // disable escape in editor mode
 	#define ESC false
+#else
+	#define ESC GetAsyncKeyState(VK_ESCAPE)
 #endif
 
 #ifdef SOUND_ON
