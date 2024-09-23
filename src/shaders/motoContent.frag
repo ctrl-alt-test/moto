@@ -229,7 +229,10 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
-        return material(MATERIAL_TYPE_EMISSIVE, isLight * vec3(1., 0., 0.), 0.5);
+        vec2 lightUV = fract(68.*p.yz + vec2(0.6, 0.)) * 2. - 1.;
+        float pattern = smoothstep(0.2, 1., sqrt(length(lightUV)));
+        vec3 luminance = mix(vec3(1., 0.005, 0.02), vec3(0.02, 0., 0.), pattern);
+        return material(MATERIAL_TYPE_EMISSIVE, isLight * luminance, 0.5);
     }
     if (mid == MOTO_EXHAUST_ID)
     {
