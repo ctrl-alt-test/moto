@@ -114,103 +114,84 @@ vec3 cookTorrance(
 	return F * (D * G * 0.25 / max(1e-8, NdotV * NdotL));
 }
 
-vec3 coneLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
+vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
 {
-    vec3 L0 = l.p0 - p;
-    float d0 = length(L0);
-    vec3 L = L0 / d0;
+    vec3 L, irradiance;
+    float NdotL;
 
-    float NdotL = dot(N, L);
+    if (l.cosAngle != -1.0)
+    {
+        vec3 L0 = l.p0 - p;
+        float d0 = length(L0);
+        L = L0 / d0;
+
+        NdotL = dot(N, L);
+
+        vec3 radiant_intensity = l.color * l.luminance;
+        radiant_intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
+        radiant_intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
+        irradiance = radiant_intensity * NdotL;
+    }
+    else
+    {
+        vec3 L0 = l.p0 - p;
+        vec3 L1 = l.p1 - p;
+        float d0 = length(L0);
+        float d1 = length(L1);
+
+        // Approximating what the impact of the light will be.
+        // This approximation assumes a diffuse material. In case
+        // of artifacts with shiny materials, maybe the area can
+        // be elongated based on the roughness.
+        //float roughContribution = dot(luminance, vec3(1.0)) * (0.5 * dot(N, L0) / dot(L0, L0));
+        //if (roughContribution * 1000.0 < 1.0) return vec3(0.);
+        float falloff = 1.0;//smoothstep(0.001, 0.002, roughContribution);
+
+        // DEBUG:
+        //if (p.x < 0.) return vec3(roughContribution);
+    
+        float NdotL0 = dot(N, L0) / d0;
+        float NdotL1 = dot(N, L1) / d1;
+
+        float angularContribution = 2. * clamp((NdotL0 + NdotL1) / 2., 0., 1.);
+        float geometricAttenuation = d0 * d1 + dot(L0, L1);
+        float contribution = angularContribution / geometricAttenuation;
+        // The Karis paper has a +2 term in the bottom part,
+        // but I found the result to better match point lights
+        // when the length is zero.
+        // Then again, there could be an implementation error.
+
+        contribution *= falloff;
+        if (contribution <= 0.)
+        {
+            return vec3(0.);
+        }
+
+        vec3 luminance = l.color * l.luminance;
+        irradiance = luminance * contribution;
+
+        vec3 Ld = l.p1 - l.p0;
+        vec3 R = reflect(-V, N);
+        float RdotLd = dot(R, Ld);
+    
+        float t = clamp((dot(R, L0) * RdotLd - dot(L0, Ld)) / (dot(Ld, Ld) - RdotLd * RdotLd), 0., 1.);
+
+        // Most representative light direction
+        L = normalize(mix(L0, L1, t));
+        NdotL = dot(N, L);
+    }
+
     if (NdotL <= 0.)
         return vec3(0.);
 
-    vec3 intensity = l.color * l.luminance;
-    intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
-    intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
-    vec3 radiance = intensity * NdotL;
-
-    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
-    {
-        float exponent = 1e3;
-        float normalisationFactor = (exponent + 2.) / 2.;
-        return 0.1*radiance * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
-    }
-
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.color;
-    vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
+    vec3 spec = cookTorrance(f0, roughness, NcrossH, VdotH, NdotL, NdotV);
 
-    return radiance * (diff + spec);
-}
-
-vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
-{
-    vec3 L0 = l.p0 - p;
-    vec3 L1 = l.p1 - p;
-    float d0 = length(L0);
-    float d1 = length(L1);
-
-    vec3 luminance = l.color * l.luminance;
-
-    // Approximating what the impact of the light will be.
-    // This approximation assumes a diffuse material. In case
-    // of artifacts with shiny materials, maybe the area can
-    // be elongated based on the roughness.
-    //float roughContribution = dot(luminance, vec3(1.0)) * (0.5 * dot(N, L0) / dot(L0, L0));
-    //if (roughContribution * 1000.0 < 1.0) return vec3(0.);
-    float falloff = 1.0;//smoothstep(0.001, 0.002, roughContribution);
-
-    // DEBUG:
-    //if (p.x < 0.) return vec3(roughContribution);
-    
-    float NdotL0 = dot(N, L0) / d0;
-    float NdotL1 = dot(N, L1) / d1;
-
-    float topPart = 2. * clamp((NdotL0 + NdotL1) / 2., 0., 1.);
-    float bottomPart = d0 * d1 + dot(L0, L1);
-    float contribution = topPart / bottomPart;
-    // The Karis paper has a +2 term in the bottom part,
-    // but I found the result to better match point lights
-    // when the length is zero.
-    // Then again, there could be an implementation error.
-
-    if (contribution <= 0.)
-    {
-        return vec3(0.);
-    }
-
-    vec3 irradiance = luminance * contribution * falloff;
-
-    vec3 Ld = l.p1 - l.p0;
-    vec3 R = reflect(-V, N);
-    float RdotLd = dot(R, Ld);
-    
-    float t = clamp((dot(R, L0) * RdotLd - dot(L0, Ld)) / (dot(Ld, Ld) - RdotLd * RdotLd), 0., 1.);
-    vec3 Lmrp = mix(L0, L1, t);
-
-    vec3 L = normalize(Lmrp);
-    float NdotL = clamp(dot(N, L), 0., 1.);
-
-    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
-    {
-        float exponent = 100.;
-        float normalisationFactor = (exponent + 2.) / 2.;
-        return irradiance * NdotL * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
-    }
-
-    vec3 H = normalize(L + V);
-    vec3 NcrossH = cross(N, H);
-    float VdotH = clamp(dot(V, H), 0., 1.);
-    float NdotV = clamp(dot(N, V), 0., 1.);
-
-    vec3 diff = m.color;
-    vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
-
-    return irradiance * (diff + spec);
+    return irradiance * (albedo + spec);
 }
 
 // -------------------------------------------------------

@@ -179,9 +179,15 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     }
 
     vec3 f0 = vec3(0.04);
-    if (m.type == MATERIAL_TYPE_METALLIC || m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    if (m.type == MATERIAL_TYPE_METALLIC)
     {
         f0 = m.color;
+    }
+
+    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        f0 = m.color;
+        N = V;
     }
 
     vec3 radiance = emissive;
@@ -210,14 +216,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     // Direct lighting:
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
-        if (lights[i].cosAngle == -1.0)
-        {
-            radiance += rodLightContribution(m, lights[i], p, N, V);
-        }
-        else
-        {
-            radiance += coneLightContribution(m, lights[i], p, N, V);
-        }
+        radiance += lightContribution(lights[i], p, V, N, albedo, f0, m.roughness);
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);
