@@ -163,7 +163,13 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     vec3 emissive = vec3(0.);
     if (m.type == MATERIAL_TYPE_EMISSIVE)
     {
-        emissive = m.color;
+        float aligned = clamp(dot(V, N), 0., 1.);
+        float aligned4 = aligned * aligned;
+        aligned4 *= aligned4;
+        float aligned8 = aligned4 * aligned4;
+        aligned8 *= aligned8;
+        aligned8 *= aligned8;
+        emissive = m.color * mix(aligned*0.1 + aligned4, 1., aligned8);
     }
 
     vec3 albedo = vec3(0.);
