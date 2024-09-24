@@ -359,27 +359,27 @@ vec2 driverShape(vec3 p)
 vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 {
     vec2 d = vec2(1e6, MOTO_WHEEL_ID);
-    float frontWheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
+    float wheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
 
-    if (frontWheel < 0.25)
+    if (wheel < 0.25)
     {
         p.z = abs(p.z);
         float h;
         float cyl = Segment3(p, vec3(0.0), vec3(0.0, 0.0, 1.0), h);
-        frontWheel = -smin(-frontWheel, cyl - innerRadius, 0.01);
+        wheel = -smin(-wheel, cyl - innerRadius, 0.01);
 
         /**/
         // Note: the following group of lines is 1 byte smaller written as
-        frontWheel = min(frontWheel, -min(min(min(0.15 - cyl, cyl - 0.08), p.z - 0.04), -p.z + 0.05));
+        wheel = min(wheel, -min(min(min(0.15 - cyl, cyl - 0.08), p.z - 0.04), -p.z + 0.05));
         /*/
-        float frontBreak = cyl - 0.15;
-        frontBreak = -min(-frontBreak, cyl - 0.08);
-        frontBreak = -min(-frontBreak, -p.z + 0.05);
-        frontBreak = -min(-frontBreak, p.z - 0.04);
-        frontWheel = min(frontWheel, frontBreak);
+        float breakDisc = cyl - 0.15;
+        breakDisc = -min(-breakDisc, cyl - 0.08);
+        breakDisc = -min(-breakDisc, -p.z + 0.05);
+        breakDisc = -min(-breakDisc, p.z - 0.04);
+        wheel = min(wheel, breakDisc);
         /**/
     }
-    return vec2(frontWheel, MOTO_WHEEL_ID);
+    return vec2(wheel, MOTO_WHEEL_ID);
 }
 
 vec2 motoShape(vec3 p)

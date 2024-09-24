@@ -71,7 +71,7 @@ struct light
     vec3 color;
     float cosAngle; // -1 for rod light.
     float collimation;
-    float luminance;
+    float intensity;
 };
 
 const int MATERIAL_TYPE_DIELECTRIC = 0;
@@ -127,7 +127,7 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
 
         NdotL = dot(N, L);
 
-        vec3 radiant_intensity = l.color * l.luminance;
+        vec3 radiant_intensity = l.color * l.intensity;
         radiant_intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
         radiant_intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
         irradiance = radiant_intensity * NdotL;
@@ -143,7 +143,7 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
         // This approximation assumes a diffuse material. In case
         // of artifacts with shiny materials, maybe the area can
         // be elongated based on the roughness.
-        //float roughContribution = dot(luminance, vec3(1.0)) * (0.5 * dot(N, L0) / dot(L0, L0));
+        //float roughContribution = dot(intensity, vec3(1.0)) * (0.5 * dot(N, L0) / dot(L0, L0));
         //if (roughContribution * 1000.0 < 1.0) return vec3(0.);
         float falloff = 1.0;//smoothstep(0.001, 0.002, roughContribution);
 
@@ -167,8 +167,8 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
             return vec3(0.);
         }
 
-        vec3 luminance = l.color * l.luminance;
-        irradiance = luminance * contribution;
+        vec3 radiant_intensity = l.color * l.intensity;
+        irradiance = radiant_intensity * contribution;
 
         vec3 Ld = l.p1 - l.p0;
         vec3 R = reflect(-V, N);
@@ -435,18 +435,6 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
     
     return res;
 }
-
-/*
-float DistanceFromBezierAABB(vec2 p, vec2 A, vec2 B, vec2 C)
-{
-    vec4 aabb = BezierAABB(A, B, C);
-
-    vec2 center = (aabb.xy + aabb.zw) / 2.0;
-    vec2 size = aabb.zw - aabb.xy;
-
-    return Box2(p - center, size / 2.0, 0.0);
-}
-*/
 
 // -------------------------------------------------------
 // Raymarching functions

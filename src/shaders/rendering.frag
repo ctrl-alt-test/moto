@@ -72,11 +72,11 @@ void setLights()
     dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
     dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
 
-    vec3 luminanceHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.93, 10.0, 20.);
+    vec3 intensityHeadLight = vec3(1.);
+    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.93, 10.0, 20.);
 
-    vec3 luminanceBreakLight = vec3(1., 0., 0.);
-    lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);
+    vec3 intensityBreakLight = vec3(1., 0., 0.);
+    lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.7, 2.0, 0.1);
 }
 
 // -------------------------------------------------------
@@ -163,6 +163,8 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     vec3 emissive = vec3(0.);
     if (m.type == MATERIAL_TYPE_EMISSIVE)
     {
+        // Stronger luminance in the direction of the normal:
+        // https://graphtoy.com/?f1(x,t)=mix(0.1*x+pow(x,4),1,pow(x,8))&coords=0.4,0.4,1
         float aligned = clamp(dot(V, N), 0., 1.);
         float aligned4 = aligned * aligned;
         aligned4 *= aligned4;
