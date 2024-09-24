@@ -2,7 +2,7 @@ vec3 motoPos;
 vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
-vec3 dirHeadLight = normalize(vec3(1.0, -0.22, 0.0));
+vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
 vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 
 // Moto position functions

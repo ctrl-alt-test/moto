@@ -62,21 +62,21 @@ vec2 sceneSDF(vec3 p, float current_t)
 void setLights()
 {
 #ifdef ENABLE_DAY_MODE
-    lights[0] = light(moonDirection * 1e3, moonDirection, sunLightColor, 0., 1e3, 10.);
+    lights[0] = light(moonDirection * 1e3, moonDirection, sunLightColor, 0., 0., 1e3, 10.);
 #else
-    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 1e10, 0.02);
+    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 0., 1e10, 0.02);
 #endif
 
-    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot, true, iTime);
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);
     vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
     dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
     dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
 
     vec3 intensityHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.93, 10.0, 20.);
+    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 20.);
 
     vec3 intensityBreakLight = vec3(1., 0., 0.);
-    lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.7, 2.0, 0.1);
+    lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.3, 0.9, 2.0, 0.05);
 }
 
 // -------------------------------------------------------

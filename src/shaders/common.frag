@@ -69,7 +69,8 @@ struct light
     vec3 p0;
     vec3 p1; // End position for rod light, direction for cone light.
     vec3 color;
-    float cosAngle; // -1 for rod light.
+    float cosAngleStart; // -1 for rod light.
+    float cosAngleEnd; // -1 for rod light.
     float collimation;
     float intensity;
 };
@@ -119,21 +120,35 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
     vec3 L, irradiance;
     float NdotL;
 
-    if (l.cosAngle != -1.0)
+    if (l.cosAngleStart != -1.0)
     {
+        //
+        // Cone light contribution
+        //
         vec3 L0 = l.p0 - p;
         float d0 = length(L0);
         L = L0 / d0;
 
         NdotL = dot(N, L);
 
+        float LdotD = dot(L, -l.p1);
+        vec3 freq = 180. + vec3(0., .4, .8);
+        float angleFallOff = smoothstep(l.cosAngleStart, l.cosAngleEnd, LdotD);
+        angleFallOff *= angleFallOff;
+        angleFallOff *= angleFallOff;
+        angleFallOff *= angleFallOff;
+
         vec3 radiant_intensity = l.color * l.intensity;
-        radiant_intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
+        radiant_intensity *= (sin(freq/LdotD) * 0.5 + 0.5) * 0.2 + 0.8;
+        radiant_intensity *= angleFallOff;
         radiant_intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
         irradiance = radiant_intensity * NdotL;
     }
     else
     {
+        //
+        // Rod light contribution
+        //
         vec3 L0 = l.p0 - p;
         vec3 L1 = l.p1 - p;
         float d0 = length(L0);
