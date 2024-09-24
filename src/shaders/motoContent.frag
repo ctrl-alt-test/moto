@@ -251,7 +251,7 @@ material motoMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
-        float isLight = smoothstep(0.9, 0.95, N.x);
+        float isLight = smoothstep(0., 0.01, N.x - 0.94);
         vec3 luminance = isLight * vec3(1., 0.95, 0.9);
 
         float isDashboard = smoothstep(0.9, 0.95, -N.x + 0.4 * N.y - 0.07);
@@ -393,7 +393,7 @@ vec2 driverShape(vec3 p)
     return vec2(d, MOTO_DRIVER_ID);
 }
 
-vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
+vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius, vec3 innerPart)
 {
     vec2 d = vec2(1e6, MOTO_WHEEL_ID);
     float wheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
@@ -415,6 +415,7 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
         breakDisc = -min(-breakDisc, p.z - 0.04);
         wheel = min(wheel, breakDisc);
         /**/
+        wheel = min(wheel, Ellipsoid(p, innerPart));
     }
     return vec2(wheel, MOTO_WHEEL_ID);
 }
@@ -448,13 +449,13 @@ vec2 motoShape(vec3 p)
     // Front wheel
     if (true)
     {
-        d = MinDist(d, wheelShape(p - frontWheelPos, frontWheelRadius, frontWheelTireRadius, 0.22));
+        d = MinDist(d, wheelShape(p - frontWheelPos, frontWheelRadius, frontWheelTireRadius, 0.22, vec3(0.02, 0.02, 0.12)));
     }
 
     // Rear wheel and its break light
     if (true)
     {
-        d = MinDist(d, wheelShape(p - vec3(-0.85, rearWheelRadius + rearWheelTireRadius, 0.0), rearWheelRadius, rearWheelTireRadius, 0.18));
+        d = MinDist(d, wheelShape(p - vec3(-0.85, rearWheelRadius + rearWheelTireRadius, 0.0), rearWheelRadius, rearWheelTireRadius, 0.18, vec3(0.2, 0.2, 0.01)));
     
         // Break light
         if (true)

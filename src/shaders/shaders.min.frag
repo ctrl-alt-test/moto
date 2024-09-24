@@ -513,7 +513,7 @@ material motoMaterial(float mid,vec3 p,vec3 N)
 {
   if(mid==2.)
     {
-      vec3 luminance=smoothstep(.9,.95,N.x)*vec3(1,.95,.9);
+      vec3 luminance=smoothstep(0.,.01,N.x-.94)*vec3(1,.95,.9);
       float isDashboard=smoothstep(.9,.95,-N.x+.4*N.y-.07);
       if(isDashboard>0.)
         {
@@ -601,7 +601,7 @@ vec2 driverShape(vec3 p)
   }
   return vec2(d,7);
 }
-vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius)
+vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3 innerPart)
 {
   wheelRadius=Torus(p.yzx,vec2(wheelRadius,tireRadius));
   if(wheelRadius<.25)
@@ -609,7 +609,7 @@ vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius)
       p.z=abs(p.z);
       float h;
       h=Segment3(p,vec3(0),vec3(0,0,1),h);
-      wheelRadius=min(-smin(-wheelRadius,h-innerRadius,.01),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05));
+      wheelRadius=min(min(-smin(-wheelRadius,h-innerRadius,.01),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05)),Ellipsoid(p,innerPart));
     }
   return vec2(wheelRadius,4);
 }
@@ -621,8 +621,8 @@ vec2 motoShape(vec3 p)
     return vec2(boundingSphere-1.5,1);
   vec2 d=vec2(1e6,1);
   vec3 frontWheelPos=vec3(.9,.33,0);
-  d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22));
-  d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18));
+  d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22,vec3(.02,.02,.12)));
+  d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18,vec3(.2,.2,.01)));
   {
     vec3 pBreak=p-breakLightOffsetFromMotoRoot;
     d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),3));
