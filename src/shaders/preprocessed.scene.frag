@@ -959,13 +959,17 @@ vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
 vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
 vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
+float motoYaw;
+float motoPitch;
+float motoRoll;
+
 
 
 vec3 motoToWorld(vec3 v, bool isPos, float time)
 {
-    float angle = atan(motoDir.z, motoDir.x);
-    
-    v.xz *= Rotation(-angle);
+    v.xy *= Rotation(-motoPitch);
+    v.yz *= Rotation(-motoRoll);
+    v.xz *= Rotation(-motoYaw);
 
     if (isPos)
     {
@@ -983,9 +987,9 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
         v -= motoPos;
         v.z -= 2. + 0.5*sin(time);
     }
-    float angle = atan(motoDir.z, motoDir.x);
-    
-    v.xz *= Rotation(angle);
+    v.xz *= Rotation(motoYaw);
+    v.yz *= Rotation(motoRoll);
+    v.xy *= Rotation(motoPitch);
     return v;
 }
 
@@ -1792,6 +1796,9 @@ void main()
     nextPos.xz = GetPositionOnCurve(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
+    motoYaw = atan(motoDir.z, motoDir.x);
+    motoPitch = atan(motoDir.y, length(motoDir.zx));
+    motoRoll = 0.0;
 
     setLights();
 

@@ -68,6 +68,9 @@ void main()
     nextPos.xz = GetPositionOnCurve(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
+    motoYaw = atan(motoDir.z, motoDir.x);
+    motoPitch = atan(motoDir.y, length(motoDir.zx));
+    motoRoll = 0.0;//0.1*PI * sin(time);
 
     setLights();
 

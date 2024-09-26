@@ -410,10 +410,12 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   return vec2(tree(p,localP,id,splineUV,current_t),0);
 }
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+float motoYaw,motoPitch,motoRoll;
 vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
-  float angle=atan(motoDir.z,motoDir.x);
-  v.xz*=Rotation(-angle);
+  v.xy*=Rotation(-motoPitch);
+  v.yz*=Rotation(-motoRoll);
+  v.xz*=Rotation(-motoYaw);
   if(isPos)
     v+=motoPos,v.z+=2.+.5*sin(time);
   return v;
@@ -422,8 +424,9 @@ vec3 worldToMoto(vec3 v,bool isPos,float time)
 {
   if(isPos)
     v-=motoPos,v.z-=2.+.5*sin(time);
-  time=atan(motoDir.z,motoDir.x);
-  v.xz*=Rotation(time);
+  v.xz*=Rotation(motoYaw);
+  v.yz*=Rotation(motoRoll);
+  v.xy*=Rotation(motoPitch);
   return v;
 }
 vec3 meter3(vec2 uv,float value)
@@ -813,6 +816,9 @@ void main()
   nextPos.xz=GetPositionOnCurve(time+.01);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
+  motoYaw=atan(motoDir.z,motoDir.x);
+  motoPitch=atan(motoDir.y,length(motoDir.zx));
+  motoRoll=0.;
   setLights();
   vec3 rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
