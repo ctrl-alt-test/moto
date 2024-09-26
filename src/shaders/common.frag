@@ -90,6 +90,12 @@ struct material
 // -------------------------------------------------------
 // Shading functions
 
+float invV1(float NdotV, float sqrAlpha)
+{
+    return NdotV + sqrt(sqrAlpha + (1.0 - sqrAlpha) * NdotV * NdotV);
+}
+
+
 vec3 cookTorrance(
     vec3 f0,
 	float roughness,
@@ -101,18 +107,18 @@ vec3 cookTorrance(
 	float alpha = roughness * roughness;
     float sqrAlpha = alpha * alpha;
 
+    // Normal distribution term D:
 	float distribution = dot(NcrossH, NcrossH) * (1. - sqrAlpha) + sqrAlpha;
 	float D = sqrAlpha / (PI * distribution * distribution);
 
-	float SmithL = (2. * NdotL) / max(1e-8, NdotL + sqrt(NdotL * NdotL * (1. - sqrAlpha) + sqrAlpha));
-	float SmithV = (2. * NdotV) / max(1e-8, NdotV + sqrt(NdotV * NdotV * (1. - sqrAlpha) + sqrAlpha));
-	float G = SmithL * SmithV;
+    // Visibility term V:
+    float V = 1.0 / (invV1(NdotV, sqrAlpha) * invV1(NdotL, sqrAlpha));
 
+    // Fresnel term F:
 	float x = 1. - VdotH;
-	x = x*x*x*x*x;
-	vec3 F = x + f0 * (1. - x);
+	vec3 F = x + f0 * (1. - x*x*x*x*x);
 
-	return F * (D * G * 0.25 / max(1e-8, NdotV * NdotL));
+	return F * D * V;
 }
 
 vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
