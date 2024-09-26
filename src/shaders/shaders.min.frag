@@ -13,48 +13,55 @@ float PIXEL_ANGLE=camFoV/iResolution.x;
 #define ZERO(iTime)min(0,int(iTime))
 
 const float PI=acos(-1.);
-struct light{vec3 p0;vec3 p1;vec3 color;float cosAngle;float collimation;float luminance;};
-struct material{int type;vec3 color;float roughness;};
-vec3 cookTorrance(float roughness,vec3 NcrossH,float VdotH,float NdotL,float NdotV)
+struct light{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
+struct material{int T;vec3 C;float R;};
+float invV1(float NdotV,float sqrAlpha)
+{
+  return NdotV+sqrt(sqrAlpha+(1.-sqrAlpha)*NdotV*NdotV);
+}
+vec3 cookTorrance(vec3 f0,float roughness,vec3 NcrossH,float VdotH,float NdotL,float NdotV)
 {
   roughness*=roughness;
   roughness*=roughness;
   float distribution=dot(NcrossH,NcrossH)*(1.-roughness)+roughness;
   VdotH=1.-VdotH;
-  VdotH*=VdotH*VdotH*VdotH*VdotH;
-  NcrossH=VdotH+vec3(.04)*(1.-VdotH);
-  return NcrossH*(roughness/(PI*distribution*distribution)*(2.*NdotL/max(1e-8,NdotL+sqrt(NdotL*NdotL*(1.-roughness)+roughness))*(2.*NdotV/max(1e-8,NdotV+sqrt(NdotV*NdotV*(1.-roughness)+roughness))))*.25/max(1e-8,NdotV*NdotL));
+  return(VdotH+f0*(1.-VdotH*VdotH*VdotH*VdotH*VdotH))*(roughness/(PI*distribution*distribution))*(1./(invV1(NdotV,roughness)*invV1(NdotL,roughness)));
 }
-vec3 coneLightContribution(material m,light l,vec3 p,vec3 N,vec3 V)
+vec3 lightContribution(light l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughness)
 {
-  p=l.p0-p;
-  float d0=length(p);
-  p/=d0;
-  float NdotL=dot(N,p);
+  vec3 L,irradiance;
+  float NdotL;
+  if(l.A!=-1.)
+    {
+      vec3 L0=l.P-p;
+      float d0=length(L0);
+      L=L0/d0;
+      NdotL=dot(N,L);
+      float LdotD=dot(L,-l.Q),angleFallOff=smoothstep(l.A,l.B,LdotD);
+      angleFallOff*=angleFallOff;
+      angleFallOff*=angleFallOff;
+      angleFallOff*=angleFallOff;
+      L0=l.C*l.I*((sin((180.+vec3(0,.4,.8))/LdotD)*.5+.5)*.2+.8)*angleFallOff*((1.+l.F)/(l.F+d0*d0));
+      irradiance=L0*NdotL;
+    }
+  else
+    {
+      vec3 L0=l.P-p,L1=l.Q-p;
+      float d0=length(L0),d1=length(L1);
+      d0=2.*clamp((dot(N,L0)/d0+dot(N,L1)/d1)/2.,0.,1.)/(d0*d1+dot(L0,L1));
+      if(d0<=0.)
+        return vec3(0);
+      irradiance=l.C*l.I*d0;
+      vec3 Ld=l.Q-l.P,R=reflect(-V,N);
+      d0=dot(R,Ld);
+      L=normalize(mix(L0,L1,clamp((dot(R,L0)*d0-dot(L0,Ld))/(dot(Ld,Ld)-d0*d0),0.,1.)));
+      NdotL=dot(N,L);
+    }
   if(NdotL<=0.)
     return vec3(0);
-  vec3 radiance=l.color*l.luminance*smoothstep(l.cosAngle,mix(l.cosAngle,1.,.5),dot(p,-l.p1))*((1.+l.collimation)/(l.collimation+d0*d0))*NdotL;
-  if(m.type==3)
-    return.1*radiance*m.color*pow(clamp(dot(V,p),0.,1.),1e3)*501.;
-  p=normalize(p+V);
-  return radiance*(m.color+cookTorrance(m.roughness,cross(N,p),clamp(dot(V,p),0.,1.),NdotL,clamp(dot(N,V),0.,1.)));
-}
-vec3 rodLightContribution(material m,light l,vec3 p,vec3 N,vec3 V)
-{
-  vec3 L0=l.p0-p;
-  p=l.p1-p;
-  float d0=length(L0),d1=length(p);
-  d0=2.*clamp((dot(N,L0)/d0+dot(N,p)/d1)/2.,0.,1.)/(d0*d1+dot(L0,p));
-  if(d0<=0.)
-    return vec3(0);
-  vec3 irradiance=l.color*l.luminance*d0,Ld=l.p1-l.p0,R=reflect(-V,N);
-  d0=dot(R,Ld);
-  Ld=normalize(mix(L0,p,clamp((dot(R,L0)*d0-dot(L0,Ld))/(dot(Ld,Ld)-d0*d0),0.,1.)));
-  d0=clamp(dot(N,Ld),0.,1.);
-  if(m.type==3)
-    return irradiance*d0*m.color*pow(clamp(dot(V,Ld),0.,1.),1e2)*51.;
-  Ld=normalize(Ld+V);
-  return irradiance*(m.color+cookTorrance(m.roughness,cross(N,Ld),clamp(dot(V,Ld),0.,1.),d0,clamp(dot(N,V),0.,1.)));
+  L=normalize(L+V);
+  L=cookTorrance(f0,roughness,cross(N,L),clamp(dot(V,L),0.,1.),NdotL,clamp(dot(N,V),0.,1.));
+  return irradiance*(albedo+L);
 }
 float hash21(vec2 xy)
 {
@@ -402,7 +409,7 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV,current_t),0);
 }
-vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.22,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
   float angle=atan(motoDir.z,motoDir.x);
@@ -504,7 +511,7 @@ material motoMaterial(float mid,vec3 p,vec3 N,float time)
       return material(2,luminance,.15);
     }
   return mid==3.?
-    material(2,smoothstep(.9,.95,-N.x)*vec3(1,0,0),.5):
+    material(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
     mid==6.?
       material(1,vec3(1),.2):
       mid==5.?
@@ -730,12 +737,12 @@ vec2 sceneSDF(vec3 p,float current_t)
 }
 void setLights()
 {
-  lights[0]=light(moonDirection*1e3,moonDirection,moonLightColor,-2.,1e10,.02);
-  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot,true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
+  lights[0]=light(moonDirection*1e3,moonDirection,moonLightColor,-2.,0.,1e10,.02);
+  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
   dirHeadLight=motoToWorld(dirHeadLight,false,iTime);
   dirBreakLight=motoToWorld(dirBreakLight,false,iTime);
-  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.93,10.,20.);
-  lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.7,2.,.1);
+  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.75,.95,10.,20.);
+  lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.3,.9,2.,.05);
 }
 vec3 evalNormal(vec3 p,float t)
 {
@@ -771,22 +778,29 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     return sky(-V);
   material m=computeMaterial(mid,p,N);
   vec3 emissive=vec3(0);
-  if(m.type==2)
-    emissive=m.color;
+  if(m.T==2)
+    {
+      float aligned=clamp(dot(V,N),0.,1.),aligned4=aligned*aligned*aligned*aligned;
+      emissive=m.C*mix(aligned*.1+aligned4,1.,aligned4*aligned4*aligned4*aligned4*aligned4*aligned4*aligned4*aligned4);
+    }
   vec3 albedo=vec3(0);
-  if(m.type==0)
-    albedo=m.color;
+  if(m.T==0)
+    albedo=m.C;
   vec3 f0=vec3(.04);
-  if(m.type==1||m.type==3)
-    f0=m.color;
-  albedo=emissive+nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5)*albedo;
-  if(m.roughness<.25)
-    albedo+=f0*sky(reflect(-V,N));
+  if(m.T==1)
+    f0=m.C;
+  if(m.T==3)
+    f0=m.C,N=V;
+  vec3 I0=nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
+  emissive+=I0*albedo;
+  if(m.R<.25)
+    {
+      vec3 L=reflect(-V,N);
+      emissive+=f0*sky(L);
+    }
   for(int i=0;i<3;++i)
-    albedo=lights[i].cosAngle==-1.?
-      albedo+rodLightContribution(m,lights[i],p,N,V):
-      albedo+coneLightContribution(m,lights[i],p,N,V);
-  return mix(albedo,vec3(.001,.001,.005),1.-exp(-t.x*.01));
+    emissive+=lightContribution(lights[i],p,V,N,albedo,f0,m.R);
+  return mix(emissive,vec3(.001,.001,.005),1.-exp(-t.x*.01));
 }
 void main()
 {

@@ -161,34 +161,31 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     material m = computeMaterial(mid, p, N);
 
     vec3 emissive = vec3(0.);
-    if (m.type == MATERIAL_TYPE_EMISSIVE)
+    if (m.T == MATERIAL_TYPE_EMISSIVE)
     {
         // Stronger luminance in the direction of the normal:
         // https://graphtoy.com/?f1(x,t)=mix(0.1*x+pow(x,4),1,pow(x,8))&coords=0.4,0.4,1
         float aligned = clamp(dot(V, N), 0., 1.);
-        float aligned4 = aligned * aligned;
-        aligned4 *= aligned4;
-        float aligned8 = aligned4 * aligned4;
-        aligned8 *= aligned8;
-        aligned8 *= aligned8;
-        emissive = m.color * mix(aligned*0.1 + aligned4, 1., aligned8);
+        float aligned4 = aligned * aligned * aligned * aligned;
+        float aligned8 = aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4;
+        emissive = m.C * mix(aligned*0.1 + aligned4, 1., aligned8);
     }
 
     vec3 albedo = vec3(0.);
-    if (m.type == MATERIAL_TYPE_DIELECTRIC)
+    if (m.T == MATERIAL_TYPE_DIELECTRIC)
     {
-        albedo = m.color;
+        albedo = m.C;
     }
 
     vec3 f0 = vec3(0.04);
-    if (m.type == MATERIAL_TYPE_METALLIC)
+    if (m.T == MATERIAL_TYPE_METALLIC)
     {
-        f0 = m.color;
+        f0 = m.C;
     }
 
-    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    if (m.T == MATERIAL_TYPE_RETROREFLECTIVE)
     {
-        f0 = m.color;
+        f0 = m.C;
         N = V;
     }
 
@@ -205,7 +202,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     radiance += I0 * albedo;
 
     // Env map:
-    if (m.roughness < 0.25) // Brutal if until there's a roughness dependent reflection.
+    if (m.R < 0.25) // Brutal if until there's a roughness dependent reflection.
     {
         vec3 L = reflect(-V, N);
         // vec3 H = normalize(L + V);
@@ -218,7 +215,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     // Direct lighting:
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
-        radiance += lightContribution(lights[i], p, V, N, albedo, f0, m.roughness);
+        radiance += lightContribution(lights[i], p, V, N, albedo, f0, m.R);
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);

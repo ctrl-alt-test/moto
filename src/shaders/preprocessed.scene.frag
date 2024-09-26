@@ -68,12 +68,13 @@ vec3 palette(float t, vec3 a, vec3 b, vec3 c, vec3 d)
 
 struct light
 {
-    vec3 p0;
-    vec3 p1; 
-    vec3 color;
-    float cosAngle; 
-    float collimation;
-    float luminance;
+    vec3 P; 
+    vec3 Q; 
+    vec3 C; 
+    float A; 
+    float B; 
+    float F; 
+    float I; 
 };
 
 const int MATERIAL_TYPE_DIELECTRIC = 0;
@@ -83,12 +84,18 @@ const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
 
 struct material
 {
-    int type;
-    vec3 color; 
-    float roughness;
+    int T; 
+    vec3 C; 
+    float R; 
 };
 
 
+
+
+float invV1(float NdotV, float sqrAlpha)
+{
+    return NdotV + sqrt(sqrAlpha + (1.0 - sqrAlpha) * NdotV * NdotV);
+}
 
 
 vec3 cookTorrance(
@@ -102,117 +109,112 @@ vec3 cookTorrance(
 	float alpha = roughness * roughness;
     float sqrAlpha = alpha * alpha;
 
+    
 	float distribution = dot(NcrossH, NcrossH) * (1. - sqrAlpha) + sqrAlpha;
 	float D = sqrAlpha / (PI * distribution * distribution);
 
-	float SmithL = (2. * NdotL) / max(1e-8, NdotL + sqrt(NdotL * NdotL * (1. - sqrAlpha) + sqrAlpha));
-	float SmithV = (2. * NdotV) / max(1e-8, NdotV + sqrt(NdotV * NdotV * (1. - sqrAlpha) + sqrAlpha));
-	float G = SmithL * SmithV;
+    
+    float V = 1.0 / (invV1(NdotV, sqrAlpha) * invV1(NdotL, sqrAlpha));
 
+    
 	float x = 1. - VdotH;
-	x = x*x*x*x*x;
-	vec3 F = x + f0 * (1. - x);
+	vec3 F = x + f0 * (1. - x*x*x*x*x);
 
-	return F * (D * G * 0.25 / max(1e-8, NdotV * NdotL));
+	return F * D * V;
 }
 
-vec3 coneLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
+vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
 {
-    vec3 L0 = l.p0 - p;
-    float d0 = length(L0);
-    vec3 L = L0 / d0;
+    vec3 L, irradiance;
+    float NdotL;
 
-    float NdotL = dot(N, L);
+    if (l.A != -1.0)
+    {
+        
+        
+        
+        vec3 L0 = l.P - p;
+        float d0 = length(L0);
+        L = L0 / d0;
+
+        NdotL = dot(N, L);
+
+        float LdotD = dot(L, -l.Q);
+        vec3 freq = 180. + vec3(0., .4, .8);
+        float angleFallOff = smoothstep(l.A, l.B, LdotD);
+        angleFallOff *= angleFallOff;
+        angleFallOff *= angleFallOff;
+        angleFallOff *= angleFallOff;
+
+        vec3 radiant_intensity = l.C * l.I;
+        radiant_intensity *= (sin(freq/LdotD) * 0.5 + 0.5) * 0.2 + 0.8;
+        radiant_intensity *= angleFallOff;
+        radiant_intensity *= (1.0 + l.F) / (l.F + d0 * d0);
+        irradiance = radiant_intensity * NdotL;
+    }
+    else
+    {
+        
+        
+        
+        vec3 L0 = l.P - p;
+        vec3 L1 = l.Q - p;
+        float d0 = length(L0);
+        float d1 = length(L1);
+
+        
+        
+        
+        
+        
+        
+        float falloff = 1.0;
+
+        
+        
+    
+        float NdotL0 = dot(N, L0) / d0;
+        float NdotL1 = dot(N, L1) / d1;
+
+        float angularContribution = 2. * clamp((NdotL0 + NdotL1) / 2., 0., 1.);
+        float geometricAttenuation = d0 * d1 + dot(L0, L1);
+        float contribution = angularContribution / geometricAttenuation;
+        
+        
+        
+        
+
+        contribution *= falloff;
+        if (contribution <= 0.)
+        {
+            return vec3(0.);
+        }
+
+        vec3 radiant_intensity = l.C * l.I;
+        irradiance = radiant_intensity * contribution;
+
+        vec3 Ld = l.Q - l.P;
+        vec3 R = reflect(-V, N);
+        float RdotLd = dot(R, Ld);
+    
+        float t = clamp((dot(R, L0) * RdotLd - dot(L0, Ld)) / (dot(Ld, Ld) - RdotLd * RdotLd), 0., 1.);
+
+        
+        L = normalize(mix(L0, L1, t));
+        NdotL = dot(N, L);
+    }
+
     if (NdotL <= 0.)
         return vec3(0.);
 
-    vec3 intensity = l.color * l.luminance;
-    intensity *= smoothstep(l.cosAngle, mix(l.cosAngle, 1.0, 0.5), dot(L, -l.p1));
-    intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
-    vec3 radiance = intensity * NdotL;
-
-    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
-    {
-        float exponent = 1e3;
-        float normalisationFactor = (exponent + 2.) / 2.;
-        return 0.1*radiance * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
-    }
-
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
     float VdotH = clamp(dot(V, H), 0., 1.);
     float NdotV = clamp(dot(N, V), 0., 1.);
 
-    vec3 diff = m.color;
-    vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
+    vec3 spec = cookTorrance(f0, roughness, NcrossH, VdotH, NdotL, NdotV);
 
-    return radiance * (diff + spec);
-}
-
-vec3 rodLightContribution(material m, light l, vec3 p, vec3 N, vec3 V)
-{
-    vec3 L0 = l.p0 - p;
-    vec3 L1 = l.p1 - p;
-    float d0 = length(L0);
-    float d1 = length(L1);
-
-    vec3 luminance = l.color * l.luminance;
-
-    
-    
-    
-    
-    
-    
-    float falloff = 1.0;
-
-    
-    
-    
-    float NdotL0 = dot(N, L0) / d0;
-    float NdotL1 = dot(N, L1) / d1;
-
-    float topPart = 2. * clamp((NdotL0 + NdotL1) / 2., 0., 1.);
-    float bottomPart = d0 * d1 + dot(L0, L1);
-    float contribution = topPart / bottomPart;
-    
-    
-    
-    
-
-    if (contribution <= 0.)
-    {
-        return vec3(0.);
-    }
-
-    vec3 irradiance = luminance * contribution * falloff;
-
-    vec3 Ld = l.p1 - l.p0;
-    vec3 R = reflect(-V, N);
-    float RdotLd = dot(R, Ld);
-    
-    float t = clamp((dot(R, L0) * RdotLd - dot(L0, Ld)) / (dot(Ld, Ld) - RdotLd * RdotLd), 0., 1.);
-    vec3 Lmrp = mix(L0, L1, t);
-
-    vec3 L = normalize(Lmrp);
-    float NdotL = clamp(dot(N, L), 0., 1.);
-
-    if (m.type == MATERIAL_TYPE_RETROREFLECTIVE)
-    {
-        float exponent = 100.;
-        float normalisationFactor = (exponent + 2.) / 2.;
-        return irradiance * NdotL * m.color * pow(clamp(dot(V, L), 0., 1.), exponent) * normalisationFactor;
-    }
-
-    vec3 H = normalize(L + V);
-    vec3 NcrossH = cross(N, H);
-    float VdotH = clamp(dot(V, H), 0., 1.);
-    float NdotV = clamp(dot(N, V), 0., 1.);
-
-    vec3 diff = m.color;
-    vec3 spec = cookTorrance(vec3(0.04), m.roughness, NcrossH, VdotH, NdotL, NdotV);
-
-    return irradiance * (diff + spec);
+    return irradiance * (albedo + spec);
 }
 
 
@@ -456,8 +458,6 @@ vec4 BezierAABB(vec2 A, vec2 B, vec2 C)
     
     return res;
 }
-
- 
 
 
 
@@ -957,7 +957,7 @@ vec3 motoPos;
 vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
-vec3 dirHeadLight = normalize(vec3(1.0, -0.22, 0.0));
+vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
 vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 
 
@@ -1184,7 +1184,10 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
         float isLight = smoothstep(0.9, 0.95, -N.x);
-        return material(MATERIAL_TYPE_EMISSIVE, isLight * vec3(1., 0., 0.), 0.5);
+        vec2 lightUV = fract(68.*p.yz + vec2(0.6, 0.)) * 2. - 1.;
+        float pattern = smoothstep(0.2, 1., sqrt(length(lightUV)));
+        vec3 luminance = mix(vec3(1., 0.005, 0.02), vec3(0.02, 0., 0.), pattern);
+        return material(MATERIAL_TYPE_EMISSIVE, isLight * luminance, 0.5);
     }
     if (mid == MOTO_EXHAUST_ID)
     {
@@ -1311,21 +1314,21 @@ vec2 driverShape(vec3 p)
 vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 {
     vec2 d = vec2(1e6, MOTO_WHEEL_ID);
-    float frontWheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
+    float wheel = Torus(p.yzx, vec2(wheelRadius, tireRadius));
 
-    if (frontWheel < 0.25)
+    if (wheel < 0.25)
     {
         p.z = abs(p.z);
         float h;
         float cyl = Segment3(p, vec3(0.0), vec3(0.0, 0.0, 1.0), h);
-        frontWheel = -smin(-frontWheel, cyl - innerRadius, 0.01);
+        wheel = -smin(-wheel, cyl - innerRadius, 0.01);
 
          
         
-        frontWheel = min(frontWheel, -min(min(min(0.15 - cyl, cyl - 0.08), p.z - 0.04), -p.z + 0.05));
+        wheel = min(wheel, -min(min(min(0.15 - cyl, cyl - 0.08), p.z - 0.04), -p.z + 0.05));
          
     }
-    return vec2(frontWheel, MOTO_WHEEL_ID);
+    return vec2(wheel, MOTO_WHEEL_ID);
 }
 
 vec2 motoShape(vec3 p)
@@ -1608,19 +1611,19 @@ void setLights()
 {
 // Inactive conditional block: #ifdef ENABLE_DAY_MODE
 // Active conditional block: #else
-    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 1e10, 0.02);
+    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 0., 1e10, 0.02);
 // End of active block.
 
-    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot, true, iTime);
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);
     vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
     dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
     dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
 
-    vec3 luminanceHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, luminanceHeadLight, 0.93, 10.0, 20.);
+    vec3 intensityHeadLight = vec3(1.);
+    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 20.);
 
-    vec3 luminanceBreakLight = vec3(1., 0., 0.);
-    lights[2] = light(posBreakLight, dirBreakLight, luminanceBreakLight, 0.7, 2.0, 0.1);
+    vec3 intensityBreakLight = vec3(1., 0., 0.);
+    lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.3, 0.9, 2.0, 0.05);
 }
 
 
@@ -1701,21 +1704,32 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     material m = computeMaterial(mid, p, N);
 
     vec3 emissive = vec3(0.);
-    if (m.type == MATERIAL_TYPE_EMISSIVE)
+    if (m.T == MATERIAL_TYPE_EMISSIVE)
     {
-        emissive = m.color;
+        
+        
+        float aligned = clamp(dot(V, N), 0., 1.);
+        float aligned4 = aligned * aligned * aligned * aligned;
+        float aligned8 = aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4 * aligned4;
+        emissive = m.C * mix(aligned*0.1 + aligned4, 1., aligned8);
     }
 
     vec3 albedo = vec3(0.);
-    if (m.type == MATERIAL_TYPE_DIELECTRIC)
+    if (m.T == MATERIAL_TYPE_DIELECTRIC)
     {
-        albedo = m.color;
+        albedo = m.C;
     }
 
     vec3 f0 = vec3(0.04);
-    if (m.type == MATERIAL_TYPE_METALLIC || m.type == MATERIAL_TYPE_RETROREFLECTIVE)
+    if (m.T == MATERIAL_TYPE_METALLIC)
     {
-        f0 = m.color;
+        f0 = m.C;
+    }
+
+    if (m.T == MATERIAL_TYPE_RETROREFLECTIVE)
+    {
+        f0 = m.C;
+        N = V;
     }
 
     vec3 radiance = emissive;
@@ -1729,7 +1743,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     radiance += I0 * albedo;
 
     
-    if (m.roughness < 0.25) 
+    if (m.R < 0.25) 
     {
         vec3 L = reflect(-V, N);
         
@@ -1742,14 +1756,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
-        if (lights[i].cosAngle == -1.0)
-        {
-            radiance += rodLightContribution(m, lights[i], p, N, V);
-        }
-        else
-        {
-            radiance += coneLightContribution(m, lights[i], p, N, V);
-        }
+        radiance += lightContribution(lights[i], p, V, N, albedo, f0, m.R);
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);

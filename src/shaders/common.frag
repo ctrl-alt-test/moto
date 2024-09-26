@@ -66,13 +66,13 @@ vec3 stepsToColor(int steps)
 
 struct light
 {
-    vec3 p0;
-    vec3 p1; // End position for rod light, direction for cone light.
-    vec3 color;
-    float cosAngleStart; // -1 for rod light.
-    float cosAngleEnd; // -1 for rod light.
-    float collimation;
-    float intensity;
+    vec3 P; // Start position for rod light, position for cone light.
+    vec3 Q; // End position for rod light, direction for cone light.
+    vec3 C; // Color
+    float A; // Start cos angle; -1 for rod light.
+    float B; // End cos angle.
+    float F; // Collimation factor (point light vs focused torch light).
+    float I; // intensity
 };
 
 const int MATERIAL_TYPE_DIELECTRIC = 0;
@@ -82,9 +82,9 @@ const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
 
 struct material
 {
-    int type;
-    vec3 color; // Albedo for dielectric, metallic and retroreflective, luminance for emissive.
-    float roughness;
+    int T; // Type
+    vec3 C; // Albedo for dielectric, metallic and retroreflective, luminance for emissive.
+    float R; // Roughness
 };
 
 // -------------------------------------------------------
@@ -126,28 +126,28 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
     vec3 L, irradiance;
     float NdotL;
 
-    if (l.cosAngleStart != -1.0)
+    if (l.A != -1.0)
     {
         //
         // Cone light contribution
         //
-        vec3 L0 = l.p0 - p;
+        vec3 L0 = l.P - p;
         float d0 = length(L0);
         L = L0 / d0;
 
         NdotL = dot(N, L);
 
-        float LdotD = dot(L, -l.p1);
+        float LdotD = dot(L, -l.Q);
         vec3 freq = 180. + vec3(0., .4, .8);
-        float angleFallOff = smoothstep(l.cosAngleStart, l.cosAngleEnd, LdotD);
+        float angleFallOff = smoothstep(l.A, l.B, LdotD);
         angleFallOff *= angleFallOff;
         angleFallOff *= angleFallOff;
         angleFallOff *= angleFallOff;
 
-        vec3 radiant_intensity = l.color * l.intensity;
+        vec3 radiant_intensity = l.C * l.I;
         radiant_intensity *= (sin(freq/LdotD) * 0.5 + 0.5) * 0.2 + 0.8;
         radiant_intensity *= angleFallOff;
-        radiant_intensity *= (1.0 + l.collimation) / (l.collimation + d0 * d0);
+        radiant_intensity *= (1.0 + l.F) / (l.F + d0 * d0);
         irradiance = radiant_intensity * NdotL;
     }
     else
@@ -155,8 +155,8 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
         //
         // Rod light contribution
         //
-        vec3 L0 = l.p0 - p;
-        vec3 L1 = l.p1 - p;
+        vec3 L0 = l.P - p;
+        vec3 L1 = l.Q - p;
         float d0 = length(L0);
         float d1 = length(L1);
 
@@ -188,10 +188,10 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
             return vec3(0.);
         }
 
-        vec3 radiant_intensity = l.color * l.intensity;
+        vec3 radiant_intensity = l.C * l.I;
         irradiance = radiant_intensity * contribution;
 
-        vec3 Ld = l.p1 - l.p0;
+        vec3 Ld = l.Q - l.P;
         vec3 R = reflect(-V, N);
         float RdotLd = dot(R, Ld);
     
