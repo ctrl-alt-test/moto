@@ -1,7 +1,7 @@
 #version 150
 
 
-#define ENABLE_STOCHASTIC_MOTION_BLUR
+const int ENABLE_STOCHASTIC_MOTION_BLUR = 1;
 
 
 
@@ -1785,9 +1785,9 @@ void main()
     vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     float time = iTime;
-// Active conditional block: #ifdef ENABLE_STOCHASTIC_MOTION_BLUR
-    time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
-// End of active block.
+    if (ENABLE_STOCHASTIC_MOTION_BLUR) {
+        time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
+    }
 
     float ti = fract(time * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);

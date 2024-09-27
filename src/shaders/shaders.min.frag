@@ -1,7 +1,5 @@
 // src\shaders\preprocessed.scene.frag#version 150
 
-#define ENABLE_STOCHASTIC_MOTION_BLUR
-
 const vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 in vec3 camPos,camTa;

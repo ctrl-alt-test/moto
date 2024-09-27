@@ -1,7 +1,7 @@
 #version 150
 
 //#define DEBUG 1
-#define ENABLE_STOCHASTIC_MOTION_BLUR
+const int ENABLE_STOCHASTIC_MOTION_BLUR = 1;
 // #define ENABLE_STEP_COUNT
 // #define ENABLE_DAY_MODE
 // #define DISABLE_MOTO
@@ -57,9 +57,9 @@ void main()
     vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     float time = iTime;
-#ifdef ENABLE_STOCHASTIC_MOTION_BLUR
-    time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
-#endif
+    if (ENABLE_STOCHASTIC_MOTION_BLUR) {
+        time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
+    }
 
     float ti = fract(time * 0.1);
     motoPos.xz = GetPositionOnCurve(ti);
