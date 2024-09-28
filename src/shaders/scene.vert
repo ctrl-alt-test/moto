@@ -65,6 +65,7 @@ float verticalBump()
     return valueNoise(6.*iTime).x;
 }
 
+const float SHOT_SIDE_FRONT = 0.0;
 void sideShotFront()
 {
     vec2 p = vec2(0.95, 0.5);
@@ -75,6 +76,7 @@ void sideShotFront()
     camProjectionRatio = 2.;
 }
 
+const float SHOT_SIDE_REAR = 1.0;
 void sideShotRear()
 {
     vec2 p = vec2(-1., 0.5);
@@ -85,6 +87,7 @@ void sideShotRear()
     camProjectionRatio = 2.;
 }
 
+const float SHOT_DASHBOARD_FPS = 2.0;
 void fpsDashboardShot()
 {
     vec2 noise = valueNoise(5.*iTime);
@@ -97,6 +100,7 @@ void fpsDashboardShot()
     camProjectionRatio = 0.6;
 }
 
+const float SHOT_DASHBOARD_UNDER_SHOULDER = 3.0;
 // t should go from 0 to 1 in roughly 4 seconds
 void dashBoardUnderTheShoulderShot(float t)
 {
@@ -106,6 +110,7 @@ void dashBoardUnderTheShoulderShot(float t)
     camProjectionRatio = 1.5;
 }
 
+const float SHOT_FRONT_WHEEL_CLOSEUP = 4.0;
 void frontWheelCloseUpShot()
 {
     camPos = vec3(-0.1, 0.5, 0.5);
@@ -119,6 +124,7 @@ void frontWheelCloseUpShot()
     camShowDriver = 0.;
 }
 
+const float SHOT_OVER_THE_HEAD = 5.0;
 void overTheHeadShot()
 {
     camPos = vec3(-1.4, 1.7, 0.);
@@ -129,6 +135,7 @@ void overTheHeadShot()
     camProjectionRatio = 2.;
 }
 
+const float SHOT_TOP_DOWN = 6.0;
 void topDownView() // useful for debugging & visualizing the spline
 {
     camPos = vec3(-5., 37., 0.);
@@ -139,6 +146,7 @@ void topDownView() // useful for debugging & visualizing the spline
     camProjectionRatio = 0.5;
 }
 
+const float SHOT_FROM_BEHIND = 7.0;
 void viewFromBehind(float t_in_shot)
 {
     camTa = vec3(1., 1., 0.);
@@ -146,6 +154,7 @@ void viewFromBehind(float t_in_shot)
     camProjectionRatio = 1.;
 }
 
+const float SHOT_FACE = 8.0;
 void faceView(float t_in_shot)
 {
     camTa = vec3(1., 1.5, 0.);
@@ -193,35 +202,35 @@ void main(void)
     float shot = floor(t);
     float t_in_shot = fract(t);
 
-    if (shot == 0.)
+    if (shot == SHOT_SIDE_REAR)
     {
         sideShotRear();
     }
-    if (shot == 1.)
+    if (shot == SHOT_SIDE_FRONT)
     {
         sideShotFront();
     }
-    if (shot == 2.)
+    if (shot == SHOT_FRONT_WHEEL_CLOSEUP)
     {
         frontWheelCloseUpShot();
     }
-    if (shot == 3.)
+    if (shot == SHOT_OVER_THE_HEAD)
     {
         overTheHeadShot();
     }
-    if (shot == 4.)
+    if (shot == SHOT_DASHBOARD_FPS)
     {
         fpsDashboardShot();
     }
-    if (shot == 5.)
+    if (shot == SHOT_DASHBOARD_UNDER_SHOULDER)
     {
         dashBoardUnderTheShoulderShot(t_in_shot);
     }
-    if (shot == 6.)
+    if (shot == SHOT_FROM_BEHIND)
     {
         viewFromBehind(t_in_shot);
     }
-    if (shot == 7.)
+    if (shot == SHOT_FACE)
     {
         faceView(t_in_shot);
     }
