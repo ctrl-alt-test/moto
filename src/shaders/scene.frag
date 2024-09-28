@@ -1,7 +1,7 @@
 #version 150
 
 //#define DEBUG 1
-const int ENABLE_STOCHASTIC_MOTION_BLUR = 1;
+const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
 // #define ENABLE_STEP_COUNT
 // #define ENABLE_DAY_MODE
 // #define DISABLE_MOTO
