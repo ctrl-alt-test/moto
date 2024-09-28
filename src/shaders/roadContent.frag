@@ -228,6 +228,12 @@ float terrainDetailHeight(vec2 p)
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
+float roadBumpHeight(float d)
+{
+    float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);
+    return 0.2 * (1. - x * x * x);
+}
+
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
@@ -288,8 +294,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
         // Get the terrain height at the center line
         roadHeight = smoothTerrainHeight(positionOnSpline);
-        float x = clamp(abs(splineUV.x / roadWidthInMeters.x), 0., 1.);
-        roadHeight += 0.2 * (1. - x * x * x);
+        roadHeight += roadBumpHeight(splineUV.x);
     }
 
     // Combine terrain height and road heigt

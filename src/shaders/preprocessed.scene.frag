@@ -819,6 +819,12 @@ float terrainDetailHeight(vec2 p)
     return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
+float roadBumpHeight(float d)
+{
+    float x = clamp(abs(d / roadWidthInMeters.x), 0., 1.);
+    return 0.2 * (1. - x * x * x);
+}
+
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
@@ -879,8 +885,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
         
         roadHeight = smoothTerrainHeight(positionOnSpline);
-        float x = clamp(abs(splineUV.x / roadWidthInMeters.x), 0., 1.);
-        roadHeight += 0.2 * (1. - x * x * x);
+        roadHeight += roadBumpHeight(splineUV.x);
     }
 
     
@@ -983,18 +988,20 @@ void computeMotoPosition()
 {
     float distanceOnCurve = fract(time*0.1);
 
+    vec3 nextPos = motoPos *= 0.;
     motoPos.xz = GetPositionOnSpline(distanceOnCurve);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
 
-    float leftRightOffset = 2. + 1.5*sin(time);
-    motoPos.z += leftRightOffset;
-
-    vec3 nextPos;
     nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.0001);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
-    nextPos.z += leftRightOffset;
 
     motoDir = normalize(nextPos - motoPos);
+
+    vec2 motoRight = vec2(-motoDir.z, motoDir.x);
+    float rightOffset = 2.0 + 1.5*sin(time);
+    motoPos.xz += motoRight * rightOffset;
+    motoPos.y += roadBumpHeight(abs(rightOffset));
+
     motoYaw = atan(motoDir.z, motoDir.x);
     motoPitch = atan(motoDir.y, length(motoDir.zx));
     motoRoll = 0.0;

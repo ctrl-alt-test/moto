@@ -28,18 +28,20 @@ void computeMotoPosition()
 {
     float distanceOnCurve = fract(time*0.1);
 
+    vec3 nextPos = motoPos *= 0.;
     motoPos.xz = GetPositionOnSpline(distanceOnCurve);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
 
-    float leftRightOffset = 2. + 1.5*sin(time);
-    motoPos.z += leftRightOffset;
-
-    vec3 nextPos;
     nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.0001);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
-    nextPos.z += leftRightOffset;
 
     motoDir = normalize(nextPos - motoPos);
+
+    vec2 motoRight = vec2(-motoDir.z, motoDir.x);
+    float rightOffset = 2.0 + 1.5*sin(time);
+    motoPos.xz += motoRight * rightOffset;
+    motoPos.y += roadBumpHeight(abs(rightOffset));
+
     motoYaw = atan(motoDir.z, motoDir.x);
     motoPitch = atan(motoDir.y, length(motoDir.zx));
     motoRoll = 0.0;//0.1*PI * sin(time);

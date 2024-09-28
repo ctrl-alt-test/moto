@@ -345,6 +345,11 @@ float smoothTerrainHeight(vec2 p)
 {
   return 1e2*fBm(p*2./2e3,3,.6,.5);
 }
+float roadBumpHeight(float d)
+{
+  d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
+  return.2*(1.-d*d*d);
+}
 vec2 roadSideItems(vec4 splineUV,float relativeHeight)
 {
   vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z),pObj=vec3(pRoad.x-4.2,pRoad.y-.8,0);
@@ -372,11 +377,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
     terrainHeight+=.5*fBm(p.xz*2./1e2,1,.6,.5);
   float roadHeight=terrainHeight;
   if(isRoad>0.)
-    {
-      roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw));
-      float x=clamp(abs(splineUV.x/roadWidthInMeters.x),0.,1.);
-      roadHeight+=.2*(1.-x*x*x);
-    }
+    roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),roadHeight+=roadBumpHeight(splineUV.x);
   isRoad=mix(terrainHeight,roadHeight,isRoad);
   relativeHeight=p.y-isRoad;
   return MinDist(vec2(.75*relativeHeight,0),roadSideItems(splineUV,p.y-roadHeight));
@@ -410,15 +411,16 @@ float motoYaw,motoPitch,motoRoll;
 void computeMotoPosition()
 {
   float distanceOnCurve=fract(time*.1);
+  vec3 nextPos=motoPos*=0.;
   motoPos.xz=GetPositionOnSpline(distanceOnCurve);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
-  float leftRightOffset=2.+1.5*sin(time);
-  motoPos.z+=leftRightOffset;
-  vec3 nextPos;
   nextPos.xz=GetPositionOnSpline(distanceOnCurve+1e-4);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
-  nextPos.z+=leftRightOffset;
   motoDir=normalize(nextPos-motoPos);
+  vec2 motoRight=vec2(-motoDir.z,motoDir);
+  distanceOnCurve=2.+1.5*sin(time);
+  motoPos.xz+=motoRight*distanceOnCurve;
+  motoPos.y+=roadBumpHeight(abs(distanceOnCurve));
   motoYaw=atan(motoDir.z,motoDir.x);
   motoPitch=atan(motoDir.y,length(motoDir.zx));
   motoRoll=0.;
