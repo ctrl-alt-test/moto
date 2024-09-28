@@ -1,7 +1,7 @@
 #version 150
 
 
-const int ENABLE_STOCHASTIC_MOTION_BLUR = 1;
+const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
 
 
 
@@ -508,6 +508,8 @@ const float MOTO_DRIVER_ID = 7.;
 const float MOTO_DRIVER_HELMET_ID = 8.;
 const float CITY_ID = 9.;
 const float ROAD_REFLECTOR_ID = 10.;
+// Inactive conditional block: #ifdef DEBUG
+
 
 bool IsMoto(float mid)
 {
@@ -965,6 +967,20 @@ float motoRoll;
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 vec3 motoToWorld(vec3 v, bool isPos, float time)
 {
     v.xy *= Rotation(-motoPitch);
@@ -992,6 +1008,7 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     v.xy *= Rotation(motoPitch);
     return v;
 }
+
 
 
 
@@ -1169,6 +1186,10 @@ vec3 motoDashboard(vec2 uv)
         glowy(numbers);
 }
 
+
+
+
+
 material motoMaterial(float mid, vec3 p, vec3 N, float time)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
@@ -1204,6 +1225,11 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
     if (mid == MOTO_WHEEL_ID)
     {
         return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.008), 0.8);
+
+
+
+
+
     }
 
     if (mid == MOTO_DRIVER_ID)
@@ -1338,12 +1364,16 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 vec2 motoShape(vec3 p)
 {
     p = worldToMoto(p, true, iTime);
-    
+
     float boundingSphere = length(p);
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
     vec2 d = vec2(1e6, MOTO_ID);
+
+// Inactive conditional block: #ifdef DEBUG
+
+
     float h;
     float cyl;
 
@@ -1557,6 +1587,9 @@ light lights[MAX_LIGHTS];
 
 material computeMaterial(float mid, vec3 p, vec3 N)
 {
+// Inactive conditional block: #ifdef DEBUG
+
+
     if (mid == GROUND_ID)
     {
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
@@ -1615,7 +1648,7 @@ void setLights()
 {
 // Inactive conditional block: #ifdef ENABLE_DAY_MODE
 // Active conditional block: #else
-    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 0., 1e10, 0.02);
+    lights[0] = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 // End of active block.
 
     vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);

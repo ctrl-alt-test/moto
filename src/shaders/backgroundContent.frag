@@ -1,5 +1,5 @@
 #ifdef ENABLE_DAY_MODE
-vec3 daySkyDomeLight = 0.5 * vec3(0.25, 0.5, 1.0);
+vec3 daySkyDomeLight = 0.8 * vec3(0.25, 0.5, 1.0);
 vec3 sunLightColor = vec3(1.0, 0.85, 0.7);
 #else
 vec3 nightHorizonLight = 0.01 * vec3(0.07, 0.1, 1.0);

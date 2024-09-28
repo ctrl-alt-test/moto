@@ -738,7 +738,7 @@ vec2 sceneSDF(vec3 p,float current_t)
 }
 void setLights()
 {
-  lights[0]=light(moonDirection*1e3,moonDirection,moonLightColor,-2.,0.,1e10,.02);
+  lights[0]=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
   vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
   dirHeadLight=motoToWorld(dirHeadLight,false,iTime);
   dirBreakLight=motoToWorld(dirBreakLight,false,iTime);
@@ -952,21 +952,21 @@ void main()
   camShowDriver=1.;
   float t=fract(iTime/6./8.)*8.,shot=floor(t);
   t=fract(t);
-  if(shot==0.)
-    sideShotRear();
   if(shot==1.)
+    sideShotRear();
+  if(shot==0.)
     sideShotFront();
-  if(shot==2.)
-    frontWheelCloseUpShot();
-  if(shot==3.)
-    overTheHeadShot();
   if(shot==4.)
-    fpsDashboardShot();
+    frontWheelCloseUpShot();
   if(shot==5.)
+    overTheHeadShot();
+  if(shot==2.)
+    fpsDashboardShot();
+  if(shot==3.)
     dashBoardUnderTheShoulderShot(t);
-  if(shot==6.)
-    viewFromBehind(t);
   if(shot==7.)
+    viewFromBehind(t);
+  if(shot==8.)
     faceView(t);
   camFoV=atan(1./camProjectionRatio);
 }

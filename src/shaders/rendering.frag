@@ -69,9 +69,9 @@ vec2 sceneSDF(vec3 p, float current_t)
 void setLights()
 {
 #ifdef ENABLE_DAY_MODE
-    lights[0] = light(moonDirection * 1e3, moonDirection, sunLightColor, 0., 0., 1e3, 10.);
+    lights[0] = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
 #else
-    lights[0] = light(moonDirection * 1e3, moonDirection, moonLightColor, -2., 0., 1e10, 0.02);
+    lights[0] = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 #endif
 
     vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);
