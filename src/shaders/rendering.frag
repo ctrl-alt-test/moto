@@ -5,6 +5,13 @@ light lights[MAX_LIGHTS];
 
 material computeMaterial(float mid, vec3 p, vec3 N)
 {
+#ifdef DEBUG
+    if (mid == DEBUG_ID)
+    {
+        return material(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 1.0);
+    }
+#endif
+
     if (mid == GROUND_ID)
     {
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);

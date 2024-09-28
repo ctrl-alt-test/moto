@@ -10,6 +10,9 @@ const float MOTO_DRIVER_ID = 7.;
 const float MOTO_DRIVER_HELMET_ID = 8.;
 const float CITY_ID = 9.;
 const float ROAD_REFLECTOR_ID = 10.;
+#ifdef DEBUG
+const float DEBUG_ID = 9999.;
+#endif
 
 bool IsMoto(float mid)
 {

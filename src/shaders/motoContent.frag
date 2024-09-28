@@ -8,8 +8,22 @@ float motoYaw;
 float motoPitch;
 float motoRoll;
 
-
+//
 // Moto position functions
+//
+
+// Moto local space:
+// - The moto is aligned with the X axis.
+// - The anchor point is on the ground, roughly at the center (engine).
+//        Y
+//        ^
+//        |
+//        |_o<)
+//    _--<| /\_  ==>
+//   (o)\ |/ (o)
+// -------+--------> X
+//
+
 vec3 motoToWorld(vec3 v, bool isPos, float time)
 {
     v.xy *= Rotation(-motoPitch);
@@ -38,8 +52,9 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     return v;
 }
 
-// dashboard
-
+//
+// Dashboard
+//
 
 float rect(vec2 uv, float x1, float y1, float x2, float y2) {
   return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
@@ -213,6 +228,10 @@ vec3 motoDashboard(vec2 uv)
         meter4(uv * .7 - vec2(0.6, 0.45), 0.4) +
         glowy(numbers);
 }
+
+//
+// Moto and driver
+//
 
 material motoMaterial(float mid, vec3 p, vec3 N, float time)
 {
@@ -389,12 +408,20 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 vec2 motoShape(vec3 p)
 {
     p = worldToMoto(p, true, iTime);
-    
+
     float boundingSphere = length(p);
     if (boundingSphere > 2.0)
         return vec2(boundingSphere - 1.5, MOTO_ID);
 
     vec2 d = vec2(1e6, MOTO_ID);
+
+#ifdef DEBUG
+    // Show moto coordinates:
+    d = MinDist(d, vec2(Box3(p, vec3(1.00, 0.01, 0.01), 0.001), DEBUG_ID));
+    d = MinDist(d, vec2(Box3(p, vec3(0.01, 1.00, 0.01), 0.001), DEBUG_ID));
+    d = MinDist(d, vec2(Box3(p, vec3(0.01, 0.01, 1.00), 0.001), DEBUG_ID));
+#endif
+
     float h;
     float cyl;
 
