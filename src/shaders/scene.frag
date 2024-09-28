@@ -60,17 +60,7 @@ void main()
     if (ENABLE_STOCHASTIC_MOTION_BLUR) {
         time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
     }
-
-    float ti = fract(time * 0.1);
-    motoPos.xz = GetPositionOnSpline(ti);
-    motoPos.y = smoothTerrainHeight(motoPos.xz);
-    vec3 nextPos;
-    nextPos.xz = GetPositionOnSpline(ti+0.01);
-    nextPos.y = smoothTerrainHeight(nextPos.xz);
-    motoDir = normalize(nextPos - motoPos);
-    motoYaw = atan(motoDir.z, motoDir.x);
-    motoPitch = atan(motoDir.y, length(motoDir.zx));
-    motoRoll = 0.0;//0.1*PI * sin(time);
+    computeMotoPosition(time);
 
     setLights();
 

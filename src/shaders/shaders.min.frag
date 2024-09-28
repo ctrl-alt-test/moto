@@ -407,19 +407,35 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
 }
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 float motoYaw,motoPitch,motoRoll;
+void computeMotoPosition(float time)
+{
+  float distanceOnCurve=fract(time*.2);
+  motoPos.xz=GetPositionOnSpline(distanceOnCurve);
+  motoPos.y=smoothTerrainHeight(motoPos.xz);
+  time=2.+1.5*sin(time);
+  motoPos.z+=time;
+  vec3 nextPos;
+  nextPos.xz=GetPositionOnSpline(distanceOnCurve+1e-4);
+  nextPos.y=smoothTerrainHeight(nextPos.xz);
+  nextPos.z+=time;
+  motoDir=normalize(nextPos-motoPos);
+  motoYaw=atan(motoDir.z,motoDir.x);
+  motoPitch=atan(motoDir.y,length(motoDir.zx));
+  motoRoll=0.;
+}
 vec3 motoToWorld(vec3 v,bool isPos,float time)
 {
   v.xy*=Rotation(-motoPitch);
   v.yz*=Rotation(-motoRoll);
   v.xz*=Rotation(-motoYaw);
   if(isPos)
-    v+=motoPos,v.z+=2.+.5*sin(time);
+    v+=motoPos;
   return v;
 }
 vec3 worldToMoto(vec3 v,bool isPos,float time)
 {
   if(isPos)
-    v-=motoPos,v.z-=2.+.5*sin(time);
+    v-=motoPos;
   v.xz*=Rotation(motoYaw);
   v.yz*=Rotation(motoRoll);
   v.xy*=Rotation(motoPitch);
@@ -805,25 +821,17 @@ void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
   vec2 uv=(gl_FragCoord.xy/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x);
-  float time=fract((iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008)*.1);
-  motoPos.xz=GetPositionOnSpline(time);
-  motoPos.y=smoothTerrainHeight(motoPos.xz);
-  vec3 nextPos;
-  nextPos.xz=GetPositionOnSpline(time+.01);
-  nextPos.y=smoothTerrainHeight(nextPos.xz);
-  motoDir=normalize(nextPos-motoPos);
-  motoYaw=atan(motoDir.z,motoDir.x);
-  motoPitch=atan(motoDir.y,length(motoDir.zx));
-  motoRoll=0.;
+  float time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
+  computeMotoPosition(time);
   setLights();
-  vec3 rd,cameraPosition=camPos,cameraTarget=camTa;
+  vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true,iTime),cameraTarget=motoToWorld(camTa,true,iTime);
-  setupCamera(uv,cameraPosition,cameraTarget,nextPos,rd);
-  uv=rayMarchScene(nextPos,rd,cameraPosition);
-  cameraTarget=evalNormal(cameraPosition,uv.x);
-  rd=evalRadiance(uv,cameraPosition,-rd,cameraTarget);
-  fragColor=vec4(pow(rd,vec3(1./2.2)),1);
+  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
+  uv=rayMarchScene(ro,rd,cameraTarget);
+  ro=evalNormal(cameraTarget,uv.x);
+  ro=evalRadiance(uv,cameraTarget,-rd,ro);
+  fragColor=vec4(pow(ro,vec3(1./2.2)),1);
 }
 
 // src\shaders\scene.vert#version 150

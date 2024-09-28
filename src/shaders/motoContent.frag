@@ -24,17 +24,35 @@ float motoRoll;
 // -------+--------> X
 //
 
+void computeMotoPosition(float time)
+{
+    float distanceOnCurve = fract(time*0.2);
+
+    motoPos.xz = GetPositionOnSpline(distanceOnCurve);
+    motoPos.y = smoothTerrainHeight(motoPos.xz);
+
+    float leftRightOffset = 2. + 1.5*sin(time);
+    motoPos.z += leftRightOffset;
+
+    vec3 nextPos;
+    nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.0001);
+    nextPos.y = smoothTerrainHeight(nextPos.xz);
+    nextPos.z += leftRightOffset;
+
+    motoDir = normalize(nextPos - motoPos);
+    motoYaw = atan(motoDir.z, motoDir.x);
+    motoPitch = atan(motoDir.y, length(motoDir.zx));
+    motoRoll = 0.0;//0.1*PI * sin(time);
+}
+
 vec3 motoToWorld(vec3 v, bool isPos, float time)
 {
     v.xy *= Rotation(-motoPitch);
     v.yz *= Rotation(-motoRoll);
     v.xz *= Rotation(-motoYaw);
-
     if (isPos)
     {
         v += motoPos;
-        v.z += 2. + 0.5*sin(time);
-        // v.z -= 1.5*sin(time);
     }
     return v;
 }
@@ -44,7 +62,6 @@ vec3 worldToMoto(vec3 v, bool isPos, float time)
     if (isPos)
     {
         v -= motoPos;
-        v.z -= 2. + 0.5*sin(time);
     }
     v.xz *= Rotation(motoYaw);
     v.yz *= Rotation(motoRoll);
