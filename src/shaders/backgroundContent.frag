@@ -36,7 +36,7 @@ vec3 sky(vec3 V)
         color = mix(color, moonColor, 0.9 * moon);
     }
 
-    float cloud = fBm(0.015*iTime+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
+    float cloud = fBm(0.015*time+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
     cloud = smoothstep(0., 1., cloud+1.);
 
     color *= mix(0.1, 1., pow(cloud, 2.));

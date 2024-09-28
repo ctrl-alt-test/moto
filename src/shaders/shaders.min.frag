@@ -6,7 +6,7 @@ in vec3 camPos,camTa;
 in float camMotoSpace,camFoV,camProjectionRatio,camFishEye,camShowDriver;
 in vec2 spline[13];
 out vec4 fragColor;
-float PIXEL_ANGLE=camFoV/iResolution.x;
+float PIXEL_ANGLE=camFoV/iResolution.x,time;
 
 #define ZERO(iTime)min(0,int(iTime))
 
@@ -237,7 +237,7 @@ vec3 sky(vec3 V)
       float pattern=smoothstep(-.5,.5,fBm(V.xy*1e2,4,.65,.7)+.13);
       color=mix(color,clearest*5.*mix(1.,2.,pattern),.9*direction);
     }
-  dmoon=fBm(.015*iTime+V.xz/(.01+V.y)*.5,5,.55,.7);
+  dmoon=fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7);
   dmoon=smoothstep(0.,1.,dmoon+1.);
   color=color*mix(.1,1.,pow(dmoon,2.))*smoothstep(-.1,0.,V.y);
   return color/1.97e5;
@@ -407,23 +407,23 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
 }
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 float motoYaw,motoPitch,motoRoll;
-void computeMotoPosition(float time)
+void computeMotoPosition()
 {
-  float distanceOnCurve=fract(time*.2);
+  float distanceOnCurve=fract(time*.1);
   motoPos.xz=GetPositionOnSpline(distanceOnCurve);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
-  time=2.+1.5*sin(time);
-  motoPos.z+=time;
+  float leftRightOffset=2.+1.5*sin(time);
+  motoPos.z+=leftRightOffset;
   vec3 nextPos;
   nextPos.xz=GetPositionOnSpline(distanceOnCurve+1e-4);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
-  nextPos.z+=time;
+  nextPos.z+=leftRightOffset;
   motoDir=normalize(nextPos-motoPos);
   motoYaw=atan(motoDir.z,motoDir.x);
   motoPitch=atan(motoDir.y,length(motoDir.zx));
   motoRoll=0.;
 }
-vec3 motoToWorld(vec3 v,bool isPos,float time)
+vec3 motoToWorld(vec3 v,bool isPos)
 {
   v.xy*=Rotation(-motoPitch);
   v.yz*=Rotation(-motoRoll);
@@ -432,7 +432,7 @@ vec3 motoToWorld(vec3 v,bool isPos,float time)
     v+=motoPos;
   return v;
 }
-vec3 worldToMoto(vec3 v,bool isPos,float time)
+vec3 worldToMoto(vec3 v,bool isPos)
 {
   if(isPos)
     v-=motoPos;
@@ -508,11 +508,11 @@ vec3 glowy(float d)
 }
 vec3 motoDashboard(vec2 uv)
 {
-  int speed=105+int(sin(iTime*.5)*10.);
+  int speed=105+int(sin(time*.5)*10.);
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
-  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(iTime*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
+  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
-material motoMaterial(float mid,vec3 p,vec3 N,float time)
+material motoMaterial(float mid,vec3 p,vec3 N)
 {
   if(mid==2.)
     {
@@ -541,13 +541,13 @@ material motoMaterial(float mid,vec3 p,vec3 N,float time)
 }
 vec2 driverShape(vec3 p)
 {
-  p=worldToMoto(p,true,iTime)-vec3(-.35,.78,0);
+  p=worldToMoto(p,true)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2)
     return vec2(d,7);
   vec3 simP=p;
   simP.z=abs(simP.z);
-  float wind=fBm((p.xy+iTime)*12.,1,.5,.5);
+  float wind=fBm((p.xy+time)*12.,1,.5,.5);
   if(d<.8)
     {
       vec3 pBody=simP;
@@ -618,7 +618,7 @@ vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius)
 }
 vec2 motoShape(vec3 p)
 {
-  p=worldToMoto(p,true,iTime);
+  p=worldToMoto(p,true);
   float boundingSphere=length(p);
   if(boundingSphere>2.)
     return vec2(boundingSphere-1.5,1);
@@ -735,7 +735,7 @@ material computeMaterial(float mid,vec3 p,vec3 N)
         material(0,pow(vec3(67,81,70)/255.*1.5,vec3(2.2)),.5);
     }
   return IsMoto(mid)?
-    p=worldToMoto(p,true,iTime),N=worldToMoto(N,false,iTime),motoMaterial(mid,p,N,iTime):
+    p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
     mid==10.?
       material(3,vec3(1,.4,0),.2):
       material(0,fract(p.xyz),1.);
@@ -753,9 +753,9 @@ vec2 sceneSDF(vec3 p,float current_t)
 void setLights()
 {
   lights[0]=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
-  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true,iTime),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true,iTime);
-  dirHeadLight=motoToWorld(dirHeadLight,false,iTime);
-  dirBreakLight=motoToWorld(dirBreakLight,false,iTime);
+  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true);
+  dirHeadLight=motoToWorld(dirHeadLight,false);
+  dirBreakLight=motoToWorld(dirBreakLight,false);
   lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.75,.95,10.,20.);
   lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.3,.9,2.,.05);
 }
@@ -821,12 +821,13 @@ void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
   vec2 uv=(gl_FragCoord.xy/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x);
-  float time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
-  computeMotoPosition(time);
+  time=iTime;
+  time+=hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
+  computeMotoPosition();
   setLights();
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
-    cameraPosition=motoToWorld(camPos,true,iTime),cameraTarget=motoToWorld(camTa,true,iTime);
+    cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   uv=rayMarchScene(ro,rd,cameraTarget);
   ro=evalNormal(cameraTarget,uv.x);

@@ -40,6 +40,7 @@ out vec4 fragColor;
 
 
 float PIXEL_ANGLE = camFoV / iResolution.x;
+float time;
 #define ZERO(iTime) min(0, int(iTime))
 
 // Include begin: common.frag
@@ -555,7 +556,7 @@ vec3 sky(vec3 V)
         color = mix(color, moonColor, 0.9 * moon);
     }
 
-    float cloud = fBm(0.015*iTime+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
+    float cloud = fBm(0.015*time+V.xz/(0.01 + V.y) * 0.5, 5, 0.55, 0.7);
     cloud = smoothstep(0., 1., cloud+1.);
 
     color *= mix(0.1, 1., pow(cloud, 2.));
@@ -978,9 +979,9 @@ float motoRoll;
 
 
 
-void computeMotoPosition(float time)
+void computeMotoPosition()
 {
-    float distanceOnCurve = fract(time*0.2);
+    float distanceOnCurve = fract(time*0.1);
 
     motoPos.xz = GetPositionOnSpline(distanceOnCurve);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
@@ -999,7 +1000,7 @@ void computeMotoPosition(float time)
     motoRoll = 0.0;
 }
 
-vec3 motoToWorld(vec3 v, bool isPos, float time)
+vec3 motoToWorld(vec3 v, bool isPos)
 {
     v.xy *= Rotation(-motoPitch);
     v.yz *= Rotation(-motoRoll);
@@ -1011,7 +1012,7 @@ vec3 motoToWorld(vec3 v, bool isPos, float time)
     return v;
 }
 
-vec3 worldToMoto(vec3 v, bool isPos, float time)
+vec3 worldToMoto(vec3 v, bool isPos)
 {
     if (isPos)
     {
@@ -1182,7 +1183,7 @@ vec3 glowy(float d)
 
 vec3 motoDashboard(vec2 uv)
 {
-    int speed = 105 + int(sin(iTime*.5) * 10.);
+    int speed = 105 + int(sin(time*.5) * 10.);
     vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
     float numbers =
@@ -1195,7 +1196,7 @@ vec3 motoDashboard(vec2 uv)
         digit(speed%10, uvSpeed - vec2(1.,0)));
 
     return
-        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +
+        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(time*0.5)) +
         meter4(uv * .7 - vec2(0.6, 0.45), 0.4) +
         glowy(numbers);
 }
@@ -1204,7 +1205,7 @@ vec3 motoDashboard(vec2 uv)
 
 
 
-material motoMaterial(float mid, vec3 p, vec3 N, float time)
+material motoMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
@@ -1255,7 +1256,7 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
 
 vec2 driverShape(vec3 p)
 {
-    p = worldToMoto(p, true, iTime);
+    p = worldToMoto(p, true);
 
     
     p -= vec3(-0.35, 0.78, 0.0);
@@ -1267,7 +1268,7 @@ vec2 driverShape(vec3 p)
     vec3 simP = p;
     simP.z = abs(simP.z);
 
-    float wind = fBm((p.xy + iTime) * 12., 1, 0.5, 0.5);
+    float wind = fBm((p.xy + time) * 12., 1, 0.5, 0.5);
 
     
     if (true && d < 0.8)
@@ -1372,7 +1373,7 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 
 vec2 motoShape(vec3 p)
 {
-    p = worldToMoto(p, true, iTime);
+    p = worldToMoto(p, true);
 
     float boundingSphere = length(p);
     if (boundingSphere > 2.0)
@@ -1614,10 +1615,10 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
     if (IsMoto(mid))
     {
-        p = worldToMoto(p, true, iTime);
-        N = worldToMoto(N, false, iTime);
+        p = worldToMoto(p, true);
+        N = worldToMoto(N, false);
         
-        return motoMaterial(mid, p, N, iTime);
+        return motoMaterial(mid, p, N);
     }
 
     if (mid == ROAD_REFLECTOR_ID)
@@ -1660,10 +1661,10 @@ void setLights()
     lights[0] = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 // End of active block.
 
-    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);
-    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
-    dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
-    dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
+    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true);
+    dirHeadLight = motoToWorld(dirHeadLight, false);
+    dirBreakLight = motoToWorld(dirBreakLight, false);
 
     vec3 intensityHeadLight = vec3(1.);
     lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 20.);
@@ -1826,11 +1827,13 @@ void main()
 
     vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
-    float time = iTime;
+    time = iTime;
     if (ENABLE_STOCHASTIC_MOTION_BLUR) {
         time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
     }
-    computeMotoPosition(time);
+
+    
+    computeMotoPosition();
 
     setLights();
 
@@ -1841,8 +1844,8 @@ void main()
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
     if (camMotoSpace > 0.5) {
-        cameraPosition = motoToWorld(camPos, true, iTime);
-        cameraTarget = motoToWorld(camTa, true, iTime);
+        cameraPosition = motoToWorld(camPos, true);
+        cameraTarget = motoToWorld(camTa, true);
         
     }
     setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);

@@ -40,6 +40,7 @@ out vec4 fragColor;
 
 // Semantic constants:
 float PIXEL_ANGLE = camFoV / iResolution.x;
+float time;
 #define ZERO(iTime) min(0, int(iTime))
 
 #include "common.frag"
@@ -56,11 +57,13 @@ void main()
 
     vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
-    float time = iTime;
+    time = iTime;
     if (ENABLE_STOCHASTIC_MOTION_BLUR) {
         time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
     }
-    computeMotoPosition(time);
+
+    // Compute moto position
+    computeMotoPosition();
 
     setLights();
 
@@ -71,9 +74,9 @@ void main()
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
     if (camMotoSpace > 0.5) {
-        cameraPosition = motoToWorld(camPos, true, iTime);
-        cameraTarget = motoToWorld(camTa, true, iTime);
-        //cameraUp = motoToWorld(cameraUp, false, iTime);
+        cameraPosition = motoToWorld(camPos, true);
+        cameraTarget = motoToWorld(camTa, true);
+        //cameraUp = motoToWorld(cameraUp, false);
     }
     setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
 

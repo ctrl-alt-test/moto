@@ -27,10 +27,10 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
     if (IsMoto(mid))
     {
-        p = worldToMoto(p, true, iTime);
-        N = worldToMoto(N, false, iTime);
+        p = worldToMoto(p, true);
+        N = worldToMoto(N, false);
         //return material(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 0.15);
-        return motoMaterial(mid, p, N, iTime);
+        return motoMaterial(mid, p, N);
     }
 
     if (mid == ROAD_REFLECTOR_ID)
@@ -74,10 +74,10 @@ void setLights()
     lights[0] = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 #endif
 
-    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true, iTime);
-    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true, iTime);
-    dirHeadLight = motoToWorld(dirHeadLight, false, iTime);
-    dirBreakLight = motoToWorld(dirBreakLight, false, iTime);
+    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
+    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true);
+    dirHeadLight = motoToWorld(dirHeadLight, false);
+    dirBreakLight = motoToWorld(dirBreakLight, false);
 
     vec3 intensityHeadLight = vec3(1.);
     lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 20.);

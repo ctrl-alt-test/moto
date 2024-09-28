@@ -24,9 +24,9 @@ float motoRoll;
 // -------+--------> X
 //
 
-void computeMotoPosition(float time)
+void computeMotoPosition()
 {
-    float distanceOnCurve = fract(time*0.2);
+    float distanceOnCurve = fract(time*0.1);
 
     motoPos.xz = GetPositionOnSpline(distanceOnCurve);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
@@ -45,7 +45,7 @@ void computeMotoPosition(float time)
     motoRoll = 0.0;//0.1*PI * sin(time);
 }
 
-vec3 motoToWorld(vec3 v, bool isPos, float time)
+vec3 motoToWorld(vec3 v, bool isPos)
 {
     v.xy *= Rotation(-motoPitch);
     v.yz *= Rotation(-motoRoll);
@@ -57,7 +57,7 @@ vec3 motoToWorld(vec3 v, bool isPos, float time)
     return v;
 }
 
-vec3 worldToMoto(vec3 v, bool isPos, float time)
+vec3 worldToMoto(vec3 v, bool isPos)
 {
     if (isPos)
     {
@@ -228,7 +228,7 @@ vec3 glowy(float d)
 
 vec3 motoDashboard(vec2 uv)
 {
-    int speed = 105 + int(sin(iTime*.5) * 10.);
+    int speed = 105 + int(sin(time*.5) * 10.);
     vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
     float numbers =
@@ -241,7 +241,7 @@ vec3 motoDashboard(vec2 uv)
         digit(speed%10, uvSpeed - vec2(1.,0)));
 
     return
-        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(iTime*0.5)) +
+        meter3(uv * 0.6 - vec2(0.09, 0.05), 0.7+0.3*sin(time*0.5)) +
         meter4(uv * .7 - vec2(0.6, 0.45), 0.4) +
         glowy(numbers);
 }
@@ -250,7 +250,7 @@ vec3 motoDashboard(vec2 uv)
 // Moto and driver
 //
 
-material motoMaterial(float mid, vec3 p, vec3 N, float time)
+material motoMaterial(float mid, vec3 p, vec3 N)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
@@ -301,7 +301,7 @@ material motoMaterial(float mid, vec3 p, vec3 N, float time)
 
 vec2 driverShape(vec3 p)
 {
-    p = worldToMoto(p, true, iTime);
+    p = worldToMoto(p, true);
 
     // Place roughly on the seat
     p -= vec3(-0.35, 0.78, 0.0);
@@ -313,7 +313,7 @@ vec2 driverShape(vec3 p)
     vec3 simP = p;
     simP.z = abs(simP.z);
 
-    float wind = fBm((p.xy + iTime) * 12., 1, 0.5, 0.5);
+    float wind = fBm((p.xy + time) * 12., 1, 0.5, 0.5);
 
     // upper body
     if (true && d < 0.8)
@@ -424,7 +424,7 @@ vec2 wheelShape(vec3 p, float wheelRadius, float tireRadius, float innerRadius)
 
 vec2 motoShape(vec3 p)
 {
-    p = worldToMoto(p, true, iTime);
+    p = worldToMoto(p, true);
 
     float boundingSphere = length(p);
     if (boundingSphere > 2.0)
