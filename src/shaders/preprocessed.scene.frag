@@ -797,7 +797,7 @@ material roadMaterial(vec2 uv, float width, vec2 params)
      
     
 
-    return material(MATERIAL_TYPE_DIELECTRIC, color, roughness);
+    return material(paint > 0.5 ? MATERIAL_TYPE_RETROREFLECTIVE : MATERIAL_TYPE_DIELECTRIC, color, roughness);
 }
 
 const float terrain_fBm_weight_param = 0.6;
@@ -1630,7 +1630,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
     if (mid == ROAD_REFLECTOR_ID)
     {
-        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.), 0.2);
+        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);
     }
 
     return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);

@@ -35,7 +35,7 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
     if (mid == ROAD_REFLECTOR_ID)
     {
-        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.), 0.2);
+        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);
     }
 
     return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);

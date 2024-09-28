@@ -339,7 +339,9 @@ material roadMaterial(vec2 uv)
   tireTrails=roadMarkings(uv.yx);
   color=mix(color,vec3(.5),tireTrails);
   largeScaleNoise=mix(largeScaleNoise,.7,tireTrails);
-  return material(0,color,largeScaleNoise);
+  return material(tireTrails>.5?
+    3:
+    0,color,largeScaleNoise);
 }
 float smoothTerrainHeight(vec2 p)
 {
@@ -739,7 +741,7 @@ material computeMaterial(float mid,vec3 p,vec3 N)
   return IsMoto(mid)?
     p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
     mid==10.?
-      material(3,vec3(1,.4,0),.2):
+      material(3,vec3(1,.4,.05),.2):
       material(0,fract(p.xyz),1.);
 }
 vec2 sceneSDF(vec3 p,float current_t)
