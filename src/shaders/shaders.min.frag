@@ -2,6 +2,7 @@
 
 const vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
+uniform sampler2D tex;
 in vec3 camPos,camTa;
 in float camMotoSpace,camFoV,camProjectionRatio,camFishEye,camShowDriver;
 in vec2 spline[13];
@@ -824,7 +825,7 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
-  vec2 uv=(gl_FragCoord.xy/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x);
+  vec2 texCoord=gl_FragCoord.xy/iResolution.xy;
   time=iTime;
   time+=hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   computeMotoPosition();
@@ -832,11 +833,11 @@ void main()
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
-  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
-  uv=rayMarchScene(ro,rd,cameraTarget);
-  ro=evalNormal(cameraTarget,uv.x);
-  ro=evalRadiance(uv,cameraTarget,-rd,ro);
-  fragColor=vec4(pow(ro,vec3(1./2.2)),1);
+  setupCamera((texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,ro,rd);
+  vec2 t=rayMarchScene(ro,rd,cameraTarget);
+  ro=evalNormal(cameraTarget,t.x);
+  ro=evalRadiance(t,cameraTarget,-rd,ro);
+  fragColor=vec4(mix(pow(ro,vec3(1./2.2)),texture(tex,texCoord).xyz,.2),1);
 }
 
 // src\shaders\scene.vert#version 150

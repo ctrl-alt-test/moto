@@ -201,19 +201,22 @@ int __cdecl main(int argc, char* argv[])
 		#endif
 
 		// main renderer
+		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
 		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderMain);
 		((PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f"))(0, time);
+		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(1, 0); // Previous frame
 		glRects(-1, -1, 1, 1);
 
-		// two pass FXAA
+		// FXAA
 #ifdef USE_FXAA
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
 		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderFXAA);
-		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0);
+		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0); // Set sampler ID
 		glRects(-1, -1, 1, 1);
 
-		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
-		glRects(-1, -1, 1, 1);
+		// Optional second FXAA pass
+		//glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
+		//glRects(-1, -1, 1, 1);
 #endif
 
 #ifdef USE_POSTPROCESS
@@ -222,7 +225,7 @@ int __cdecl main(int argc, char* argv[])
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
 		//((PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture"))(GL_TEXTURE0);
 		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderPostProcess);
-		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0);
+		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0); // Set sampler ID
 		glRects(-1, -1, 1, 1);
 #endif
 

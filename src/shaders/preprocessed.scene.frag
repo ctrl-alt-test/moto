@@ -24,6 +24,8 @@ const float INF = 1e6;
 
 
 uniform float iTime;
+uniform sampler2D tex;
+
 
 
 in vec3 camPos;
@@ -1832,7 +1834,8 @@ void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
 
-    vec2 uv = (gl_FragCoord.xy/iResolution.xy * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
+    vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
+    vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
     time = iTime;
     if (ENABLE_STOCHASTIC_MOTION_BLUR) {
@@ -1877,5 +1880,6 @@ void main()
     vec3 radiance = evalRadiance(t, p, -rd, N);
     
     vec3 color = pow(radiance, vec3(1. / GAMMA));
+    color = mix(color, texture(tex, texCoord).rgb, 0.2);
     fragColor = vec4(color, 1.);
 }
