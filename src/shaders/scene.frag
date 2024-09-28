@@ -62,10 +62,10 @@ void main()
     }
 
     float ti = fract(time * 0.1);
-    motoPos.xz = GetPositionOnCurve(ti);
+    motoPos.xz = GetPositionOnSpline(ti);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
     vec3 nextPos;
-    nextPos.xz = GetPositionOnCurve(ti+0.01);
+    nextPos.xz = GetPositionOnSpline(ti+0.01);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
     motoDir = normalize(nextPos - motoPos);
     motoYaw = atan(motoDir.z, motoDir.x);

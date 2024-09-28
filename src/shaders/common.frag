@@ -95,7 +95,6 @@ float invV1(float NdotV, float sqrAlpha)
     return NdotV + sqrt(sqrAlpha + (1.0 - sqrAlpha) * NdotV * NdotV);
 }
 
-
 vec3 cookTorrance(
     vec3 f0,
 	float roughness,
@@ -372,7 +371,7 @@ float GetWinding(vec2 a, vec2 b)
     return 2.0 * step(a.x * b.y, a.y * b.x) - 1.0;
 }
 
-// Returns the signed distance from a point to a bezier curve
+// Returns the signed distance from a point to a Bezier curve
 // Mostly from: https://www.shadertoy.com/view/MdXBzB by tomkh
 vec2 BezierSDF(vec2 A, vec2 B, vec2 C, vec2 p)
 {

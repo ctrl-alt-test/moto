@@ -255,18 +255,20 @@ vec3 cityLights(vec2 p)
   return ctex*5.;
 }
 vec4 splineAABB,splineSegmentAABBs[6];
-float splineSegmentDistances[6];
+vec2 splineSegmentDistances[6];
 void ComputeBezierSegmentsLengthAndAABB()
 {
   float splineLength=0.;
   splineAABB=vec4(1e6,1e6,-1e6,-1e6);
-  for(int i=ZERO(iTime);i<12;i+=2)
+  for(int i=ZERO(iTime);i<6;++i)
     {
-      vec2 A=spline[i],B=spline[i+1],C=spline[i+2];
-      splineSegmentDistances[i/2]=splineLength;
+      int index=2*i;
+      vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
+      splineSegmentDistances[i].x=splineLength;
       splineLength+=BezierCurveLengthAt(A,B,C,1.);
+      splineSegmentDistances[i].y=splineLength;
       vec4 AABB=BezierAABB(A,B,C);
-      splineSegmentAABBs[i/2]=AABB;
+      splineSegmentAABBs[i]=AABB;
       splineAABB.xy=min(splineAABB.xy,AABB.xy);
       splineAABB.zw=max(splineAABB.zw,AABB.zw);
     }
@@ -276,39 +278,35 @@ vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
   vec4 splineUV=vec4(1e6,0,0,0);
   if(DistanceFromAABB(p,splineAABB)>splineWidth)
     return splineUV;
-  for(int i=ZERO(iTime);i<12;i+=2)
+  for(int i=ZERO(iTime);i<6;++i)
     {
-      vec2 A=spline[i],B=spline[i+1],C=spline[i+2];
+      int index=2*i;
+      vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
       if(DistanceFromAABB(p,BezierAABB(A,B,C))>splineWidth)
         continue;
       B=mix(B+vec2(1e-4),B,abs(sign(B*2.-A-C)));
       vec2 bezierSDF=BezierSDF(A,B,C,p);
       if(abs(bezierSDF.x)<abs(splineUV.x))
         {
-          float lengthInSegment=BezierCurveLengthAt(A,B,C,clamp(bezierSDF.y,0.,1.))+splineSegmentDistances[i/2];
-          splineUV=vec4(bezierSDF.x,clamp(bezierSDF.y,0.,1.),lengthInSegment,float(i));
+          float lengthInSegment=BezierCurveLengthAt(A,B,C,clamp(bezierSDF.y,0.,1.))+splineSegmentDistances[i].x;
+          splineUV=vec4(bezierSDF.x,clamp(bezierSDF.y,0.,1.),lengthInSegment,float(index));
         }
     }
   return splineUV;
 }
-vec2 GetPositionOnCurve(float t)
+vec2 GetPositionOnSplineFromIndex(vec2 spline_t_and_index)
 {
-  t*=splineSegmentDistances[5];
-  int segmentIndex=0;
-  for(int i=ZERO(iTime);i<5;++i)
-    if(splineSegmentDistances[i]<=t&&splineSegmentDistances[i+1]>t)
-      {
-        segmentIndex=i;
-        break;
-      }
-  float segmentStartLength=splineSegmentDistances[segmentIndex],segmentEndLength=splineSegmentDistances[segmentIndex+1];
-  vec2 A=spline[segmentIndex*2],B=spline[segmentIndex*2+1],C=spline[segmentIndex*2+2];
-  return Bezier(A,B,C,(t-segmentStartLength)/(segmentEndLength-segmentStartLength));
+  int index=int(spline_t_and_index.y);
+  return Bezier(spline[index],spline[index+1],spline[index+2],spline_t_and_index.x);
 }
-vec2 GetPositionOnSpline(vec2 spline_t_and_index)
+vec2 GetPositionOnSpline(float t)
 {
-  int i=int(spline_t_and_index.y);
-  return Bezier(spline[i],spline[i+1],spline[i+2],spline_t_and_index.x);
+  t*=splineSegmentDistances[5].y;
+  int index=0;
+  for(;index<6&&t>splineSegmentDistances[index].y;++index)
+    ;
+  float segmentStartDistance=splineSegmentDistances[index].x,segmentEndDistance=splineSegmentDistances[index].y;
+  return GetPositionOnSplineFromIndex(vec2((t-segmentStartDistance)/(segmentEndDistance-segmentStartDistance),index*2.));
 }
 vec3 roadWidthInMeters=vec3(4,8,8);
 float roadMarkings(vec2 uv)
@@ -375,7 +373,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
   float roadHeight=terrainHeight;
   if(isRoad>0.)
     {
-      roadHeight=smoothTerrainHeight(GetPositionOnSpline(splineUV.yw));
+      roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw));
       float x=clamp(abs(splineUV.x/roadWidthInMeters.x),0.,1.);
       roadHeight+=.2*(1.-x*x*x);
     }
@@ -808,10 +806,10 @@ void main()
   ComputeBezierSegmentsLengthAndAABB();
   vec2 uv=(gl_FragCoord.xy/iResolution.xy*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   float time=fract((iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008)*.1);
-  motoPos.xz=GetPositionOnCurve(time);
+  motoPos.xz=GetPositionOnSpline(time);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
   vec3 nextPos;
-  nextPos.xz=GetPositionOnCurve(time+.01);
+  nextPos.xz=GetPositionOnSpline(time+.01);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
   motoYaw=atan(motoDir.z,motoDir.x);
