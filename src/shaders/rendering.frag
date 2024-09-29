@@ -3,7 +3,7 @@ light lights[MAX_LIGHTS];
 // -------------------------------------------------------
 // Scene description functions
 
-material computeMaterial(float mid, vec3 p, vec3 N)
+material computeMaterial(int mid, vec3 p, vec3 N)
 {
 #ifdef DEBUG
     if (mid == DEBUG_ID)
@@ -12,9 +12,16 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     }
 #endif
 
+    vec4 splineUV;
+    vec3 pRoad = p;
+    if (IsRoad(mid))
+    {
+        splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+        pRoad.xz = splineUV.xz;
+    }
+
     if (mid == GROUND_ID)
     {
-        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
         vec3 grassColor = pow(vec3(67., 81., 70.) / 255. * 1., vec3(GAMMA));
         if (isRoad > 0.)
@@ -31,7 +38,6 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     {
         p = worldToMoto(p, true);
         N = worldToMoto(N, false);
-        //return material(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 0.15);
         return motoMaterial(mid, p, N);
     }
 
@@ -150,7 +156,7 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
-    float mid = t.y;
+    int mid = int(t.y);
     if (mid == CITY_ID) {
         return mix(
             abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),

@@ -1,20 +1,33 @@
-const float NO_ID = -1.;
-const float GROUND_ID = 0.;
-const float MOTO_ID = 1.;
-const float MOTO_HEAD_LIGHT_ID = 2.;
-const float MOTO_BREAK_LIGHT_ID = 3.;
-const float MOTO_WHEEL_ID = 4.;
-const float MOTO_MOTOR_ID = 5.;
-const float MOTO_EXHAUST_ID = 6.;
-const float MOTO_DRIVER_ID = 7.;
-const float MOTO_DRIVER_HELMET_ID = 8.;
-const float CITY_ID = 9.;
-const float ROAD_REFLECTOR_ID = 10.;
+const int NO_ID = -1;
+
+const int MOTO_ID = 0;
+const int MOTO_WHEEL_ID = 1;
+const int MOTO_MOTOR_ID = 2;
+const int MOTO_EXHAUST_ID = 3;
+const int MOTO_BREAK_LIGHT_ID = 4;
+const int MOTO_HEAD_LIGHT_ID = 5;
+const int MOTO_DRIVER_ID = 6;
+const int MOTO_DRIVER_HELMET_ID = 7;
+
+const int CITY_ID = 8;
+
+const int GROUND_ID = 9;
+const int ROAD_UTILITY_ID = 10;
+const int ROAD_WALL_ID = 11;
+const int ROAD_REFLECTOR_ID = 12;
+const int ROAD_LIGHT_ID = 13;
+
 #ifdef DEBUG
-const float DEBUG_ID = 9999.;
+const int DEBUG_ID = 9999;
 #endif
 
-bool IsMoto(float mid)
+bool IsMoto(int mid)
 {
-    return mid >= MOTO_ID && mid <= MOTO_DRIVER_HELMET_ID;
+    // Assumes mid != NO_ID
+    return mid <= MOTO_DRIVER_HELMET_ID;
+}
+
+bool IsRoad(int mid)
+{
+    return mid >= GROUND_ID;
 }

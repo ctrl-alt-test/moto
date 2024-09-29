@@ -349,19 +349,19 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   pObj=vec3(pRoad.x-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
   relativeHeight=min(relativeHeight,Box3(pObj,vec3(.05,.5,.05),.01));
   float reflector=Box3(pObj-vec3(-.1,.3,0),vec3(.04,.06,.03),.01);
-  vec2 res=MinDist(vec2(relativeHeight,6),vec2(reflector,10));
+  vec2 res=MinDist(vec2(relativeHeight,3),vec2(reflector,12));
   pObj=vec3(pRoad.x-4.5,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
   relativeHeight=Box3(pObj,vec3(.1,3,.1),.1);
-  res=MinDist(res,vec2(relativeHeight,6));
+  res=MinDist(res,vec2(relativeHeight,3));
   pObj=vec3(pRoad.x-4.3,pRoad.y-4.,pObj.z);
   relativeHeight=Box3(pObj,vec3(.2,.1,.1),.1);
-  return MinDist(res,vec2(relativeHeight,3));
+  return MinDist(res,vec2(relativeHeight,4));
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
   float terrainHeight=smoothTerrainHeight(p.xz),relativeHeight=p.y-terrainHeight;
   if(relativeHeight>5.5)
-    return vec2(.75*relativeHeight,0);
+    return vec2(.75*relativeHeight,9);
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
   if(isRoad<1.)
     terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
@@ -370,7 +370,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
     roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),roadHeight+=roadBumpHeight(splineUV.x);
   isRoad=mix(terrainHeight,roadHeight,isRoad);
   relativeHeight=p.y-isRoad;
-  return MinDist(vec2(.75*relativeHeight,0),roadSideItems(splineUV,p.y-roadHeight));
+  return MinDist(vec2(.75*relativeHeight,9),roadSideItems(splineUV,p.y-roadHeight));
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
@@ -394,7 +394,7 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   vec2 id=round(p.xz/10.)*10.;
   vec3 localP=p;
   localP.xz-=id;
-  return vec2(tree(p,localP,id,splineUV,current_t),0);
+  return vec2(tree(p,localP,id,splineUV,current_t),9);
 }
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 float motoYaw,motoPitch,motoRoll;
@@ -501,9 +501,9 @@ vec3 motoDashboard(vec2 uv)
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
   return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
-material motoMaterial(float mid,vec3 p,vec3 N)
+material motoMaterial(int mid,vec3 p,vec3 N)
 {
-  if(mid==2.)
+  if(mid==5)
     {
       vec3 luminance=smoothstep(0.,.01,N.x-.94)*vec3(1,.95,.9);
       float isDashboard=smoothstep(.9,.95,-N.x+.4*N.y-.07);
@@ -514,17 +514,17 @@ material motoMaterial(float mid,vec3 p,vec3 N)
         }
       return material(2,luminance,.15);
     }
-  return mid==3.?
+  return mid==4?
     material(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
-    mid==6.?
+    mid==3?
       material(1,vec3(1),.2):
-      mid==5.?
+      mid==2?
         material(0,vec3(0),.3):
-        mid==4.?
+        mid==1?
           material(0,vec3(.008),.8):
-          mid==7.?
+          mid==6?
             material(0,vec3(.02,.025,.04),.6):
-            mid==8.?
+            mid==7?
               material(0,vec3(0),.25):
               material(0,vec3(0),.15);
 }
@@ -533,7 +533,7 @@ vec2 driverShape(vec3 p)
   p=worldToMoto(p,true)-vec3(-.35,.78,0);
   float d=length(p);
   if(d>1.2||camShowDriver<.5)
-    return vec2(d,7);
+    return vec2(d,6);
   vec3 simP=p;
   simP.z=abs(simP.z);
   float wind=fBm((p.xy+time)*12.,1,.5,.5);
@@ -589,9 +589,9 @@ vec2 driverShape(vec3 p)
     vec3 pHead=p-vec3(.39,.6,0);
     float head=length(pHead)-.15;
     if(head<d)
-      return vec2(head,8);
+      return vec2(head,7);
   }
-  return vec2(d,7);
+  return vec2(d,6);
 }
 vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3 innerPart)
 {
@@ -603,21 +603,21 @@ vec2 wheelShape(vec3 p,float wheelRadius,float tireRadius,float innerRadius,vec3
       h=Segment3(p,vec3(0),vec3(0,0,1),h);
       wheelRadius=min(min(-smin(-wheelRadius,h-innerRadius,.01),-min(min(min(.15-h,h-.08),p.z-.04),-p.z+.05)),Ellipsoid(p,innerPart));
     }
-  return vec2(wheelRadius,4);
+  return vec2(wheelRadius,1);
 }
 vec2 motoShape(vec3 p)
 {
   p=worldToMoto(p,true);
   float boundingSphere=length(p);
   if(boundingSphere>2.)
-    return vec2(boundingSphere-1.5,1);
-  vec2 d=vec2(1e6,1);
+    return vec2(boundingSphere-1.5,0);
+  vec2 d=vec2(1e6,0);
   vec3 frontWheelPos=vec3(.9,.33,0);
   d=MinDist(d,wheelShape(p-frontWheelPos,.26,.07,.22,vec3(.02,.02,.12)));
   d=MinDist(d,wheelShape(p-vec3(-.85,.32,0),.17,.15,.18,vec3(.2,.2,.01)));
   {
     vec3 pBreak=p-breakLightOffsetFromMotoRoot;
-    d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),3));
+    d=MinDist(d,vec2(Box3(pBreak,vec3(.02,.025,.1),.02),4));
   }
   {
     vec3 pFork=p,pForkTop=vec3(-.48,.66,0),pForkAngle=pForkTop+vec3(-.14,.04,.05);
@@ -634,7 +634,7 @@ vec2 motoShape(vec3 p)
     pFork.xz*=Rotation(.25);
     handle=-min(handle,-Ellipsoid(pFork,vec3(.04,.05,.08)));
     fork=min(fork,handle);
-    d=MinDist(d,vec2(fork,1));
+    d=MinDist(d,vec2(fork,0));
   }
   {
     vec3 pHead=p-headLightOffsetFromMotoRoot;
@@ -647,9 +647,9 @@ vec2 motoShape(vec3 p)
         pHead.xy*=Rotation(-.4);
         headBlock=-min(-headBlock,-Ellipsoid(pHead-vec3(.1,0,0),vec3(.2,.3,.4)));
       }
-    d=MinDist(d,vec2(headBlock,2));
-    headBlock=Box3(p-vec3(.4,.82,0),vec3(.04,.1,.08),.02);
     d=MinDist(d,vec2(headBlock,5));
+    headBlock=Box3(p-vec3(.4,.82,0),vec3(.04,.1,.08),.02);
+    d=MinDist(d,vec2(headBlock,2));
   }
   {
     vec3 pTank=p-vec3(.1,.74,0),pTankR=pTank;
@@ -661,7 +661,7 @@ vec2 motoShape(vec3 p)
         float tankCut=Ellipsoid(pTankR+vec3(0,.13,0),vec3(.5,.35,.22));
         tank=-min(min(-tank,-tankCut),-Ellipsoid(pTank-vec3(0,.3,0),vec3(.6,.35,.4)));
       }
-    d=MinDist(d,vec2(tank,1));
+    d=MinDist(d,vec2(tank,0));
   }
   {
     vec3 pMotor=p-vec3(-.08,.44,0),pMotorSkewd=pMotor;
@@ -685,14 +685,14 @@ vec2 motoShape(vec3 p)
         gearBoxCut=Segment3(pMotor-vec3(.24,-.13,0),vec3(0,0,.4),vec3(0,0,-.4),boundingSphere)-.02;
         motorBlock=min(motorBlock,gearBoxCut);
       }
-    d=MinDist(d,vec2(motorBlock,5));
+    d=MinDist(d,vec2(motorBlock,2));
   }
   {
     vec3 pExhaust=p-vec3(0,0,.2);
     float exhaust=Segment3(pExhaust,vec3(.24,.25,0),vec3(-.7,.3,.05),boundingSphere);
     if(exhaust<.6)
       exhaust=-min(-exhaust+mix(.04,.08,mix(boundingSphere,smoothstep(.5,.7,boundingSphere),.5)),p.x-.7*p.y+.9),exhaust=min(exhaust,Segment3(pExhaust,vec3(.24,.25,0),vec3(.32,.55,-.02),boundingSphere)-.04),exhaust=min(exhaust,Segment3(pExhaust,vec3(.22,.32,-.02),vec3(-.4,.37,.02),boundingSphere)-.04);
-    d=MinDist(d,vec2(exhaust,1));
+    d=MinDist(d,vec2(exhaust,0));
   }
   {
     vec3 pSeat=p-vec3(-.44,.44,0);
@@ -709,16 +709,19 @@ vec2 motoShape(vec3 p)
         seatSaddleCut=Ellipsoid(pSaddle,vec3(.8,.4,.4));
         seat=-min(-seat,-seatSaddleCut);
       }
-    d=MinDist(d,vec2(seat,1));
+    d=MinDist(d,vec2(seat,0));
   }
   return d;
 }
 light lights[3];
-material computeMaterial(float mid,vec3 p,vec3 N)
+material computeMaterial(int mid,vec3 p,vec3 N)
 {
-  if(mid==0.)
+  vec4 splineUV;
+  vec3 pRoad=p;
+  if(mid>=9)
+    splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z),pRoad.xz=splineUV.xz;
+  if(mid==9)
     {
-      vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
       float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
       vec3 grassColor=pow(vec3(67,81,70)/255.,vec3(2.2));
       if(isRoad>0.)
@@ -729,9 +732,9 @@ material computeMaterial(float mid,vec3 p,vec3 N)
         }
       return material(0,grassColor,.5);
     }
-  return mid>=1.&&mid<=8.?
+  return mid<=7?
     p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
-    mid==10.?
+    mid==12?
       material(3,vec3(1,.4,.05),.2):
       material(0,fract(p.xyz),1.);
 }
@@ -777,12 +780,12 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
 }
 vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 {
-  float mid=t.y;
-  if(mid==9.)
+  int mid=int(t.y);
+  if(mid==8)
     return mix(abs(N.y)>.8?
       cityLights(p.xz*2.):
       vec3(0),mix(vec3(0),vec3(.06,.04,.03),V.y),min(t.x*.001,1.));
-  if(mid==-1.)
+  if(mid==-1)
     return sky(-V);
   material m=computeMaterial(mid,p,N);
   vec3 emissive=vec3(0);

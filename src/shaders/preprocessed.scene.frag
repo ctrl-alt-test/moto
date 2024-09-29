@@ -498,24 +498,37 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
 
 // Include begin: ids.frag
 // --------------------------------------------------------------------
-const float NO_ID = -1.;
-const float GROUND_ID = 0.;
-const float MOTO_ID = 1.;
-const float MOTO_HEAD_LIGHT_ID = 2.;
-const float MOTO_BREAK_LIGHT_ID = 3.;
-const float MOTO_WHEEL_ID = 4.;
-const float MOTO_MOTOR_ID = 5.;
-const float MOTO_EXHAUST_ID = 6.;
-const float MOTO_DRIVER_ID = 7.;
-const float MOTO_DRIVER_HELMET_ID = 8.;
-const float CITY_ID = 9.;
-const float ROAD_REFLECTOR_ID = 10.;
+const int NO_ID = -1;
+
+const int MOTO_ID = 0;
+const int MOTO_WHEEL_ID = 1;
+const int MOTO_MOTOR_ID = 2;
+const int MOTO_EXHAUST_ID = 3;
+const int MOTO_BREAK_LIGHT_ID = 4;
+const int MOTO_HEAD_LIGHT_ID = 5;
+const int MOTO_DRIVER_ID = 6;
+const int MOTO_DRIVER_HELMET_ID = 7;
+
+const int CITY_ID = 8;
+
+const int GROUND_ID = 9;
+const int ROAD_UTILITY_ID = 10;
+const int ROAD_WALL_ID = 11;
+const int ROAD_REFLECTOR_ID = 12;
+const int ROAD_LIGHT_ID = 13;
+
 // Inactive conditional block: #ifdef DEBUG
 
 
-bool IsMoto(float mid)
+bool IsMoto(int mid)
 {
-    return mid >= MOTO_ID && mid <= MOTO_DRIVER_HELMET_ID;
+    
+    return mid <= MOTO_DRIVER_HELMET_ID;
+}
+
+bool IsRoad(int mid)
+{
+    return mid >= GROUND_ID;
 }
 // --------------------------------------------------------------------
 // Include end: ids.frag
@@ -1212,7 +1225,7 @@ vec3 motoDashboard(vec2 uv)
 
 
 
-material motoMaterial(float mid, vec3 p, vec3 N)
+material motoMaterial(int mid, vec3 p, vec3 N)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
@@ -1603,14 +1616,21 @@ light lights[MAX_LIGHTS];
 
 
 
-material computeMaterial(float mid, vec3 p, vec3 N)
+material computeMaterial(int mid, vec3 p, vec3 N)
 {
 // Inactive conditional block: #ifdef DEBUG
 
 
+    vec4 splineUV;
+    vec3 pRoad = p;
+    if (IsRoad(mid))
+    {
+        splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
+        pRoad.xz = splineUV.xz;
+    }
+
     if (mid == GROUND_ID)
     {
-        vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
         vec3 grassColor = pow(vec3(67., 81., 70.) / 255. * 1., vec3(GAMMA));
         if (isRoad > 0.)
@@ -1627,7 +1647,6 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     {
         p = worldToMoto(p, true);
         N = worldToMoto(N, false);
-        
         return motoMaterial(mid, p, N);
     }
 
@@ -1740,7 +1759,7 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
-    float mid = t.y;
+    int mid = int(t.y);
     if (mid == CITY_ID) {
         return mix(
             abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),

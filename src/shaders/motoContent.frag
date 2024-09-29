@@ -247,7 +247,7 @@ vec3 motoDashboard(vec2 uv)
 // Moto and driver
 //
 
-material motoMaterial(float mid, vec3 p, vec3 N)
+material motoMaterial(int mid, vec3 p, vec3 N)
 {
     if (mid == MOTO_HEAD_LIGHT_ID)
     {
