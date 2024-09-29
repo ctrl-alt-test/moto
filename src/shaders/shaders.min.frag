@@ -342,19 +342,29 @@ float roadBumpHeight(float d)
 }
 vec2 roadSideItems(vec4 splineUV,float relativeHeight)
 {
-  vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z),pObj=vec3(pRoad.x-4.2,pRoad.y-.8,0);
-  relativeHeight=Box3(pObj,vec3(.1,.2,.1),.05);
-  pObj=vec3(pRoad.x-4.1,pRoad.y-.8,0);
-  relativeHeight=max(relativeHeight,-Box3(pObj,vec3(.1),.1));
-  pObj=vec3(pRoad.x-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
-  relativeHeight=min(relativeHeight,Box3(pObj,vec3(.05,.5,.05),.01));
-  float reflector=Box3(pObj-vec3(-.1,.3,0),vec3(.04,.06,.03),.01);
-  vec2 res=MinDist(vec2(relativeHeight,10),vec2(reflector,12));
-  pObj=vec3(pRoad.x-4.5,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
-  relativeHeight=Box3(pObj,vec3(.1,3,.1),.1);
+  vec2 res=vec2(1e6,-1);
+  vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z);
+  pRoad.x-=roadWidthInMeters.x*1.2;
+  relativeHeight=smoothstep(0.,1.,abs(fract(splineUV.y*2.)*2.-1.)*2.)*2.-1.;
+  vec3 pReflector=vec3(pRoad.x,pRoad.y-.8,round(pRoad.z/4.)*4.-pRoad.z);
+  if(relativeHeight>-.5)
+    {
+      float height=.8*relativeHeight;
+      vec3 pObj=vec3(pRoad.x,pRoad.y-height,0);
+      float len=Box3(pObj,vec3(.1,.2,.1),.05);
+      pObj=vec3(pRoad.x+.1,pRoad.y-height,0);
+      len=max(len,-Box3(pObj,vec3(.1),.1));
+      pObj=vec3(pRoad.x-.1,pRoad.y-height+.5,pReflector.z);
+      len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
+      res=MinDist(res,vec2(len,10));
+    }
+  if(relativeHeight>=1.)
+    res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
+  pReflector=vec3(pRoad.x-.4,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
+  relativeHeight=Box3(pReflector,vec3(.1,3,.1),.1);
   res=MinDist(res,vec2(relativeHeight,3));
-  pObj=vec3(pRoad.x-4.3,pRoad.y-4.,pObj.z);
-  relativeHeight=Box3(pObj,vec3(.2,.1,.1),.1);
+  pReflector=vec3(pRoad.x-.2,pRoad.y-4.,pReflector.z);
+  relativeHeight=Box3(pReflector,vec3(.2,.1,.1),.1);
   return MinDist(res,vec2(relativeHeight,4));
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)

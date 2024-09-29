@@ -236,27 +236,42 @@ float roadBumpHeight(float d)
 }
 
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
+    vec2 res = vec2(1e6, NO_ID);
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
+    pRoad.x -= roadWidthInMeters.x * 1.2;
+
+    float hasGuardrail = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
+
 	// Traffic barrier
-    vec3 pObj = vec3(pRoad.x - 4.2, pRoad.y - 0.8, 0.);
-    float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
+    /**/
+    vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
+    if (hasGuardrail > -0.5)
+    {
+        float height = 0.8 * hasGuardrail;
+        vec3 pObj = vec3(pRoad.x, pRoad.y - height, 0.);
+        float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
 
-    pObj = vec3(pRoad.x - 4.1, pRoad.y - 0.8, 0.);
-    len = max(len, -Box3(pObj, vec3(0.1, 0.1, 0.1), 0.1));
+        pObj = vec3(pRoad.x + 0.1, pRoad.y - height, 0.);
+        len = max(len, -Box3(pObj, vec3(0.1), 0.1));
 
-    pObj = vec3(pRoad.x - 4.3, pRoad.y - 0.5, round(pRoad.z * 0.5) / 0.5 - pRoad.z);
-    len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
+        pObj = vec3(pRoad.x - 0.1, pRoad.y - height + 0.5, pReflector.z);
+        len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
+        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
+    }
 
-    float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
-    vec2 res = MinDist(vec2(len, ROAD_UTILITY_ID), vec2(reflector, ROAD_REFLECTOR_ID));
+    float reflector = Box3(pReflector, vec3(0.05), 0.01);
+    if (hasGuardrail >= 1.)
+    {
+        res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
+    }
 
     // street lamp
-    pObj = vec3(pRoad.x - 4.5, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
-    len = Box3(pObj, vec3(0.1, 3., 0.1), 0.1);
+    vec3 pObj = vec3(pRoad.x - 0.4, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
+    float len = Box3(pObj, vec3(0.1, 3., 0.1), 0.1);
     res = MinDist(res, vec2(len, MOTO_EXHAUST_ID));
 
-    pObj = vec3(pRoad.x - 4.3, pRoad.y - 4., pObj.z);
+    pObj = vec3(pRoad.x - 0.2, pRoad.y - 4., pObj.z);
     len = Box3(pObj, vec3(0.2, 0.1, 0.1), 0.1);
     res = MinDist(res, vec2(len, MOTO_BREAK_LIGHT_ID)); // TODO: proper light
 
