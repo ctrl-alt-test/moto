@@ -851,6 +851,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 
     float hasGuardrail = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
     float lampHeight = 7.;
+    float wallHeight = 4.;
 
     vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
@@ -870,7 +871,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     }
 
     float reflector = Box3(pReflector, vec3(0.05), 0.01);
-    if (hasGuardrail >= 1.)
+    if (hasGuardrail >= 1. || wallHeight > 0.7)
     {
         res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
     }
@@ -889,6 +890,18 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
         pObj.x += 1.2;
         len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
         res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
+    }
+
+    if (wallHeight > 0.)
+    {
+        vec3 pObj = vec3(pRoad.x - 0.1, pRoad.y, 0.);
+        float len = Box3(pObj, vec3(0.1, wallHeight, 0.1), 0.05);
+
+        pObj.xy -= vec2(0.1, min(wallHeight, 0.8) - 0.7);
+        pObj.xy *= Rotation(1.2);
+        len = min(len, Box3(pObj, vec3(0.3), 0.));
+
+        res = MinDist(res, vec2(len, ROAD_WALL_ID));
     }
 
     return res;
@@ -1688,6 +1701,17 @@ material computeMaterial(int mid, vec3 p, vec3 N)
             return utility;
         }
         return material(MATERIAL_TYPE_EMISSIVE, vec3(5., 3., 0.1), 0.4);
+    }
+
+    if (mid == ROAD_WALL_ID)
+    {
+        
+        float streaks = smoothstep(0., 1., fBm(pRoad.yz * 0.1, 3, 0.5, 0.5));
+        streaks *= streaks * smoothstep(0., 1.5, fBm(pRoad.yz * vec2(0.5, 10.), 3, 0.8, 0.5));
+
+        vec3 color = vec3(0.5) + (fBm(pRoad.yz / 4., 3, 0.6, 0.9) * 0.1);
+        color *= (1. - streaks);
+        return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
     }
 
     if (mid == ROAD_REFLECTOR_ID)

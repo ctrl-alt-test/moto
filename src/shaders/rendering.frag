@@ -56,6 +56,17 @@ material computeMaterial(int mid, vec3 p, vec3 N)
         return material(MATERIAL_TYPE_EMISSIVE, vec3(5., 3., 0.1), 0.4);
     }
 
+    if (mid == ROAD_WALL_ID)
+    {
+        //return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.5), 0.8);
+        float streaks = smoothstep(0., 1., fBm(pRoad.yz * 0.1, 3, 0.5, 0.5));
+        streaks *= streaks * smoothstep(0., 1.5, fBm(pRoad.yz * vec2(0.5, 10.), 3, 0.8, 0.5));
+
+        vec3 color = vec3(0.5) + (fBm(pRoad.yz / 4., 3, 0.6, 0.9) * 0.1);
+        color *= (1. - streaks);
+        return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
+    }
+
     if (mid == ROAD_REFLECTOR_ID)
     {
         return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);

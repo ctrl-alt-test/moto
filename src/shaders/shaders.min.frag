@@ -358,7 +358,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
       len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
       res=MinDist(res,vec2(len,10));
     }
-  if(relativeHeight>=1.)
+  if(relativeHeight>=1.||true)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
   {
     vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/30.)*30.-pRoad.z);
@@ -370,6 +370,14 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     pObj.x+=1.2;
     len=Box3(pObj,vec3(.7,.1,.1),.1);
     res=MinDist(res,vec2(len,13));
+  }
+  {
+    vec3 pObj=vec3(pRoad.x-.1,pRoad.y,0);
+    float len=Box3(pObj,vec3(.1,4,.1),.05);
+    pObj.xy-=vec2(.1,min(4.,.8)-.7);
+    pObj.xy*=Rotation(1.2);
+    len=min(len,Box3(pObj,vec3(.3),0.));
+    res=MinDist(res,vec2(len,11));
   }
   return res;
 }
@@ -752,15 +760,23 @@ material computeMaterial(int mid,vec3 p,vec3 N)
   if(mid<=7)
     return p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N);
   material utility=material(1,vec3(.9),.7);
-  return mid==10?
-    utility:
-    mid==13?
-      N.y>-.5?
-        utility:
-        material(2,vec3(5,3,.1),.4):
-      mid==12?
-        material(3,vec3(1,.4,.05),.2):
-        material(0,fract(p.xyz),1.);
+  if(mid==10)
+    return utility;
+  if(mid==13)
+    return N.y>-.5?
+      utility:
+      material(2,vec3(5,3,.1),.4);
+  if(mid==11)
+    {
+      float streaks=smoothstep(0.,1.,fBm(pRoad.yz*.1,3,.5,.5));
+      streaks*=streaks*smoothstep(0.,1.5,fBm(pRoad.yz*vec2(.5,10),3,.8,.5));
+      vec3 color=vec3(.5)+fBm(pRoad.yz/4.,3,.6,.9)*.1;
+      color*=1.-streaks;
+      return material(0,color,.5);
+    }
+  return mid==12?
+    material(3,vec3(1,.4,.05),.2):
+    material(0,fract(p.xyz),1.);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {

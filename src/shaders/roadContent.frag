@@ -243,6 +243,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 
     float hasGuardrail = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
     float lampHeight = 7.;
+    float wallHeight = 4.;//0.8 * clamp(abs(fract(splineUV.y) * 2. - 1.) * 8.-4., 0., 1.);
 
     vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
@@ -262,7 +263,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     }
 
     float reflector = Box3(pReflector, vec3(0.05), 0.01);
-    if (hasGuardrail >= 1.)
+    if (hasGuardrail >= 1. || wallHeight > 0.7)
     {
         res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
     }
@@ -281,6 +282,18 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
         pObj.x += 1.2;
         len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
         res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
+    }
+
+    if (wallHeight > 0.)
+    {
+        vec3 pObj = vec3(pRoad.x - 0.1, pRoad.y, 0.);
+        float len = Box3(pObj, vec3(0.1, wallHeight, 0.1), 0.05);
+
+        pObj.xy -= vec2(0.1, min(wallHeight, 0.8) - 0.7);
+        pObj.xy *= Rotation(1.2);
+        len = min(len, Box3(pObj, vec3(0.3), 0.));
+
+        res = MinDist(res, vec2(len, ROAD_WALL_ID));
     }
 
     return res;
