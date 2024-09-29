@@ -60,9 +60,10 @@ void main()
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
-    time = iTime;
     if (ENABLE_STOCHASTIC_MOTION_BLUR) {
-        time += hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
+        time = iTime + hash31(vec3(gl_FragCoord.xy, 1e-3*iTime)) * 0.008;
+    } else {
+        time = iTime;
     }
 
     // Compute moto position
@@ -102,11 +103,9 @@ void main()
 #else
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 #endif
-    vec3 N = evalNormal(p, t.x);
-
-    vec3 radiance = evalRadiance(t, p, -rd, N);
+    vec3 i_N = evalNormal(p, t.x);
+    vec3 i_radiance = evalRadiance(t, p, -rd, i_N);
     
-    vec3 color = pow(radiance, vec3(1. / GAMMA));
-    color = mix(color, texture(tex, texCoord).rgb, 0.2);
-    fragColor = vec4(color, 1.);
+    vec3 i_color = pow(i_radiance, vec3(1. / GAMMA));
+    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2), 1.);
 }

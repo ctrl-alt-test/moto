@@ -818,8 +818,7 @@ void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy;
-  time=iTime;
-  time+=hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
+  time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   computeMotoPosition();
   setLights();
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
@@ -827,9 +826,7 @@ void main()
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   setupCamera((texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraPosition);
-  ro=evalNormal(cameraPosition,t.x);
-  ro=evalRadiance(t,cameraPosition,-rd,ro);
-  fragColor=vec4(mix(pow(ro,vec3(1./2.2)),texture(tex,texCoord).xyz,.2),1);
+  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2)),texture(tex,texCoord).xyz,.2),1);
 }
 
 // src\shaders\scene.vert#version 150
