@@ -143,17 +143,17 @@ vec2 Bezier(vec2 A,vec2 B,vec2 C,float t)
 vec4 FindCubicRoots(float a,float b,float c)
 {
   float p=b-a*a/3.,p3=p*p*p;
-  b=a*(2.*a*a-9.*b)/27.+c;
-  c=b*b+4.*p3/27.;
+  c+=a*(2.*a*a-9.*b)/27.;
+  b=c*c+4.*p3/27.;
   a=-a/3.;
-  if(c>=0.)
+  if(b>=0.)
     {
-      float z=sqrt(c);
-      vec2 x=(vec2(z,-z)-b)/2.;
+      float z=sqrt(b);
+      vec2 x=(vec2(z,-z)-c)/2.;
       x=sign(x)*pow(abs(x),vec2(1)/3.);
       return vec4(a+x.x+x.y,0,0,1);
     }
-  p3=acos(-sqrt(-27./p3)*b/2.)/3.;
+  p3=acos(-sqrt(-27./p3)*c/2.)/3.;
   b=cos(p3);
   p3=sin(p3)*sqrt(3.);
   return vec4(vec3(b+b,-p3-b,p3-b)*sqrt(-p/3.)+a,3);
@@ -219,10 +219,6 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
   uv*=mix(1.,length(uv),camFishEye);
   ro=cameraPosition;
   rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
-}
-bool IsMoto(float mid)
-{
-  return mid>=1.&&mid<=8.;
 }
 vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 vec3 sky(vec3 V)
@@ -312,19 +308,18 @@ vec2 GetPositionOnSpline(float t)
 vec3 roadWidthInMeters=vec3(4,8,8);
 float roadMarkings(vec2 uv)
 {
-  vec2 params=vec2(.7,0),t1b=vec2(6.5,1.5),t3=vec2(26./6.,3),t3b=vec2(26,20),continuous=vec2(100);
-  t3b=vec2(13,3);
+  vec2 params=vec2(.7,0),separationLineParams=vec2(13,3);
   if(params.x>.25)
-    t3b=t1b;
+    separationLineParams=vec2(6.5,1.5);
   if(params.x>.5)
-    t3b=t3;
+    separationLineParams=vec2(26./6.,3);
   if(params.x>.75)
-    t3b=continuous;
-  continuous=vec2(6.5,3);
-  t1b=vec2(fract(uv.x/t3b.x)*t3b.x,uv.y-floor(clamp(uv.y,0.,3.5)/3.5)*3.5);
-  params=vec2(fract((uv.x+.4)/continuous.x)*continuous.x,uv.y);
-  float sideLine1=Box2(params-vec2(.5*continuous.y,3.5),vec2(.5*continuous.y,.1),.03),sideLine2=Box2(params-vec2(.5*continuous.y,-3.5),vec2(.5*continuous.y,.1),.03),separationLine1=Box2(t1b-vec2(.5*t3b.y,0),vec2(.5*t3b.y,.1),.01);
-  return 1.-smoothstep(-.01,.01,min(min(sideLine1,sideLine2),separationLine1));
+    separationLineParams=vec2(100);
+  params=vec2(6.5,3);
+  vec2 separationTileUV=vec2(fract(uv.x/separationLineParams.x)*separationLineParams.x,uv.y-floor(clamp(uv.y,0.,3.5)/3.5)*3.5);
+  uv=vec2(fract((uv.x+.4)/params.x)*params.x,uv.y);
+  float separationLine1=Box2(separationTileUV-vec2(.5*separationLineParams.y,0),vec2(.5*separationLineParams.y,.1),.01);
+  return 1.-smoothstep(-.01,.01,min(min(Box2(uv-vec2(.5*params.y,3.5),vec2(.5*params.y,.1),.03),Box2(uv-vec2(.5*params.y,-3.5),vec2(.5*params.y,.1),.03)),separationLine1));
 }
 material roadMaterial(vec2 uv)
 {
@@ -736,7 +731,7 @@ material computeMaterial(float mid,vec3 p,vec3 N)
         roadMaterial(splineUV.xz):
         material(0,pow(vec3(67,81,70)/255.*1.5,vec3(2.2)),.5);
     }
-  return IsMoto(mid)?
+  return mid>=1.&&mid<=8.?
     p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
     mid==10.?
       material(3,vec3(1,.4,.05),.2):
@@ -831,9 +826,9 @@ void main()
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   setupCamera((texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x),cameraPosition,cameraTarget,ro,rd);
-  vec2 t=rayMarchScene(ro,rd,cameraTarget);
-  ro=evalNormal(cameraTarget,t.x);
-  ro=evalRadiance(t,cameraTarget,-rd,ro);
+  vec2 t=rayMarchScene(ro,rd,cameraPosition);
+  ro=evalNormal(cameraPosition,t.x);
+  ro=evalRadiance(t,cameraPosition,-rd,ro);
   fragColor=vec4(mix(pow(ro,vec3(1./2.2)),texture(tex,texCoord).xyz,.2),1);
 }
 
@@ -990,14 +985,13 @@ void main()
   vec2 rcpFrame=1./iResolution,texcoord=gl_FragCoord.xy*rcpFrame;
   vec4 uv=vec4(texcoord,texcoord-rcpFrame*.5);
   vec3 luma=vec3(.299,.587,.114);
-  float lumaNW=dot(textureLod(tex,uv.zw,0.).xyz,luma),lumaNE=dot(textureLod(tex,uv.zw+vec2(1,0)*rcpFrame.xy,0.).xyz,luma),lumaSW=dot(textureLod(tex,uv.zw+vec2(0,1)*rcpFrame.xy,0.).xyz,luma),lumaSE=dot(textureLod(tex,uv.zw+vec2(1)*rcpFrame.xy,0.).xyz,luma),lumaM=dot(textureLod(tex,uv.xy,0.).xyz,luma),lumaMin=min(lumaM,min(min(lumaNW,lumaNE),min(lumaSW,lumaSE)));
-  lumaM=max(lumaM,max(max(lumaNW,lumaNE),max(lumaSW,lumaSE)));
+  float lumaNW=dot(textureLod(tex,uv.zw,0.).xyz,luma),lumaNE=dot(textureLod(tex,uv.zw+vec2(1,0)*rcpFrame.xy,0.).xyz,luma),lumaSW=dot(textureLod(tex,uv.zw+vec2(0,1)*rcpFrame.xy,0.).xyz,luma),lumaSE=dot(textureLod(tex,uv.zw+vec2(1)*rcpFrame.xy,0.).xyz,luma),lumaM=dot(textureLod(tex,uv.xy,0.).xyz,luma);
   texcoord=vec2(-lumaNW-lumaNE+lumaSW+lumaSE,lumaNW+lumaSW-lumaNE-lumaSE);
-  lumaNW=1./(min(abs(texcoord.x),abs(texcoord.y))+1./128.);
-  texcoord=min(vec2(8),max(vec2(-8),texcoord*lumaNW))*rcpFrame.xy;
+  float rcpDirMin=1./(min(abs(texcoord.x),abs(texcoord.y))+1./128.);
+  texcoord=min(vec2(8),max(vec2(-8),texcoord*rcpDirMin))*rcpFrame.xy;
   vec3 rgbA=.5*(textureLod(tex,uv.xy+texcoord*(1./3.-.5),0.).xyz+textureLod(tex,uv.xy+texcoord*(2./3.-.5),0.).xyz),rgbB=rgbA*.5+.25*(textureLod(tex,uv.xy+texcoord*-.5,0.).xyz+textureLod(tex,uv.xy+texcoord*.5,0.).xyz);
-  lumaNW=dot(rgbB,luma);
-  fragColor=lumaNW<lumaMin||lumaNW>lumaM?
+  rcpDirMin=dot(rgbB,luma);
+  fragColor=rcpDirMin<min(lumaM,min(min(lumaNW,lumaNE),min(lumaSW,lumaSE)))||rcpDirMin>max(lumaM,max(max(lumaNW,lumaNE),max(lumaSW,lumaSE)))?
     vec4(rgbA,1):
     vec4(rgbB,1);
 }
