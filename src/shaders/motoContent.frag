@@ -32,7 +32,7 @@ void computeMotoPosition()
     motoPos.xz = GetPositionOnSpline(distanceOnCurve);
     motoPos.y = smoothTerrainHeight(motoPos.xz);
 
-    nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.05);
+    nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.02);
     nextPos.y = smoothTerrainHeight(nextPos.xz);
 
     motoDir = normalize(nextPos - motoPos);

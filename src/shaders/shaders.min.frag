@@ -372,7 +372,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
     return vec2(.75*relativeHeight,0);
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
   if(isRoad<1.)
-    terrainHeight+=.5*fBm(p.xz*2./1e2,1,.6,.5);
+    terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
   float roadHeight=terrainHeight;
   if(isRoad>0.)
     roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),roadHeight+=roadBumpHeight(splineUV.x);
@@ -412,7 +412,7 @@ void computeMotoPosition()
   vec3 nextPos=motoPos*=0.;
   motoPos.xz=GetPositionOnSpline(distanceOnCurve);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
-  nextPos.xz=GetPositionOnSpline(distanceOnCurve+.05);
+  nextPos.xz=GetPositionOnSpline(distanceOnCurve+.02);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
   vec2 motoRight=vec2(-motoDir.z,motoDir);
@@ -727,9 +727,15 @@ material computeMaterial(float mid,vec3 p,vec3 N)
   if(mid==0.)
     {
       vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
-      return 1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x))>0.?
-        roadMaterial(splineUV.xz):
-        material(0,pow(vec3(67,81,70)/255.*1.5,vec3(2.2)),.5);
+      float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
+      vec3 grassColor=pow(vec3(67,81,70)/255.,vec3(2.2));
+      if(isRoad>0.)
+        {
+          material m=roadMaterial(splineUV.xz);
+          m.C=mix(grassColor,m.C,isRoad);
+          return m;
+        }
+      return material(0,grassColor,.5);
     }
   return mid>=1.&&mid<=8.?
     p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
@@ -753,7 +759,7 @@ void setLights()
   vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true);
   dirHeadLight=motoToWorld(dirHeadLight,false);
   dirBreakLight=motoToWorld(dirBreakLight,false);
-  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.75,.95,10.,20.);
+  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.75,.95,10.,5.);
   lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.3,.9,2.,.05);
 }
 vec3 evalNormal(vec3 p,float t)
@@ -860,7 +866,7 @@ vec2 valueNoise(float p)
 }
 void GenerateSpline()
 {
-  float seed=floor(iTime/20);
+  float seed=1.+floor(iTime/20);
   vec2 direction=normalize(vec2(hash11(seed),hash11(seed+1.))*2.-1.),point=vec2(0);
   for(int i=0;i<13;i++)
     {

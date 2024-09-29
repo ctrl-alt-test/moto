@@ -166,7 +166,7 @@ void main(void)
 {
     gl_Position = a_position;
     float time = iTime;
-    GenerateSpline(1.8/*curvature*/, 80./*scale*/, floor(iTime / 20)/*seed*/);
+    GenerateSpline(1.8/*curvature*/, 80./*scale*/, 2.+floor(iTime / 20)/*seed*/);
 
     camProjectionRatio = 1.;
     camFishEye = 0.1;

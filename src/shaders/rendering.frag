@@ -16,13 +16,15 @@ material computeMaterial(float mid, vec3 p, vec3 N)
     {
         vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
-        if (isRoad > 0.0)
+        vec3 grassColor = pow(vec3(67., 81., 70.) / 255. * 1., vec3(GAMMA));
+        if (isRoad > 0.)
         {
-            return roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
+            material m = roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
+            m.C = mix(grassColor, m.C, isRoad);
+            return m;
         }
         // Terrain
-        vec3 color = pow(vec3(67., 81., 70.) / 255. * 1.5, vec3(GAMMA));
-        return material(MATERIAL_TYPE_DIELECTRIC, color, 0.5);
+        return material(MATERIAL_TYPE_DIELECTRIC, grassColor, 0.5);
     }
 
     if (IsMoto(mid))
@@ -80,7 +82,7 @@ void setLights()
     dirBreakLight = motoToWorld(dirBreakLight, false);
 
     vec3 intensityHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 20.);
+    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 5.);
 
     vec3 intensityBreakLight = vec3(1., 0., 0.);
     lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.3, 0.9, 2.0, 0.05);

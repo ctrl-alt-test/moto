@@ -220,12 +220,13 @@ float smoothTerrainHeight(vec2 p)
     return 0.5 * hillHeightInMeters * fBm(p * 2. / hillLengthInMeters, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
+#pragma function inline
 float terrainDetailHeight(vec2 p)
 {
     float detailHeightInMeters = 1.;
     float detailLengthInMeters = 100.;
 
-    return 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
+    return valueNoise(p*10.)*0.1 + 0.5 * detailHeightInMeters * fBm(p * 2. / detailLengthInMeters, 1, terrain_fBm_weight_param, terrain_fBm_frequency_param);
 }
 
 float roadBumpHeight(float d)
