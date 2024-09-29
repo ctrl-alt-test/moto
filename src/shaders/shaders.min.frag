@@ -223,21 +223,13 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
 vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 vec3 sky(vec3 V)
 {
-  vec3 clearest=vec3(34,728,1910);
+  vec3 clearest=vec3(3,7,19);
   float direction=clamp(dot(V,normalize(vec3(0,1,.25))),0.,1.);
-  vec3 color=mix(vec3(126,387,728),mix(vec3(990,1527,1297),mix(vec3(332,1190,1777),mix(clearest,vec3(1,4.6,97),pow(direction,.5)),smoothstep(0.,.3,mix(V.y,direction,.5))),smoothstep(0.,.15,mix(V.y,direction,.2))),smoothstep(.05,.15,V.y));
-  direction=clamp(dot(V,moonDirection),0.,1.);
-  float dmoon=2.*fwidth(direction);
-  direction=smoothstep(-dmoon,dmoon,direction-.9999);
+  vec3 color=mix(vec3(1,4,7),mix(vec3(10,15,13),mix(vec3(3,12,18),mix(clearest,vec3(0,0,1),pow(direction,.5)),smoothstep(0.,.3,mix(V.y,direction,.5))),smoothstep(0.,.15,mix(V.y,direction,.2))),smoothstep(.05,.15,V.y));
+  direction=smoothstep(0.,1e-5,dot(V,moonDirection)-.9999);
   if(direction>0.)
-    {
-      float pattern=smoothstep(-.5,.5,fBm(V.xy*1e2,4,.65,.7)+.13);
-      color=mix(color,clearest*5.*mix(1.,2.,pattern),.9*direction);
-    }
-  dmoon=fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7);
-  dmoon=smoothstep(0.,1.,dmoon+1.);
-  color=color*mix(.1,1.,pow(dmoon,2.))*smoothstep(-.1,0.,V.y);
-  return color/1.97e5;
+    color=mix(color,clearest*5.*(smoothstep(-.5,.5,fBm(V.xy*1e2,4,.6,.7))+1.),direction);
+  return color*mix(.1,1.,pow(smoothstep(0.,1.,fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7)+1.),2.))*smoothstep(-.1,0.,V.y)/2e3;
 }
 vec3 cityLights(vec2 p)
 {
