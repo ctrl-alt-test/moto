@@ -278,7 +278,7 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
 
 float smin(float a, float b, float k)
 {
-    k *= 1.0 / (1.0 - sqrt(0.5));
+    k /= 1.0 - sqrt(0.5);
     return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
 }
 
@@ -1037,10 +1037,6 @@ vec3 worldToMoto(vec3 v, bool isPos)
 
 
 
-float rect(vec2 uv, float x1, float y1, float x2, float y2) {
-  return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
-}
-
 
 vec3 meter3(vec2 uv, float value) {
     
@@ -1059,8 +1055,7 @@ vec3 meter3(vec2 uv, float value) {
         mix(vec3(0.7, 0.9, 0.8),
             vec3(0.8, 0., 0.), smoothstep(0.4, 0.41, uv.x));
 
-    value *= 0.5;
-    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value - uv.x));
+    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value*0.5 - uv.x));
     vec3 col = lines * baseCol;
     return smoothstep(0.001, 0., r) * float(uv.y > 0.) * col;
 }

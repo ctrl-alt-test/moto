@@ -273,7 +273,7 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
 
 float smin(float a, float b, float k)
 {
-    k *= 1.0 / (1.0 - sqrt(0.5));
+    k /= 1.0 - sqrt(0.5);
     return max(k, min(a, b)) - length(max(k - vec2(a, b), 0.0));
 }
 

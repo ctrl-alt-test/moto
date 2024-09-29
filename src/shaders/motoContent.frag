@@ -75,10 +75,6 @@ vec3 worldToMoto(vec3 v, bool isPos)
 // Dashboard
 //
 
-float rect(vec2 uv, float x1, float y1, float x2, float y2) {
-  return float(uv.x > x1 && uv.x < x2 && uv.y > y1 && uv.y < y2);
-}
-
 // vertical bars
 vec3 meter3(vec2 uv, float value) {
     // 0.69, 0.87, 0.79
@@ -97,8 +93,7 @@ vec3 meter3(vec2 uv, float value) {
         mix(vec3(0.7, 0.9, 0.8),
             vec3(0.8, 0., 0.), smoothstep(0.4, 0.41, uv.x));
 
-    value *= 0.5;
-    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value - uv.x));
+    baseCol = mix(vec3(0.01), baseCol, 0.15+0.85*smoothstep(0., 0.001, value*0.5 - uv.x));
     vec3 col = lines * baseCol;
     return smoothstep(0.001, 0., r) * float(uv.y > 0.) * col;
 }

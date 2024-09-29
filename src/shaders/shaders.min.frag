@@ -92,7 +92,7 @@ float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
 }
 float smin(float a,float b,float k)
 {
-  k*=1./(1.-sqrt(.5));
+  k/=1.-sqrt(.5);
   return max(k,min(a,b))-length(max(k-vec2(a,b),0.));
 }
 float Box2(vec2 p,vec2 size,float corner)
@@ -449,10 +449,7 @@ vec3 worldToMoto(vec3 v,bool isPos)
 vec3 meter3(vec2 uv,float value)
 {
   float verticalLength=.04+.15*smoothstep(.1,.4,uv.x);
-  vec3 baseCol=mix(vec3(.7,.9,.8),vec3(.8,0,0),smoothstep(.4,.41,uv.x));
-  value*=.5;
-  baseCol=smoothstep(.5,.7,fract(uv.x*30.))*smoothstep(.1,.3,fract(uv.y/verticalLength*2.))*mix(vec3(.01),baseCol,.15+.85*smoothstep(0.,.001,value-uv.x));
-  return smoothstep(.001,0.,Box2(uv,vec2(.5,verticalLength),.01))*float(uv.y>0.)*baseCol;
+  return smoothstep(.001,0.,Box2(uv,vec2(.5,verticalLength),.01))*float(uv.y>0.)*(smoothstep(.5,.7,fract(uv.x*30.))*smoothstep(.1,.3,fract(uv.y/verticalLength*2.))*mix(vec3(.01),mix(vec3(.7,.9,.8),vec3(.8,0,0),smoothstep(.4,.41,uv.x)),.15+.85*smoothstep(0.,.001,value*.5-uv.x)));
 }
 vec3 meter4(vec2 uv)
 {
