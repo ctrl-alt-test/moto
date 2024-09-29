@@ -540,7 +540,7 @@ vec2 driverShape(vec3 p)
 {
   p=worldToMoto(p,true)-vec3(-.35,.78,0);
   float d=length(p);
-  if(d>1.2)
+  if(d>1.2||camShowDriver<.5)
     return vec2(d,7);
   vec3 simP=p;
   simP.z=abs(simP.z);
@@ -745,11 +745,9 @@ material computeMaterial(float mid,vec3 p,vec3 N)
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
-  vec2 d=vec2(1e6,-1);
   vec4 splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z);
-  d=MinDist(d,motoShape(p));
-  if(camShowDriver>.5)
-    d=MinDist(d,driverShape(p));
+  vec2 d=motoShape(p);
+  d=MinDist(d,driverShape(p));
   d=MinDist(d,terrainShape(p,splineUV));
   return MinDist(d,treesShape(p,splineUV,current_t));
 }
@@ -866,7 +864,7 @@ vec2 valueNoise(float p)
 }
 void GenerateSpline()
 {
-  float seed=1.+floor(iTime/20);
+  float seed=2.+floor(iTime/20);
   vec2 direction=normalize(vec2(hash11(seed),hash11(seed+1.))*2.-1.),point=vec2(0);
   for(int i=0;i<13;i++)
     {

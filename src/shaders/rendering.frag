@@ -45,18 +45,15 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
 vec2 sceneSDF(vec3 p, float current_t)
 {
-    vec2 d = vec2(INF, NO_ID);
-
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 
 #ifndef DISABLE_MOTO
-    d = MinDist(d, motoShape(p));
+    vec2 d = motoShape(p);
+#else
+    vec2 d = vec2(INF, NO_ID);
 #endif
 #ifndef DISABLE_MOTO_DRIVER
-    if (camShowDriver > 0.5)
-    {
-        d = MinDist(d, driverShape(p));
-    }
+    d = MinDist(d, driverShape(p));
 #endif
 #ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));

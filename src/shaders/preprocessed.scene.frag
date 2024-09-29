@@ -1267,7 +1267,7 @@ vec2 driverShape(vec3 p)
     p -= vec3(-0.35, 0.78, 0.0);
 
     float d = length(p);
-    if (d > 1.2)
+    if (d > 1.2 || camShowDriver < 0.5)
         return vec2(d, MOTO_DRIVER_ID);
 
     vec3 simP = p;
@@ -1639,18 +1639,14 @@ material computeMaterial(float mid, vec3 p, vec3 N)
 
 vec2 sceneSDF(vec3 p, float current_t)
 {
-    vec2 d = vec2(INF, NO_ID);
-
     vec4 splineUV = ToSplineLocalSpace(p.xz, roadWidthInMeters.z);
 
 // Active conditional block: #ifndef DISABLE_MOTO
-    d = MinDist(d, motoShape(p));
-// End of active block.
+    vec2 d = motoShape(p);
+// Inactive conditional block: #else
+
 // Active conditional block: #ifndef DISABLE_MOTO_DRIVER
-    if (camShowDriver > 0.5)
-    {
-        d = MinDist(d, driverShape(p));
-    }
+    d = MinDist(d, driverShape(p));
 // End of active block.
 // Active conditional block: #ifndef DISABLE_TERRAIN
     d = MinDist(d, terrainShape(p, splineUV));
