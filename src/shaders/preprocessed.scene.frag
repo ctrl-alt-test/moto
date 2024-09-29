@@ -857,7 +857,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
 
     float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
-    vec2 res = MinDist(vec2(len, MOTO_EXHAUST_ID), vec2(reflector, ROAD_REFLECTOR_ID));
+    vec2 res = MinDist(vec2(len, ROAD_UTILITY_ID), vec2(reflector, ROAD_REFLECTOR_ID));
 
     
     pObj = vec3(pRoad.x - 4.5, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
@@ -1650,6 +1650,10 @@ material computeMaterial(int mid, vec3 p, vec3 N)
         return motoMaterial(mid, p, N);
     }
 
+    if (mid == ROAD_UTILITY_ID)
+    {
+        return material(MATERIAL_TYPE_METALLIC, vec3(0.9), 0.7);
+    }
     if (mid == ROAD_REFLECTOR_ID)
     {
         return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);

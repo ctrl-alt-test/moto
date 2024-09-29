@@ -349,7 +349,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   pObj=vec3(pRoad.x-4.3,pRoad.y-.5,round(pRoad.z*.5)/.5-pRoad.z);
   relativeHeight=min(relativeHeight,Box3(pObj,vec3(.05,.5,.05),.01));
   float reflector=Box3(pObj-vec3(-.1,.3,0),vec3(.04,.06,.03),.01);
-  vec2 res=MinDist(vec2(relativeHeight,3),vec2(reflector,12));
+  vec2 res=MinDist(vec2(relativeHeight,10),vec2(reflector,12));
   pObj=vec3(pRoad.x-4.5,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
   relativeHeight=Box3(pObj,vec3(.1,3,.1),.1);
   res=MinDist(res,vec2(relativeHeight,3));
@@ -734,9 +734,11 @@ material computeMaterial(int mid,vec3 p,vec3 N)
     }
   return mid<=7?
     p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
-    mid==12?
-      material(3,vec3(1,.4,.05),.2):
-      material(0,fract(p.xyz),1.);
+    mid==10?
+      material(1,vec3(.9),.7):
+      mid==12?
+        material(3,vec3(1,.4,.05),.2):
+        material(0,fract(p.xyz),1.);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {

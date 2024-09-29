@@ -249,7 +249,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     len = min(len, Box3(pObj, vec3(0.05, 0.5, 0.05), 0.01));
 
     float reflector = Box3(pObj - vec3(-0.1, 0.3, 0.0), vec3(0.04, 0.06, 0.03), 0.01);
-    vec2 res = MinDist(vec2(len, MOTO_EXHAUST_ID), vec2(reflector, ROAD_REFLECTOR_ID));
+    vec2 res = MinDist(vec2(len, ROAD_UTILITY_ID), vec2(reflector, ROAD_REFLECTOR_ID));
 
     // street lamp
     pObj = vec3(pRoad.x - 4.5, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
