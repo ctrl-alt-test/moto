@@ -203,7 +203,7 @@ material roadMaterial(vec2 uv, float width, vec2 params)
     {
         color = mix(color, vec3(1.), marks.x);
     }
-    */
+    /**/
     // --------------
 
     return material(paint > 0.5 ? MATERIAL_TYPE_RETROREFLECTIVE : MATERIAL_TYPE_DIELECTRIC, color, roughness);
@@ -242,10 +242,11 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     pRoad.x -= roadWidthInMeters.x * 1.2;
 
     float hasGuardrail = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
+    float lampHeight = 7.;
+
+    vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
 	// Traffic barrier
-    /**/
-    vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
     if (hasGuardrail > -0.5)
     {
         float height = 0.8 * hasGuardrail;
@@ -267,13 +268,20 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     }
 
     // street lamp
-    vec3 pObj = vec3(pRoad.x - 0.4, pRoad.y - 1.5, round(pRoad.z / 30.) * 30. - pRoad.z);
-    float len = Box3(pObj, vec3(0.1, 3., 0.1), 0.1);
-    res = MinDist(res, vec2(len, MOTO_EXHAUST_ID));
+    if (lampHeight > 0.)
+    {
+        vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / 30.) * 30. - pRoad.z);
+        float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
 
-    pObj = vec3(pRoad.x - 0.2, pRoad.y - 4., pObj.z);
-    len = Box3(pObj, vec3(0.2, 0.1, 0.1), 0.1);
-    res = MinDist(res, vec2(len, MOTO_BREAK_LIGHT_ID)); // TODO: proper light
+        pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);
+        pObj.xy *= Rotation(-0.2);
+        len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
+        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
+
+        pObj.x += 1.2;
+        len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
+        res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
+    }
 
     return res;
 }
@@ -281,16 +289,17 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 vec2 terrainShape(vec3 p, vec4 splineUV)
 {
     float heightToDistanceFactor = 0.75;
-
     // First, compute the smooth terrain
     float terrainHeight = smoothTerrainHeight(p.xz);
     float relativeHeight = p.y - terrainHeight;
 
     // If the distance is sufficiently large, stop there
-    if (relativeHeight > 5.5)
+    if (relativeHeight > 10.)
     {
         return vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
     }
+
+    vec2 d = vec2(1e6, GROUND_ID);
 
     // Compute the road presence
     float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
@@ -310,6 +319,8 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
         // Get the terrain height at the center line
         roadHeight = smoothTerrainHeight(positionOnSpline);
+        d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
+
         roadHeight += roadBumpHeight(splineUV.x);
     }
 
@@ -318,9 +329,8 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
 
     relativeHeight = p.y - height;
     
-    vec2 d = vec2(heightToDistanceFactor * relativeHeight, GROUND_ID);
+    d = MinDist(d, vec2(heightToDistanceFactor * relativeHeight, GROUND_ID));
 
-    d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
     return d;
 }
 

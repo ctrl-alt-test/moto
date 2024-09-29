@@ -360,27 +360,34 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     }
   if(relativeHeight>=1.)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
-  pReflector=vec3(pRoad.x-.4,pRoad.y-1.5,round(pRoad.z/30.)*30.-pRoad.z);
-  relativeHeight=Box3(pReflector,vec3(.1,3,.1),.1);
-  res=MinDist(res,vec2(relativeHeight,3));
-  pReflector=vec3(pRoad.x-.2,pRoad.y-4.,pReflector.z);
-  relativeHeight=Box3(pReflector,vec3(.2,.1,.1),.1);
-  return MinDist(res,vec2(relativeHeight,4));
+  {
+    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/30.)*30.-pRoad.z);
+    float len=Box3(pObj,vec3(.1,7,.1),.1);
+    pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
+    pObj.xy*=Rotation(-.2);
+    len=min(len,Box3(pObj,vec3(1.8,.05,.05),.1));
+    res=MinDist(res,vec2(len,10));
+    pObj.x+=1.2;
+    len=Box3(pObj,vec3(.7,.1,.1),.1);
+    res=MinDist(res,vec2(len,13));
+  }
+  return res;
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
 {
   float terrainHeight=smoothTerrainHeight(p.xz),relativeHeight=p.y-terrainHeight;
-  if(relativeHeight>5.5)
+  if(relativeHeight>10.)
     return vec2(.75*relativeHeight,9);
+  vec2 d=vec2(1e6,9);
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
   if(isRoad<1.)
     terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
   float roadHeight=terrainHeight;
   if(isRoad>0.)
-    roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),roadHeight+=roadBumpHeight(splineUV.x);
-  isRoad=mix(terrainHeight,roadHeight,isRoad);
-  relativeHeight=p.y-isRoad;
-  return MinDist(vec2(.75*relativeHeight,9),roadSideItems(splineUV,p.y-roadHeight));
+    roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),d=MinDist(d,roadSideItems(splineUV,p.y-roadHeight)),roadHeight+=roadBumpHeight(splineUV.x);
+  roadHeight=mix(terrainHeight,roadHeight,isRoad);
+  relativeHeight=p.y-roadHeight;
+  return MinDist(d,vec2(.75*relativeHeight,9));
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
@@ -742,10 +749,15 @@ material computeMaterial(int mid,vec3 p,vec3 N)
         }
       return material(0,grassColor,.5);
     }
-  return mid<=7?
-    p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N):
-    mid==10?
-      material(1,vec3(.9),.7):
+  if(mid<=7)
+    return p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N);
+  material utility=material(1,vec3(.9),.7);
+  return mid==10?
+    utility:
+    mid==13?
+      N.y>-.5?
+        utility:
+        material(2,vec3(5,3,.1),.4):
       mid==12?
         material(3,vec3(1,.4,.05),.2):
         material(0,fract(p.xyz),1.);

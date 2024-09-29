@@ -41,10 +41,21 @@ material computeMaterial(int mid, vec3 p, vec3 N)
         return motoMaterial(mid, p, N);
     }
 
+
+    material utility = material(MATERIAL_TYPE_METALLIC, vec3(0.9), 0.7);
     if (mid == ROAD_UTILITY_ID)
     {
-        return material(MATERIAL_TYPE_METALLIC, vec3(0.9), 0.7);
+        return utility;
     }
+    if (mid == ROAD_LIGHT_ID)
+    {
+        if (N.y > -0.5)
+        {
+            return utility;
+        }
+        return material(MATERIAL_TYPE_EMISSIVE, vec3(5., 3., 0.1), 0.4);
+    }
+
     if (mid == ROAD_REFLECTOR_ID)
     {
         return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);
