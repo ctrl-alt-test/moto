@@ -65,29 +65,29 @@ float verticalBump()
     return valueNoise(6.*iTime).x;
 }
 
-const float SHOT_SIDE_FRONT = 0.0;
+const int SHOT_SIDE_FRONT = 0;
 void sideShotFront()
 {
     vec2 p = vec2(0.95, 0.5);
     p.x += mix(-0.5, 1., valueNoise(0.5*iTime).y);
     p.y += 0.05 * verticalBump();
-    camPos = vec3(p, 2.8);
+    camPos = vec3(p, 1.5);
     camTa = vec3(p.x, p.y + 0.1, 0.);
-    camProjectionRatio = 2.;
+    camProjectionRatio = 1.2;
 }
 
-const float SHOT_SIDE_REAR = 1.0;
+const int SHOT_SIDE_REAR = 1;
 void sideShotRear()
 {
     vec2 p = vec2(-1., 0.5);
-    p.x += mix(-1.2, 0.5, valueNoise(0.5*iTime).y);
+    p.x += mix(-0.2, 0.2, valueNoise(0.5*iTime).y);
     p.y += 0.05 * verticalBump();
-    camPos = vec3(p, 2.8);
+    camPos = vec3(p, 1.5);
     camTa = vec3(p.x, p.y + 0.1, 0.);
-    camProjectionRatio = 2.;
+    camProjectionRatio = 1.2;
 }
 
-const float SHOT_DASHBOARD_FPS = 2.0;
+const int SHOT_DASHBOARD_FPS = 2;
 void fpsDashboardShot()
 {
     vec2 noise = valueNoise(5.*iTime);
@@ -97,10 +97,10 @@ void fpsDashboardShot()
     camPos.z += mix(-0.02, 0.02, slowNoise.x);
     camPos.y += 0.01 * noise.y;
     camTa = vec3(5, 1, 0.);
-    camProjectionRatio = 0.6;
+    camProjectionRatio = 0.7;
 }
 
-const float SHOT_DASHBOARD_UNDER_SHOULDER = 3.0;
+const int SHOT_DASHBOARD_UNDER_SHOULDER = 3;
 // t should go from 0 to 1 in roughly 4 seconds
 void dashBoardUnderTheShoulderShot(float t)
 {
@@ -110,7 +110,7 @@ void dashBoardUnderTheShoulderShot(float t)
     camProjectionRatio = 1.5;
 }
 
-const float SHOT_FRONT_WHEEL_CLOSEUP = 4.0;
+const int SHOT_FRONT_WHEEL_CLOSEUP = 4;
 void frontWheelCloseUpShot()
 {
     camPos = vec3(-0.1, 0.5, 0.5);
@@ -124,7 +124,7 @@ void frontWheelCloseUpShot()
     camShowDriver = 0.;
 }
 
-const float SHOT_OVER_THE_HEAD = 5.0;
+const int SHOT_OVER_THE_HEAD = 5;
 void overTheHeadShot()
 {
     camPos = vec3(-1.4, 1.7, 0.);
@@ -135,7 +135,7 @@ void overTheHeadShot()
     camProjectionRatio = 2.;
 }
 
-const float SHOT_TOP_DOWN = 6.0;
+const int SHOT_TOP_DOWN = 20;
 void topDownView() // useful for debugging & visualizing the spline
 {
     camPos = vec3(-5., 37., 0.);
@@ -146,7 +146,7 @@ void topDownView() // useful for debugging & visualizing the spline
     camProjectionRatio = 0.5;
 }
 
-const float SHOT_FROM_BEHIND = 7.0;
+const int SHOT_FROM_BEHIND = 6;
 void viewFromBehind(float t_in_shot)
 {
     camTa = vec3(1., 1., 0.);
@@ -154,7 +154,7 @@ void viewFromBehind(float t_in_shot)
     camProjectionRatio = 1.;
 }
 
-const float SHOT_FACE = 8.0;
+const int SHOT_FACE = 7;
 void faceView(float t_in_shot)
 {
     camTa = vec3(1., 1.5, 0.);
@@ -166,7 +166,7 @@ void main(void)
 {
     gl_Position = a_position;
     float time = iTime;
-    GenerateSpline(1.8/*curvature*/, 40./*scale*/, 1./*seed*/);
+    GenerateSpline(1.8/*curvature*/, 80./*scale*/, floor(iTime / 20)/*seed*/);
 
     camProjectionRatio = 1.;
     camFishEye = 0.1;
@@ -199,7 +199,7 @@ void main(void)
     float numberOfDifferentShots = 8.;
 
     float t = fract((iTime / shotDuration) / numberOfDifferentShots) * numberOfDifferentShots;
-    float shot = floor(t);
+    int shot = int(t);
     float t_in_shot = fract(t);
 
     if (shot == SHOT_SIDE_REAR)

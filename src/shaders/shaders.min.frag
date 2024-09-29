@@ -408,15 +408,15 @@ vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffse
 float motoYaw,motoPitch,motoRoll;
 void computeMotoPosition()
 {
-  float distanceOnCurve=fract(time*.1);
+  float distanceOnCurve=fract(time/20.);
   vec3 nextPos=motoPos*=0.;
   motoPos.xz=GetPositionOnSpline(distanceOnCurve);
   motoPos.y=smoothTerrainHeight(motoPos.xz);
-  nextPos.xz=GetPositionOnSpline(distanceOnCurve+1e-4);
+  nextPos.xz=GetPositionOnSpline(distanceOnCurve+.05);
   nextPos.y=smoothTerrainHeight(nextPos.xz);
   motoDir=normalize(nextPos-motoPos);
   vec2 motoRight=vec2(-motoDir.z,motoDir);
-  distanceOnCurve=2.+1.5*sin(time);
+  distanceOnCurve=2.+.5*sin(time);
   motoPos.xz+=motoRight*distanceOnCurve;
   motoPos.y+=roadBumpHeight(abs(distanceOnCurve));
   motoYaw=atan(motoDir.z,motoDir.x);
@@ -860,16 +860,17 @@ vec2 valueNoise(float p)
 }
 void GenerateSpline()
 {
-  vec2 direction=normalize(vec2(hash11(1.),hash11(2.))*2.-1.),point=vec2(0);
+  float seed=floor(iTime/20);
+  vec2 direction=normalize(vec2(hash11(seed),hash11(seed+1.))*2.-1.),point=vec2(0);
   for(int i=0;i<13;i++)
     {
       if(i%2==0)
         {
-          spline[i]=point+20.*direction;
+          spline[i]=point+40.*direction;
           continue;
         }
-      float ha=hash11(1.+float(i)*3.);
-      point+=direction*40.;
+      float ha=hash11(seed+float(i)*3.);
+      point+=direction*80.;
       direction*=Rotation(mix(-1.8,1.8,ha));
       spline[i]=point;
     }
@@ -883,18 +884,18 @@ void sideShotFront()
   vec2 p=vec2(.95,.5);
   p.x+=mix(-.5,1.,valueNoise(.5*iTime).y);
   p.y+=.05*verticalBump();
-  camPos=vec3(p,2.8);
+  camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
-  camProjectionRatio=2.;
+  camProjectionRatio=1.2;
 }
 void sideShotRear()
 {
   vec2 p=vec2(-1,.5);
-  p.x+=mix(-1.2,.5,valueNoise(.5*iTime).y);
+  p.x+=mix(-.2,.2,valueNoise(.5*iTime).y);
   p.y+=.05*verticalBump();
-  camPos=vec3(p,2.8);
+  camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
-  camProjectionRatio=2.;
+  camProjectionRatio=1.2;
 }
 void fpsDashboardShot()
 {
@@ -902,7 +903,7 @@ void fpsDashboardShot()
   camPos.z+=mix(-.02,.02,valueNoise(.1*iTime).x);
   camPos.y+=.01*valueNoise(5.*iTime).y;
   camTa=vec3(5,1,0);
-  camProjectionRatio=.6;
+  camProjectionRatio=.7;
 }
 void dashBoardUnderTheShoulderShot(float t)
 {
@@ -951,23 +952,24 @@ void main()
   camFishEye=.1;
   camMotoSpace=1.;
   camShowDriver=1.;
-  float t=fract(iTime/6./8.)*8.,shot=floor(t);
+  float t=fract(iTime/6./8.)*8.;
+  int shot=int(t);
   t=fract(t);
-  if(shot==1.)
+  if(shot==1)
     sideShotRear();
-  if(shot==0.)
+  if(shot==0)
     sideShotFront();
-  if(shot==4.)
+  if(shot==4)
     frontWheelCloseUpShot();
-  if(shot==5.)
+  if(shot==5)
     overTheHeadShot();
-  if(shot==2.)
+  if(shot==2)
     fpsDashboardShot();
-  if(shot==3.)
+  if(shot==3)
     dashBoardUnderTheShoulderShot(t);
-  if(shot==7.)
+  if(shot==6)
     viewFromBehind(t);
-  if(shot==8.)
+  if(shot==7)
     faceView(t);
   camFoV=atan(1./camProjectionRatio);
 }
