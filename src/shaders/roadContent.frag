@@ -162,7 +162,7 @@ float roadMarkings(vec2 uv, float width, vec2 params)
 
     float pattern = min(min(sideLine1, sideLine2), separationLine1);
 
-    return 1.-smoothstep(-0.01, 0.01, pattern);
+    return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
 }
 
 material roadMaterial(vec2 uv, float width, vec2 params)
@@ -183,8 +183,8 @@ material roadMaterial(vec2 uv, float width, vec2 params)
 
 
     float paint = roadMarkings(uv.yx, width, params);
-    color = mix(color, vec3(0.5), paint);
-    roughness = mix(roughness, 0.7, paint);
+    color = mix(color, vec3(1), paint);
+    roughness = mix(roughness, .7, paint);
 
     // DEBUG --------
     /*
