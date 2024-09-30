@@ -51,7 +51,6 @@ float time;
 #include "roadContent.frag"
 #include "motoContent.frag"
 #include "rendering.frag"
-#include "moto.frag"
 
 void main()
 {
