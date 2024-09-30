@@ -7,15 +7,16 @@ void main(void)
 {
     vec2 rcpFrame = 1./iResolution;
     vec2 texcoord = gl_FragCoord.xy * rcpFrame;
-    vec4 uv = vec4( texcoord, texcoord - (rcpFrame * 0.5));
+    vec2 uv = texcoord;
+    vec2 st = texcoord - (rcpFrame * 0.5);
     
-    vec3 rgbNW = textureLod(tex, uv.zw, 0.0).xyz;
-    vec3 rgbNE = textureLod(tex, uv.zw + vec2(1,0)*rcpFrame.xy, 0.0).xyz;
-    vec3 rgbSW = textureLod(tex, uv.zw + vec2(0,1)*rcpFrame.xy, 0.0).xyz;
-    vec3 rgbSE = textureLod(tex, uv.zw + vec2(1,1)*rcpFrame.xy, 0.0).xyz;
-    vec3 rgbM  = textureLod(tex, uv.xy, 0.0).xyz;
+    vec4 rgbNW = texture(tex, st);
+    vec4 rgbNE = texture(tex, st + vec2(1,0)*rcpFrame.xy);
+    vec4 rgbSW = texture(tex, st + vec2(0,1)*rcpFrame.xy);
+    vec4 rgbSE = texture(tex, st + rcpFrame.xy);
+    vec4 rgbM  = texture(tex, uv);
 
-    vec3 luma = vec3(0.299, 0.587, 0.114);
+    vec4 luma = vec4(.299, .587, .114,0);
     float lumaNW = dot(rgbNW, luma);
     float lumaNE = dot(rgbNE, luma);
     float lumaSW = dot(rgbSW, luma);
@@ -32,17 +33,17 @@ void main(void)
           max(vec2(-8., -8.),
           dir * rcpDirMin)) * rcpFrame.xy;
 
-    vec3 rgbA = (1.0/2.0) * (
-        textureLod(tex, uv.xy + dir * (1.0/3.0 - 0.5), 0.0).xyz +
-        textureLod(tex, uv.xy + dir * (2.0/3.0 - 0.5), 0.0).xyz);
-    vec3 rgbB = rgbA * (1.0/2.0) + (1.0/4.0) * (
-        textureLod(tex, uv.xy + dir * (0.0/3.0 - 0.5), 0.0).xyz +
-        textureLod(tex, uv.xy + dir * (3.0/3.0 - 0.5), 0.0).xyz);
+    vec4 rgbA = (1.0/2.0) * (
+        texture(tex, uv + dir * (1.0/3.0 - 0.5)) +
+        texture(tex, uv + dir * (2.0/3.0 - 0.5)));
+    vec4 rgbB = rgbA * (1.0/2.0) + (1.0/4.0) * (
+        texture(tex, uv + dir * (0.0/3.0 - 0.5)) +
+        texture(tex, uv + dir * (3.0/3.0 - 0.5)));
     
     float lumaB = dot(rgbB, luma);
 
     if((lumaB < lumaMin) || (lumaB > lumaMax))
-        fragColor = vec4(rgbA,1.);
+        fragColor = rgbA;
     else
-        fragColor = vec4(rgbB,1.); 
+        fragColor = rgbB;
 }
