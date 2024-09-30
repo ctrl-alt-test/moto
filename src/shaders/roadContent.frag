@@ -334,7 +334,7 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
         roadHeight = smoothTerrainHeight(positionOnSpline);
         d = MinDist(d, roadSideItems(splineUV, p.y - roadHeight));
 
-        roadHeight += roadBumpHeight(splineUV.x);
+        roadHeight += roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
     }
 
     // Combine terrain height and road heigt
