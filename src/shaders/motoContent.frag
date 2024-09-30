@@ -77,10 +77,6 @@ vec3 worldToMoto(vec3 v, bool isPos)
 
 // vertical bars
 vec3 meter3(vec2 uv, float value) {
-    // 0.69, 0.87, 0.79
-    // 0.29, 0.63, 0.43
-    // 0.36, 0.16, 0.12
-
     float verticalLength = 0.04 + 0.15 * smoothstep(0.1, 0.4, uv.x);
 
     float r = Box2(uv, vec2(0.5, verticalLength), 0.01);
@@ -99,6 +95,7 @@ vec3 meter3(vec2 uv, float value) {
 }
 
 vec3 meter4(vec2 uv, float value) {
+  value = (value * 1.5 - 1.) * PI;
   float len = length(uv);
   float angle = atan(uv.y, uv.x);
 
@@ -108,7 +105,6 @@ vec3 meter4(vec2 uv, float value) {
     smoothstep(0., 0.01, 0.1 - length(uv)) *
     smoothstep(0., 0.01, length(uv) - 0.06);
 
-  value = (value * 1.5 - 1.) * PI;
   vec2 point = vec2(sin(value), cos(value)) * 0.07;
   float dummy;
   float line = smoothstep(0.004, 0.002, Segment3(uv.xyy, vec3(0), point.xyy, dummy));
@@ -117,15 +113,13 @@ vec3 meter4(vec2 uv, float value) {
   return col;
 }
 
-float digit(int n, vec2 p)
+float digit(int n, vec2 p2)
 {
     vec2 size = vec2(0.2, 0.35);
-    const float thickness = 0.065;
-    const float gap = 0.0125;
+    const float thickness = 0.06;
+    const float gap = 0.01;
     const float slant = 0.15;
     const float roundOuterCorners = 0.5;
-    const float roundInterCorners = 0.15;
-    const float spacing = 0.67;
 
     bool A = (n != 1 && n != 4);
     bool i_B = (n != 5 && n != 6);
@@ -135,9 +129,9 @@ float digit(int n, vec2 p)
     bool i_F = (n != 1 && n != 2 && n != 3 && n != 7);
     bool i_G = (n > 1 && n != 7);
 
-    p.x -= p.y * slant;
+    vec2 p = p2 - vec2(p.y * slant, 0.);
     float boundingBox = Box2(p, size, size.x * roundOuterCorners);
-    float innerBox = -Box2(p, size - thickness, size.x * roundInterCorners);
+    float innerBox = -Box2(p, size - thickness, 0.);
     float d = INF;
 
     // Segment A
@@ -214,12 +208,10 @@ float digit(int n, vec2 p)
 
 vec3 glowy(float d)
 {
-    float dd = fwidth(d);
-    float brightness = smoothstep(-dd, +dd, d);
-    vec3 segment = vec3(0.3, 0.5, 0.4);
+    float brightness = smoothstep(0., 0.01, d);
 
-    vec3 innerColor = mix(vec3(0.2), segment, 1. / exp(50. * max(0., -d)));
-    vec3 outerColor = mix(vec3(0.), segment, 1. / exp(200. * max(0., d)));
+    vec3 innerColor = mix(vec3(0.2), vec3(0.5), 1. / exp(50. * max(0., -d)));
+    vec3 outerColor = mix(vec3(0.), vec3(0.5), 1. / exp(200. * max(0., d)));
     return mix(innerColor, outerColor, brightness);
 }
 
