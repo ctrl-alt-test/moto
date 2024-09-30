@@ -123,6 +123,8 @@ vec3 cookTorrance(
 vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
 {
     vec3 L, irradiance;
+    vec3 L0 = l.P - p;
+    float d0 = length(L0);
     float NdotL;
 
     if (l.A != -1.0)
@@ -130,8 +132,6 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
         //
         // Cone light contribution
         //
-        vec3 L0 = l.P - p;
-        float d0 = length(L0);
         L = L0 / d0;
 
         NdotL = dot(N, L);
@@ -154,9 +154,7 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
         //
         // Rod light contribution
         //
-        vec3 L0 = l.P - p;
         vec3 L1 = l.Q - p;
-        float d0 = length(L0);
         float d1 = length(L1);
 
         // Approximating what the impact of the light will be.
@@ -173,7 +171,7 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
         float NdotL0 = dot(N, L0) / d0;
         float NdotL1 = dot(N, L1) / d1;
 
-        float angularContribution = 2. * clamp((NdotL0 + NdotL1) / 2., 0., 1.);
+        float angularContribution = max(0., NdotL0 + NdotL1);
         float geometricAttenuation = d0 * d1 + dot(L0, L1);
         float contribution = angularContribution / geometricAttenuation;
         // The Karis paper has a +2 term in the bottom part,
@@ -206,8 +204,8 @@ vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, fl
 
     vec3 H = normalize(L + V);
     vec3 NcrossH = cross(N, H);
-    float VdotH = clamp(dot(V, H), 0., 1.);
-    float NdotV = clamp(dot(N, V), 0., 1.);
+    float VdotH = max(0., dot(V, H));
+    float NdotV = max(0., dot(N, V));
 
     vec3 spec = cookTorrance(f0, roughness, NcrossH, VdotH, NdotL, NdotV);
 
