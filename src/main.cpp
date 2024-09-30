@@ -115,10 +115,10 @@ int __cdecl main(int argc, char* argv[])
 	// FXAA
 #ifdef USE_FXAA
 	#ifdef USE_CREATE_SHADER_PROGRAM
-		shaderFXAA = ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))(GL_FRAGMENT_SHADER, 1, &fxaa_frag);
+		shaderFXAA = ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))(GL_FRAGMENT_SHADER, 1, &preprocessed_fxaa_frag);
 	#else
 		f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
-		((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &fxaa_frag, 0);
+		((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &preprocessed_fxaa_frag, 0);
 		((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(f);
 
 		shaderFXAA = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
@@ -129,7 +129,7 @@ int __cdecl main(int argc, char* argv[])
 
 #ifdef USE_POSTPROCESS
 		f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
-		((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &postprocess_frag, 0);
+		((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &preprocessed_postprocess_frag, 0);
 		((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(f);
 
 		shaderPostProcess = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
