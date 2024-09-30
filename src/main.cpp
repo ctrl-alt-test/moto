@@ -97,7 +97,7 @@ int __cdecl main(int argc, char* argv[])
 	// initalize opengl context
 	SetPixelFormat(hDC, ChoosePixelFormat(hDC, &pfd), &pfd);
 	wglMakeCurrent(hDC, wglCreateContext(hDC));
-	
+
 	// create and compile shader programs
 	// Main shader
 	int v = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_VERTEX_SHADER);
@@ -221,8 +221,9 @@ int __cdecl main(int argc, char* argv[])
 
 #ifdef USE_POSTPROCESS
 		//glBindTexture(GL_TEXTURE_2D, 1);
-		//glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
+		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glGenerateMipmap"))(GL_TEXTURE_2D);
 		//((PFNGLACTIVETEXTUREPROC)wglGetProcAddress("glActiveTexture"))(GL_TEXTURE0);
 		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderPostProcess);
 		((PFNGLUNIFORM1IPROC)wglGetProcAddress("glUniform1i"))(0, 0); // Set sampler ID

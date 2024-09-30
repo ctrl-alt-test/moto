@@ -260,5 +260,5 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     vec3 fogColor = vec3(0.001,0.001,0.005);
     radiance = mix(radiance, fogColor, fogAmount);
 
-    return radiance;
+    return radiance*2;
 }

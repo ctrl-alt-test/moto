@@ -106,5 +106,9 @@ void main()
     vec3 i_radiance = evalRadiance(t, p, -rd, i_N);
     
     vec3 i_color = pow(i_radiance, vec3(1. / GAMMA));
-    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2), 1.);
+    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2)+vec3(
+        hash21(fract(uv+iTime)),
+        hash21(fract(uv-iTime)),
+        hash21(fract(uv.yx+iTime))
+    )*.025, 1.);
 }

@@ -1,14 +1,11 @@
 #version 150
 out vec4 fragColor;
 #include "iResolution.inc.frag"
-
 uniform sampler2D tex;
 
 void main(void)
 {
-    vec2 rcpFrame = 1./iResolution;
-    vec2 texcoord = gl_FragCoord.xy * rcpFrame;
-    vec4 uv = vec4( texcoord, texcoord - (rcpFrame * 0.5));
-    
-    fragColor = texture(tex, uv.xy);
+    vec2 uv = gl_FragCoord.xy/iResolution;
+    fragColor = 1-(1-texture(tex, uv))*(1-textureLod(tex,uv,7))*(1-textureLod(tex,1-uv,5)*.2);
+    fragColor *= max(1-pow(length(uv-.5),1.5)*1.5,0);
 }
