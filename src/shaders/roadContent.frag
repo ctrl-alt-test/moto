@@ -286,14 +286,13 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
 
     if (wallHeight > 0.)
     {
-        vec3 pObj = vec3(pRoad.x - 0.1, pRoad.y, 0.);
-        float len = Box3(pObj, vec3(0.1, wallHeight, 0.1), 0.05);
-
-        pObj.xy -= vec2(0.1, min(wallHeight, 0.8) - 0.7);
-        pObj.xy *= Rotation(1.2);
-        len = min(len, Box3(pObj, vec3(0.3), 0.));
-
-        res = MinDist(res, vec2(len, ROAD_WALL_ID));
+        float len = max(-abs(pRoad.x+4)+4.8+max(pRoad.y-1,0)*.5,pRoad.y-wallHeight);
+        res = MinDist(res, vec2(
+            min(
+                len,
+                max(len-.2,abs(mod(pRoad.z,10)-5)-.2)
+            )
+        , ROAD_WALL_ID));
     }
 
     return res;
