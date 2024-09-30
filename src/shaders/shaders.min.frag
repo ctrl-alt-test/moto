@@ -466,7 +466,7 @@ float digit(int n,vec2 p2)
 {
   vec2 size=vec2(.2,.35);
   bool A=n!=1&&n!=4;
-  p2-=vec2(p.y*.15,0);
+  p2-=vec2(p2.y*.15,0);
   float innerBox=-Box2(p2,size-.06,0.),d=1e6;
   if(A)
     d=min(d,max(max(innerBox,.01+p2.x-p2.y-size.x+size.y),.01-p2.x-p2.y-size.x+size.y));
@@ -484,12 +484,15 @@ float digit(int n,vec2 p2)
     d=min(d,max(max(max(max(-.06+abs(p2.y)*2.,.01+p2.x-p2.y+size.x-size.y),.01-p2.x+p2.y+size.x-size.y),.01+p2.x+p2.y+size.x-size.y),.01-p2.x-p2.y+size.x-size.y));
   return max(d,Box2(p2,size,size.x*.5));
 }
+vec3 glowy(float d)
+{
+  return mix(mix(vec3(.2),vec3(.5),1./exp(50.*max(0.,-d))),mix(vec3(0),vec3(.5),1./exp(2e2*max(0.,d))),smoothstep(0.,.01,d));
+}
 vec3 motoDashboard(vec2 uv)
 {
   int speed=105+int(sin(time*.5)*10.);
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
-  float numbers=min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0)));
-  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+mix(mix(vec3(.2),vec3(.5),1./exp(50.*max(0.,-numbers))),mix(vec3(0),vec3(.5),1./exp(2e2*max(0.,numbers))),smoothstep(0.,.01,numbers));
+  return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
 material motoMaterial(int mid,vec3 p,vec3 N)
 {

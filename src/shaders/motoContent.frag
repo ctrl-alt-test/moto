@@ -129,7 +129,7 @@ float digit(int n, vec2 p2)
     bool i_F = (n != 1 && n != 2 && n != 3 && n != 7);
     bool i_G = (n > 1 && n != 7);
 
-    vec2 p = p2 - vec2(p.y * slant, 0.);
+    vec2 p = p2 - vec2(p2.y * slant, 0.);
     float boundingBox = Box2(p, size, size.x * roundOuterCorners);
     float innerBox = -Box2(p, size - thickness, 0.);
     float d = INF;
