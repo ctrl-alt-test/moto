@@ -10,3 +10,5 @@ out
 Release
 moto.wav
 src/shaders/shaders.inl
+src/shaders/preprocessed.*
+src/shaders/shaders.min.frag
