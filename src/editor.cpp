@@ -126,7 +126,7 @@ void Editor::reloadShaderSource(int* mainShaderPID, int* postShaderPID)
 	}
 
 	// Postprocess shader
-	char* sourcePPS = textFileRead("src/shaders/postprocess.frag");
+	char* sourcePPS = textFileRead("src/shaders/preprocessed.postprocess.frag");
 	if (!sourcePPS) return;
 	int shaderPPS = compileShader(sourcePPS, GL_FRAGMENT_SHADER);
 	if (!shaderPPS) return;

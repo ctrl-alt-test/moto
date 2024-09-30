@@ -1,6 +1,7 @@
 @pushd %~dp0
 cd src\shaders
 ..\..\ShaderPreprocessor.exe scene.frag
+..\..\ShaderPreprocessor.exe postprocess.frag
 @popd
 
 @if "%~1"=="--minify" (

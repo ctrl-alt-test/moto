@@ -1,8 +1,6 @@
 #version 150
 out vec4 fragColor;
-const vec2 iResolution = vec2(1920.,1080.);
-
-
+#include "iResolution.inc.frag"
 uniform sampler2D tex;
 
 void main(void)

@@ -18,7 +18,7 @@ const float MAX_SHADOW_DIST = 5.0;
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
-const vec2 iResolution = vec2(1920.,1080.);
+#include "iResolution.inc.frag"
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
 
@@ -56,7 +56,6 @@ float time;
 void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
-
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
