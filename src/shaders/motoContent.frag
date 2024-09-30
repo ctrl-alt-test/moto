@@ -217,7 +217,7 @@ vec3 glowy(float d)
 
 vec3 motoDashboard(vec2 uv)
 {
-    int speed = 105 + int(sin(time*.5) * 10.);
+    int speed = 105 + int(sin(iTime*.5) * 10.);
     vec2 uvSpeed = uv * 3. - vec2(0.4, 1.95);
 
     float numbers =

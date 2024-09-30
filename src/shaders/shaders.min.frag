@@ -490,7 +490,7 @@ vec3 glowy(float d)
 }
 vec3 motoDashboard(vec2 uv)
 {
-  int speed=105+int(sin(time*.5)*10.);
+  int speed=105+int(sin(iTime*.5)*10.);
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
   return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
