@@ -235,6 +235,22 @@ float roadBumpHeight(float d)
     return 0.2 * (1. - x * x * x);
 }
 
+//
+// Returns the 3D direction (as a return value) and the 3D position (as
+// an out argument) on the road spline at t in [0, 1].
+//
+vec3 getRoadDirectionAndPosition(float t, out vec3 position)
+{
+    vec3 nextPos = position *= 0.;
+    position.xz = GetPositionOnSpline(t);
+    position.y = smoothTerrainHeight(position.xz);
+
+    nextPos.xz = GetPositionOnSpline(t + 0.02);
+    nextPos.y = smoothTerrainHeight(nextPos.xz);
+
+    return normalize(nextPos - position);
+}
+
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec2 res = vec2(1e6, NO_ID);
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
@@ -271,7 +287,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     // street lamp
     if (lampHeight > 0.)
     {
-        vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / 30.) * 30. - pRoad.z);
+        vec3 pObj = vec3(pRoad.x - 0.7, pRoad.y, round(pRoad.z / DISTANCE_BETWEEN_LAMPS) * DISTANCE_BETWEEN_LAMPS - pRoad.z);
         float len = Box3(pObj, vec3(0.1, lampHeight, 0.1), 0.1);
 
         pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);

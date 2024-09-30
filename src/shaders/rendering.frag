@@ -56,7 +56,7 @@ material computeMaterial(int mid, vec3 p, vec3 N)
 
     if (mid == ROAD_WALL_ID)
     {
-        return material(MATERIAL_TYPE_DIELECTRIC, vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15, .1);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15, .6);
     }
 
     if (mid == ROAD_REFLECTOR_ID)
@@ -223,10 +223,12 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     }
 
     // Direct lighting:
-    for (int i = 0; i < MAX_LIGHTS; ++i)
+    for (int i = 0; i < MAX_ROAD_LIGHTS + 3; ++i)
     {
         light l;
-        if (i == 0)
+
+        // Environment light
+        if (i == MAX_ROAD_LIGHTS)
         {
 #ifdef ENABLE_DAY_MODE
             l = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
@@ -234,17 +236,53 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             l = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 #endif
         }
-        if (i == 1)
+
+        // Head light
+        if (i == MAX_ROAD_LIGHTS + 1)
         {
             vec3 pos = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
             vec3 dir = motoToWorld(dirHeadLight, false);
             l = light(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 5.);
         }
-        if (i == 2)
+
+        // Break light
+        if (i == MAX_ROAD_LIGHTS + 2)
         {
             vec3 pos = motoToWorld(breakLightOffsetFromMotoRoot, true);
             vec3 dir = motoToWorld(dirBreakLight, false);
             l = light(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 2.0, 0.05);
+        }
+
+        // Road lights
+        if (i < MAX_ROAD_LIGHTS)
+        {
+            float t = float(i/2 - MAX_ROAD_LIGHTS/4 + 1);
+
+            float roadLength = splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
+            float motoDistanceOnRoad = motoDistanceOnCurve * roadLength;
+
+            float distanceOfFirstLamp = floor(motoDistanceOnRoad / DISTANCE_BETWEEN_LAMPS) * DISTANCE_BETWEEN_LAMPS;
+            float distanceOfCurrentLamp = distanceOfFirstLamp + t * DISTANCE_BETWEEN_LAMPS;
+
+            float distanceOnCurve = distanceOfCurrentLamp / roadLength;
+            if (distanceOnCurve > 0.97)
+            {
+                // End of the road.
+                // (hard coded 0.97 value because I couldn't determine
+                // the exact condition; I suspect the +0.02 in
+                // getRoadDirectionAndPosition)
+                continue;
+            }
+            vec3 pos, roadDir = getRoadDirectionAndPosition(distanceOnCurve, pos);
+
+            pos.x += (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
+            pos.y += 5.;
+            roadDir = 1. * vec3(roadDir.x, 0., roadDir.z);
+            //roadDir = 1. * vec3(roadDir.z, 0., -roadDir.x);
+
+            vec3 coldNeon = vec3(0.8, 0.9, 1.);
+            vec3 warmNeon = vec3(1., 0.9, 0.7);
+            l = light(pos, pos + roadDir, coldNeon, -1.0, 0.0, 0.0, 0.10);
         }
 
         radiance += lightContribution(l, p, V, N, albedo, f0, m.R);

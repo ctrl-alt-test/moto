@@ -7,6 +7,7 @@ vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
 float motoYaw;
 float motoPitch;
 float motoRoll;
+float motoDistanceOnCurve;
 
 //
 // Moto position functions
@@ -26,16 +27,9 @@ float motoRoll;
 
 void computeMotoPosition()
 {
-    float distanceOnCurve = fract(time/20.);
+    motoDistanceOnCurve = fract(time/20.);
 
-    vec3 nextPos = motoPos *= 0.;
-    motoPos.xz = GetPositionOnSpline(distanceOnCurve);
-    motoPos.y = smoothTerrainHeight(motoPos.xz);
-
-    nextPos.xz = GetPositionOnSpline(distanceOnCurve + 0.02);
-    nextPos.y = smoothTerrainHeight(nextPos.xz);
-
-    motoDir = normalize(nextPos - motoPos);
+    motoDir = getRoadDirectionAndPosition(motoDistanceOnCurve, motoPos);
 
     vec2 motoRight = vec2(-motoDir.z, motoDir.x);
     float rightOffset = 2.0 + 0.5*sin(time);
@@ -253,7 +247,7 @@ material motoMaterial(int mid, vec3 p, vec3 N)
             luminance = mix(vec3(0), color, isDashboard);
         }
 
-        return material(MATERIAL_TYPE_EMISSIVE, luminance, 0.15);
+        return material(MATERIAL_TYPE_EMISSIVE, luminance, 0.08);
     }
     if (mid == MOTO_BREAK_LIGHT_ID)
     {
@@ -265,7 +259,7 @@ material motoMaterial(int mid, vec3 p, vec3 N)
     }
     if (mid == MOTO_EXHAUST_ID)
     {
-        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.2);
+        return material(MATERIAL_TYPE_METALLIC, vec3(1.), 0.05);
     }
     if (mid == MOTO_MOTOR_ID)
     {
@@ -282,10 +276,10 @@ material motoMaterial(int mid, vec3 p, vec3 N)
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
-        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.25);
+        return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.12);
     }
 
-    return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.15);
+    return material(MATERIAL_TYPE_DIELECTRIC, vec3(0.), 0.08);
 }
 
 vec2 driverShape(vec3 p)

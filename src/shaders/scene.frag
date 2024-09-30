@@ -10,7 +10,7 @@ const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
 // #define DISABLE_TREES
 
 // Constants:
-const int MAX_LIGHTS = 3;
+const int MAX_ROAD_LIGHTS = 2 * 8; // Pairs of lights
 const int MAX_RAY_MARCH_STEPS = 200;
 const float MAX_RAY_MARCH_DIST = 100.0;
 const int MAX_SHADOW_STEPS = 30;
@@ -21,6 +21,8 @@ const float GAMMA = 2.2;
 #include "iResolution.inc.frag"
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
+
+const float DISTANCE_BETWEEN_LAMPS = 30.;
 
 // Uniforms:
 uniform float iTime;

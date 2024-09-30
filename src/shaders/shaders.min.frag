@@ -337,6 +337,15 @@ float roadBumpHeight(float d)
   d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
   return.2*(1.-d*d*d);
 }
+vec3 getRoadDirectionAndPosition(float t,out vec3 position)
+{
+  vec3 nextPos=position*=0.;
+  position.xz=GetPositionOnSpline(t);
+  position.y=smoothTerrainHeight(position.xz);
+  nextPos.xz=GetPositionOnSpline(t+.02);
+  nextPos.y=smoothTerrainHeight(nextPos.xz);
+  return normalize(nextPos-position);
+}
 vec2 roadSideItems(vec4 splineUV,float relativeHeight)
 {
   vec2 res=vec2(1e6,-1);
@@ -415,20 +424,15 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   return vec2(tree(p,localP,id,splineUV,current_t),9);
 }
 vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
-float motoYaw,motoPitch,motoRoll;
+float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
-  float distanceOnCurve=fract(time/20.);
-  vec3 nextPos=motoPos*=0.;
-  motoPos.xz=GetPositionOnSpline(distanceOnCurve);
-  motoPos.y=smoothTerrainHeight(motoPos.xz);
-  nextPos.xz=GetPositionOnSpline(distanceOnCurve+.02);
-  nextPos.y=smoothTerrainHeight(nextPos.xz);
-  motoDir=normalize(nextPos-motoPos);
+  motoDistanceOnCurve=fract(time/20.);
+  motoDir=getRoadDirectionAndPosition(motoDistanceOnCurve,motoPos);
   vec2 motoRight=vec2(-motoDir.z,motoDir);
-  distanceOnCurve=2.+.5*sin(time);
-  motoPos.xz+=motoRight*distanceOnCurve;
-  motoPos.y+=roadBumpHeight(abs(distanceOnCurve))+.1;
+  float rightOffset=2.+.5*sin(time);
+  motoPos.xz+=motoRight*rightOffset;
+  motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
   motoYaw=atan(motoDir.z,motoDir.x);
   motoPitch=atan(motoDir.y,length(motoDir.zx));
   motoRoll=0.;
@@ -505,12 +509,12 @@ material motoMaterial(int mid,vec3 p,vec3 N)
           vec3 color=motoDashboard(p.zy*5.5+vec2(.5,-5));
           luminance=mix(vec3(0),color,isDashboard);
         }
-      return material(2,luminance,.15);
+      return material(2,luminance,.08);
     }
   return mid==4?
     material(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
     mid==3?
-      material(1,vec3(1),.2):
+      material(1,vec3(1),.05):
       mid==2?
         material(0,vec3(0),.3):
         mid==1?
@@ -518,8 +522,8 @@ material motoMaterial(int mid,vec3 p,vec3 N)
           mid==6?
             material(0,vec3(.02,.025,.04),.6):
             mid==7?
-              material(0,vec3(0),.25):
-              material(0,vec3(0),.15);
+              material(0,vec3(0),.12):
+              material(0,vec3(0),.08);
 }
 vec2 driverShape(vec3 p)
 {
@@ -734,7 +738,7 @@ material computeMaterial(int mid,vec3 p,vec3 N)
         utility:
         material(2,vec3(5,3,.1),.4):
       mid==11?
-        material(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.1):
+        material(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.6):
         mid==12?
           material(3,vec3(1,.4,.05),.2):
           material(0,fract(p.xyz),1.);
@@ -801,20 +805,32 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       vec3 L=reflect(-V,N);
       emissive+=f0*sky(L);
     }
-  for(int i=0;i<3;++i)
+  for(int i=0;i<19;++i)
     {
       light l;
-      if(i==0)
+      if(i==16)
         l=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
-      if(i==1)
+      if(i==17)
         {
           vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(dirHeadLight,false);
           l=light(pos,dir,vec3(1),.75,.95,10.,5.);
         }
-      if(i==2)
+      if(i==18)
         {
           vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(dirBreakLight,false);
           l=light(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
+        }
+      if(i<16)
+        {
+          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
+          t=(floor(motoDistanceOnRoad/30.)*30.+t*30.)/roadLength;
+          if(t>.97)
+            continue;
+          vec3 pos,roadDir=getRoadDirectionAndPosition(t,pos);
+          pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
+          pos.y+=5.;
+          roadDir=vec3(roadDir.x,0,roadDir.z);
+          l=light(pos,pos+roadDir,vec3(.8,.9,1),-1.,0.,0.,.1);
         }
       emissive+=lightContribution(l,p,V,N,albedo,f0,m.R);
     }
