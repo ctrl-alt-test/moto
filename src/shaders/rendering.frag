@@ -1,5 +1,3 @@
-light lights[MAX_LIGHTS];
-
 // -------------------------------------------------------
 // Scene description functions
 
@@ -89,26 +87,6 @@ vec2 sceneSDF(vec3 p, float current_t)
 #endif
 
     return d;
-}
-
-void setLights()
-{
-#ifdef ENABLE_DAY_MODE
-    lights[0] = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
-#else
-    lights[0] = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
-#endif
-
-    vec3 posHeadLight = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
-    vec3 posBreakLight = motoToWorld(breakLightOffsetFromMotoRoot, true);
-    dirHeadLight = motoToWorld(dirHeadLight, false);
-    dirBreakLight = motoToWorld(dirBreakLight, false);
-
-    vec3 intensityHeadLight = vec3(1.);
-    lights[1] = light(posHeadLight, dirHeadLight, intensityHeadLight, 0.75, 0.95, 10.0, 5.);
-
-    vec3 intensityBreakLight = vec3(1., 0., 0.);
-    lights[2] = light(posBreakLight, dirBreakLight, intensityBreakLight, 0.3, 0.9, 2.0, 0.05);
 }
 
 // -------------------------------------------------------
@@ -247,7 +225,29 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     // Direct lighting:
     for (int i = 0; i < MAX_LIGHTS; ++i)
     {
-        radiance += lightContribution(lights[i], p, V, N, albedo, f0, m.R);
+        light l;
+        if (i == 0)
+        {
+#ifdef ENABLE_DAY_MODE
+            l = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
+#else
+            l = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
+#endif
+        }
+        if (i == 1)
+        {
+            vec3 pos = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
+            vec3 dir = motoToWorld(dirHeadLight, false);
+            l = light(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 5.);
+        }
+        if (i == 2)
+        {
+            vec3 pos = motoToWorld(breakLightOffsetFromMotoRoot, true);
+            vec3 dir = motoToWorld(dirBreakLight, false);
+            l = light(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 2.0, 0.05);
+        }
+
+        radiance += lightContribution(l, p, V, N, albedo, f0, m.R);
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);

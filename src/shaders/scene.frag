@@ -67,8 +67,6 @@ void main()
     // Compute moto position
     computeMotoPosition();
 
-    setLights();
-
     // camPos and camTa are passed by the vertex shader
     vec3 ro;
     vec3 rd;

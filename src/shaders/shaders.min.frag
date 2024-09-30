@@ -706,7 +706,6 @@ vec2 motoShape(vec3 p)
   }
   return d;
 }
-light lights[3];
 material computeMaterial(int mid,vec3 p,vec3 N)
 {
   vec4 splineUV;
@@ -747,15 +746,6 @@ vec2 sceneSDF(vec3 p,float current_t)
   d=MinDist(d,driverShape(p));
   d=MinDist(d,terrainShape(p,splineUV));
   return MinDist(d,treesShape(p,splineUV,current_t));
-}
-void setLights()
-{
-  lights[0]=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
-  vec3 posHeadLight=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),posBreakLight=motoToWorld(breakLightOffsetFromMotoRoot,true);
-  dirHeadLight=motoToWorld(dirHeadLight,false);
-  dirBreakLight=motoToWorld(dirBreakLight,false);
-  lights[1]=light(posHeadLight,dirHeadLight,vec3(1),.75,.95,10.,5.);
-  lights[2]=light(posBreakLight,dirBreakLight,vec3(1,0,0),.3,.9,2.,.05);
 }
 vec3 evalNormal(vec3 p,float t)
 {
@@ -812,7 +802,22 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       emissive+=f0*sky(L);
     }
   for(int i=0;i<3;++i)
-    emissive+=lightContribution(lights[i],p,V,N,albedo,f0,m.R);
+    {
+      light l;
+      if(i==0)
+        l=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
+      if(i==1)
+        {
+          vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(dirHeadLight,false);
+          l=light(pos,dir,vec3(1),.75,.95,10.,5.);
+        }
+      if(i==2)
+        {
+          vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(dirBreakLight,false);
+          l=light(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
+        }
+      emissive+=lightContribution(l,p,V,N,albedo,f0,m.R);
+    }
   emissive=mix(emissive,vec3(.001,.001,.005),1.-exp(-t.x*.01));
   return emissive*2;
 }
@@ -822,7 +827,6 @@ void main()
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   computeMotoPosition();
-  setLights();
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
