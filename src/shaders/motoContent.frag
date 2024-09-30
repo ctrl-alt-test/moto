@@ -40,7 +40,7 @@ void computeMotoPosition()
     vec2 motoRight = vec2(-motoDir.z, motoDir.x);
     float rightOffset = 2.0 + 0.5*sin(time);
     motoPos.xz += motoRight * rightOffset;
-    motoPos.y += roadBumpHeight(abs(rightOffset));
+    motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
 
     motoYaw = atan(motoDir.z, motoDir.x);
     motoPitch = atan(motoDir.y, length(motoDir.zx));
