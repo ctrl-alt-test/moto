@@ -14,14 +14,15 @@
     <ClInclude Include="src\glext.h">
       <Filter>ext</Filter>
     </ClInclude>
-    <ClInclude Include="src\4klang.h" />
     <ClInclude Include="src\editor.h">
       <Filter>editor</Filter>
     </ClInclude>
     <ClInclude Include="src\song.h">
       <Filter>editor</Filter>
     </ClInclude>
-    <ClInclude Include="src\music\music.h" />
+    <ClInclude Include="src\music\music.h">
+      <Filter>music</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\shaders\fxaa.frag">
@@ -67,6 +68,9 @@
     </Filter>
     <Filter Include="editor">
       <UniqueIdentifier>{6bea572d-5f4d-4221-a499-2638f6e437db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="music">
+      <UniqueIdentifier>{9bf824d7-0e9a-47d1-8928-742da8ce30c8}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

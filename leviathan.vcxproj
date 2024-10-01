@@ -556,7 +556,6 @@
     <ClInclude Include="src\definitions.h" />
     <ClInclude Include="src\editor.h" />
     <ClInclude Include="src\glext.h" />
-    <ClInclude Include="src\4klang.h" />
     <ClInclude Include="src\music\music.h" />
     <ClInclude Include="src\song.h" />
   </ItemGroup>
