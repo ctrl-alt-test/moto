@@ -214,7 +214,7 @@ const float terrain_fBm_frequency_param = 0.5;
 
 float smoothTerrainHeight(vec2 p)
 {
-    float hillHeightInMeters = 200.;
+    float hillHeightInMeters = 100.;
     float hillLengthInMeters = 2000.;
 
     return 0.5 * hillHeightInMeters * fBm(p * 2. / hillLengthInMeters, 3, terrain_fBm_weight_param, terrain_fBm_frequency_param);
