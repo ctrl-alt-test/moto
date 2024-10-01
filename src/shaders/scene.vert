@@ -127,12 +127,12 @@ void frontWheelCloseUpShot()
 const int SHOT_OVER_THE_HEAD = 5;
 void overTheHeadShot()
 {
-    camPos = vec3(-1.4, 1.7, 0.);
+    camPos = vec3(-1.8, 1.7, 0.);
     camTa = vec3(0.05, 1.45, 0.);
     float bump = 0.01 * verticalBump();
     camPos.y += bump;
     camTa.y += bump;
-    camProjectionRatio = 2.;
+    camProjectionRatio = 3.;
 }
 
 const int SHOT_TOP_DOWN = 20;

@@ -301,8 +301,8 @@ vec2 driverShape(vec3 p)
     // upper body
     if (true && d < 0.8)
     {
-        vec3 pBody = simP;
-        pBody.z -= 0.02;
+        vec3 pBody = p;
+        pBody.z = max(abs(pBody.z)-0.02,0);
         pBody.xy *= Rotation(3.1);
         pBody.yz *= Rotation(-0.1);
         d = smin(d, Capsule(pBody, 0.12, 0.12), 0.1);
@@ -319,6 +319,12 @@ vec2 driverShape(vec3 p)
         pBody.y += 0.1;
         pBody.yz *= Rotation(1.7);
         d = smin(d, Capsule(pBody, 0.12, 0.1), 0.015);
+
+        pBody=p;
+        pBody.y-=.48;
+        pBody.x-=.25;
+        pBody.xy *= Rotation(-.7);
+        d = min(d, length(vec2(max(abs(pBody.y)-.07,0),abs(length(pBody.xz)-.05)))-.04);
     }
     d += 0.005 * wind;
     
@@ -368,7 +374,10 @@ vec2 driverShape(vec3 p)
     if (true)
     {
         vec3 pHead = p - vec3(0.39, 0.6, 0.0);
-        float head = length(pHead) - 0.15;
+        float head = max(
+            length(pHead*vec3(1,1,1.2+pHead.y)) - 0.15,
+            -pHead.y-.09-pHead.x
+        );
 
         if (head < d)
         {
