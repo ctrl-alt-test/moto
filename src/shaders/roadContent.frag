@@ -182,7 +182,7 @@ float roadMarkings(vec2 uv, float width, vec2 params)
     return 1.-smoothstep(-0.01, 0.01, pattern+valueNoise(uv*30)*.03*valueNoise(uv));
 }
 
-material roadMaterial(vec2 uv, float width, vec2 params)
+M roadMaterial(vec2 uv, float width, vec2 params)
 {
     vec2 laneUV = uv / laneWidth;
 
@@ -223,7 +223,7 @@ material roadMaterial(vec2 uv, float width, vec2 params)
     /**/
     // --------------
 
-    return material(paint > 0.5 ? MATERIAL_TYPE_RETROREFLECTIVE : MATERIAL_TYPE_DIELECTRIC, color, roughness);
+    return M(paint > 0.5 ? MATERIAL_TYPE_RETROREFLECTIVE : MATERIAL_TYPE_DIELECTRIC, color, roughness);
 }
 
 const float terrain_fBm_weight_param = 0.6;

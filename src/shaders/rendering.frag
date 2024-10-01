@@ -1,12 +1,12 @@
 // -------------------------------------------------------
 // Scene description functions
 
-material computeMaterial(int mid, vec3 p, vec3 N)
+M computeMaterial(int mid, vec3 p, vec3 N)
 {
 #ifdef DEBUG
     if (mid == DEBUG_ID)
     {
-        return material(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 1.0);
+        return M(MATERIAL_TYPE_EMISSIVE, N * 0.5 + 0.5, 1.0);
     }
 #endif
 
@@ -24,12 +24,12 @@ material computeMaterial(int mid, vec3 p, vec3 N)
         vec3 grassColor = pow(vec3(67., 81., 70.) / 255. * 1., vec3(GAMMA));
         if (isRoad > 0.)
         {
-            material m = roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
+            M m = roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
             m.C = mix(grassColor, m.C, isRoad);
             return m;
         }
         // Terrain
-        return material(MATERIAL_TYPE_DIELECTRIC, grassColor, 0.5);
+        return M(MATERIAL_TYPE_DIELECTRIC, grassColor, 0.5);
     }
 
     if (IsMoto(mid))
@@ -40,7 +40,7 @@ material computeMaterial(int mid, vec3 p, vec3 N)
     }
 
 
-    material utility = material(MATERIAL_TYPE_METALLIC, vec3(0.9), 0.7);
+    M utility = M(MATERIAL_TYPE_METALLIC, vec3(0.9), 0.7);
     if (mid == ROAD_UTILITY_ID)
     {
         return utility;
@@ -51,20 +51,20 @@ material computeMaterial(int mid, vec3 p, vec3 N)
         {
             return utility;
         }
-        return material(MATERIAL_TYPE_EMISSIVE, vec3(5., 3., 0.1), 0.4);
+        return M(MATERIAL_TYPE_EMISSIVE, vec3(5., 3., 0.1), 0.4);
     }
 
     if (mid == ROAD_WALL_ID)
     {
-        return material(MATERIAL_TYPE_DIELECTRIC, vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15, .6);
+        return M(MATERIAL_TYPE_DIELECTRIC, vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15, .6);
     }
 
     if (mid == ROAD_REFLECTOR_ID)
     {
-        return material(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);
+        return M(MATERIAL_TYPE_RETROREFLECTIVE, vec3(1., 0.4, 0.05), 0.2);
     }
 
-    return material(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);
+    return M(MATERIAL_TYPE_DIELECTRIC, fract(p.xyz), 1.0);
 }
 
 vec2 sceneSDF(vec3 p, float current_t)
@@ -168,7 +168,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         return sky(-V);
     }
 
-    material m = computeMaterial(mid, p, N);
+    M m = computeMaterial(mid, p, N);
 
     vec3 emissive = vec3(0.);
     if (m.T == MATERIAL_TYPE_EMISSIVE)
@@ -227,17 +227,17 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     // Direct lighting:
     for (int i = 0; i < MAX_ROAD_LIGHTS + 3; ++i)
     {
-        light l;
+        L light;
 
         // Environment light
         if (i == MAX_ROAD_LIGHTS)
         {
 #ifdef ENABLE_DAY_MODE
             vec3 sunLightColor = vec3(1.0, 0.85, 0.7);
-            l = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
+            light = L(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
 #else
             vec3 moonLightColor = vec3(0.2, 0.8, 1.0);
-            l = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
+            light = L(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 #endif
         }
 
@@ -247,7 +247,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 pos = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
             vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
             vec3 dir = motoToWorld(dirHeadLight, false);
-            l = light(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 5.);
+            light = L(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 5.);
         }
 
         // Break light
@@ -256,7 +256,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 pos = motoToWorld(breakLightOffsetFromMotoRoot, true);
             vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
             vec3 dir = motoToWorld(dirBreakLight, false);
-            l = light(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 2.0, 0.05);
+            light = L(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 2.0, 0.05);
         }
 
         // Road lights
@@ -291,10 +291,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 coldNeon = vec3(0.8, 0.9, 1.);
             vec3 warmNeon = vec3(1., 0.9, 0.7);
             vec3 sodium = vec3(1., 0.3, 0.0);
-            l = light(pos, pos + roadDirAndCurve.xyz, sodium, -1.0, 0.0, 0.0, 10.0);
+            light = L(pos, pos + roadDirAndCurve.xyz, sodium, -1.0, 0.0, 0.0, 10.0);
         }
 
-        radiance += lightContribution(l, p, V, N, albedo, f0, m.R);
+        radiance += lightContribution(light, p, V, N, albedo, f0, m.R);
     }
 
     float fogAmount = 1.0 - exp(-t.x*0.01);

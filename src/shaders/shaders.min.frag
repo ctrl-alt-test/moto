@@ -12,8 +12,8 @@ float PIXEL_ANGLE=camFoV/iResolution.x,time;
 #define ZERO(iTime)min(0,int(iTime))
 
 const float PI=acos(-1.);
-struct light{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
-struct material{int T;vec3 C;float R;};
+struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
+struct M{int T;vec3 C;float R;};
 float invV1(float NdotV,float sqrAlpha)
 {
   return NdotV+sqrt(sqrAlpha+(1.-sqrAlpha)*NdotV*NdotV);
@@ -26,7 +26,7 @@ vec3 cookTorrance(vec3 f0,float roughness,vec3 NcrossH,float VdotH,float NdotL,f
   VdotH=1.-VdotH;
   return(VdotH+f0*(1.-VdotH*VdotH*VdotH*VdotH*VdotH))*(roughness/(PI*distribution*distribution))*(1./(invV1(NdotV,roughness)*invV1(NdotL,roughness)));
 }
-vec3 lightContribution(light l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughness)
+vec3 lightContribution(L l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughness)
 {
   vec3 L,irradiance,L0=l.P-p;
   float d0=length(L0),NdotL;
@@ -314,7 +314,7 @@ float roadMarkings(vec2 uv)
   float separationLine1=Box2(separationTileUV-vec2(.5*separationLineParams.y,0),vec2(.5*separationLineParams.y,.1),.01);
   return 1.-smoothstep(-.01,.01,min(min(Box2(sideTileUV-vec2(.5*params.y,3.5),vec2(.5*params.y,.1),.03),Box2(sideTileUV-vec2(.5*params.y,-3.5),vec2(.5*params.y,.1),.03)),separationLine1)+valueNoise(uv*30)*.03*valueNoise(uv));
 }
-material roadMaterial(vec2 uv)
+M roadMaterial(vec2 uv)
 {
   vec2 laneUV=uv/3.5;
   float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
@@ -328,7 +328,7 @@ material roadMaterial(vec2 uv)
   tireTrails=roadMarkings(uv.yx);
   color=mix(color,vec3(1),tireTrails);
   largeScaleNoise=mix(largeScaleNoise,.7,tireTrails);
-  return material(tireTrails>.5?
+  return M(tireTrails>.5?
     3:
     0,color,largeScaleNoise);
 }
@@ -507,7 +507,7 @@ vec3 motoDashboard(vec2 uv)
   vec2 uvSpeed=uv*3.-vec2(.4,1.95);
   return meter3(uv*.6-vec2(.09,.05),.7+.3*sin(time*.5))+meter4(uv*.7-vec2(.6,.45))+glowy(min(min(min(digit(5,uv*8.-vec2(.7,2.4)),float(speed<100)+digit(speed/100,uvSpeed)),digit(speed/10%10,uvSpeed-vec2(.5,0))),digit(speed%10,uvSpeed-vec2(1,0))));
 }
-material motoMaterial(int mid,vec3 p,vec3 N)
+M motoMaterial(int mid,vec3 p,vec3 N)
 {
   if(mid==5)
     {
@@ -518,21 +518,21 @@ material motoMaterial(int mid,vec3 p,vec3 N)
           vec3 color=motoDashboard(p.zy*5.5+vec2(.5,-5));
           luminance=mix(vec3(0),color,isDashboard);
         }
-      return material(2,luminance,.08);
+      return M(2,luminance,.08);
     }
   return mid==4?
-    material(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
+    M(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
     mid==3?
-      material(1,vec3(1),.05):
+      M(1,vec3(1),.05):
       mid==2?
-        material(0,vec3(0),.3):
+        M(0,vec3(0),.3):
         mid==1?
-          material(0,vec3(.008),.8):
+          M(0,vec3(.008),.8):
           mid==6?
-            material(0,vec3(.02,.025,.04),.6):
+            M(0,vec3(.02,.025,.04),.6):
             mid==7?
-              material(0,vec3(0),.12):
-              material(0,vec3(0),.08);
+              M(0,vec3(0),.12):
+              M(0,vec3(0),.08);
 }
 vec2 driverShape(vec3 p)
 {
@@ -724,7 +724,7 @@ vec2 motoShape(vec3 p)
   }
   return d;
 }
-material computeMaterial(int mid,vec3 p,vec3 N)
+M computeMaterial(int mid,vec3 p,vec3 N)
 {
   vec4 splineUV;
   vec3 pRoad=p;
@@ -736,26 +736,26 @@ material computeMaterial(int mid,vec3 p,vec3 N)
       vec3 grassColor=pow(vec3(67,81,70)/255.,vec3(2.2));
       if(isRoad>0.)
         {
-          material m=roadMaterial(splineUV.xz);
+          M m=roadMaterial(splineUV.xz);
           m.C=mix(grassColor,m.C,isRoad);
           return m;
         }
-      return material(0,grassColor,.5);
+      return M(0,grassColor,.5);
     }
   if(mid<=7)
     return p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N);
-  material utility=material(1,vec3(.9),.7);
+  M utility=M(1,vec3(.9),.7);
   return mid==10?
     utility:
     mid==13?
       N.y>-.5?
         utility:
-        material(2,vec3(5,3,.1),.4):
+        M(2,vec3(5,3,.1),.4):
       mid==11?
-        material(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.6):
+        M(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.6):
         mid==12?
-          material(3,vec3(1,.4,.05),.2):
-          material(0,fract(p.xyz),1.);
+          M(3,vec3(1,.4,.05),.2):
+          M(0,fract(p.xyz),1.);
 }
 vec2 sceneSDF(vec3 p,float current_t)
 {
@@ -797,7 +797,7 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       vec3(0),mix(vec3(0),vec3(.06,.04,.03),V.y),min(t.x*.001,1.));
   if(mid==-1)
     return sky(-V);
-  material m=computeMaterial(mid,p,N);
+  M m=computeMaterial(mid,p,N);
   vec3 emissive=vec3(0);
   if(m.T==2)
     {
@@ -821,18 +821,18 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     }
   for(int i=0;i<19;++i)
     {
-      light l;
+      L light;
       if(i==16)
-        l=light(moonDirection*1e3,-moonDirection,vec3(.2,.8,1),0.,0.,1e10,.005);
+        light=L(moonDirection*1e3,-moonDirection,vec3(.2,.8,1),0.,0.,1e10,.005);
       if(i==17)
         {
           vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(normalize(vec3(1,-.15,0)),false);
-          l=light(pos,dir,vec3(1),.75,.95,10.,5.);
+          light=L(pos,dir,vec3(1),.75,.95,10.,5.);
         }
       if(i==18)
         {
           vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(normalize(vec3(-1,-.5,0)),false);
-          l=light(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
+          light=L(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
         }
       if(i<16)
         {
@@ -845,9 +845,9 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
           roadDirAndCurve.y=0.;
           pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
           pos.y+=5.;
-          l=light(pos,pos+roadDirAndCurve.xyz,vec3(1,.3,0),-1.,0.,0.,10.);
+          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.3,0),-1.,0.,0.,10.);
         }
-      emissive+=lightContribution(l,p,V,N,albedo,f0,m.R);
+      emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
     }
   emissive=mix(emissive,vec3(.001,.001,.005),1.-exp(-t.x*.01));
   return emissive*2;

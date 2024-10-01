@@ -64,7 +64,7 @@ vec3 stepsToColor(int steps)
 // -------------------------------------------------------
 // Scene description functions
 
-struct light
+struct L // light
 {
     vec3 P; // Start position for rod light, position for cone light.
     vec3 Q; // End position for rod light, direction for cone light.
@@ -80,7 +80,7 @@ const int MATERIAL_TYPE_METALLIC = 1;
 const int MATERIAL_TYPE_EMISSIVE = 2;
 const int MATERIAL_TYPE_RETROREFLECTIVE = 3;
 
-struct material
+struct M // material
 {
     int T; // Type
     vec3 C; // Albedo for dielectric, metallic and retroreflective, luminance for emissive.
@@ -120,7 +120,7 @@ vec3 cookTorrance(
 	return F * D * V;
 }
 
-vec3 lightContribution(light l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
+vec3 lightContribution(L l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float roughness)
 {
     vec3 L, irradiance;
     vec3 L0 = l.P - p;
