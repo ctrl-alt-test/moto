@@ -76,7 +76,6 @@ void sideShotFront()
     camProjectionRatio = 1.2;
 }
 
-const int SHOT_SIDE_REAR = 1;
 void sideShotRear()
 {
     vec2 p = vec2(-1., 0.5);
@@ -87,7 +86,6 @@ void sideShotRear()
     camProjectionRatio = 1.2;
 }
 
-const int SHOT_DASHBOARD_FPS = 2;
 void fpsDashboardShot()
 {
     vec2 noise = valueNoise(5.*iTime);
@@ -100,7 +98,6 @@ void fpsDashboardShot()
     camProjectionRatio = 0.7;
 }
 
-const int SHOT_DASHBOARD_UNDER_SHOULDER = 3;
 // t should go from 0 to 1 in roughly 4 seconds
 void dashBoardUnderTheShoulderShot(float t)
 {
@@ -110,7 +107,6 @@ void dashBoardUnderTheShoulderShot(float t)
     camProjectionRatio = 1.5;
 }
 
-const int SHOT_FRONT_WHEEL_CLOSEUP = 4;
 void frontWheelCloseUpShot()
 {
     camPos = vec3(-0.1, 0.5, 0.5);
@@ -124,7 +120,6 @@ void frontWheelCloseUpShot()
     camShowDriver = 0.;
 }
 
-const int SHOT_OVER_THE_HEAD = 5;
 void overTheHeadShot()
 {
     camPos = vec3(-1.4, 1.7, 0.);
@@ -135,7 +130,6 @@ void overTheHeadShot()
     camProjectionRatio = 2.;
 }
 
-const int SHOT_TOP_DOWN = 20;
 void topDownView() // useful for debugging & visualizing the spline
 {
     camPos = vec3(-5., 37., 0.);
@@ -146,15 +140,13 @@ void topDownView() // useful for debugging & visualizing the spline
     camProjectionRatio = 0.5;
 }
 
-const int SHOT_FROM_BEHIND = 6;
 void viewFromBehind(float t_in_shot)
 {
     camTa = vec3(1., 1., 0.);
-    camPos = vec3(-2. - 4.*t_in_shot, 0.5, sin(t_in_shot));
+    camPos = vec3(-2. - 3.*t_in_shot, 1., sin(t_in_shot));
     camProjectionRatio = 1.;
 }
 
-const int SHOT_FACE = 7;
 void faceView(float t_in_shot)
 {
     camTa = vec3(1., 1.5, 0.);
@@ -162,7 +154,54 @@ void faceView(float t_in_shot)
     camProjectionRatio = 1.;
 }
 
-void main(void)
+void openingShot(float t_in_shot) {
+    camTa = vec3(10., 12. - mix(0., 10., min(1.,t_in_shot/6.)), 1.);
+    camPos = vec3(5, 7. - min(t_in_shot, 6.), 1.); // vec3(1. + 3.*time, 1.5, 1);
+    camProjectionRatio = 1.;
+}
+
+bool get_shot(inout float time, float duration) {
+    if (time < duration) {
+        return true;
+    }
+    time -= duration;
+    return false;
+}
+
+void main() {
+    gl_Position = a_position;
+    float time = iTime;
+    GenerateSpline(1.8/*curvature*/, 80./*scale*/, 2.+floor(iTime / 20)/*seed*/);
+
+    camProjectionRatio = 1.;
+    camFishEye = 0.1;
+    camMotoSpace = 1.;
+    camShowDriver = 1.;
+    camFoV = atan(1. / camProjectionRatio);
+
+    if (get_shot(time, 10.5)) {
+        openingShot(time);
+    } else if (get_shot(time, 6.)) {
+        sideShotRear();
+    } else if (get_shot(time, 5.)) {
+        sideShotFront();
+    } else if (get_shot(time, 6.)) {
+        frontWheelCloseUpShot();
+    } else if (get_shot(time, 6.)) {
+        overTheHeadShot();
+    } else if (get_shot(time, 6.)) {
+        fpsDashboardShot();
+    } else if (get_shot(time, 6.)) {
+        dashBoardUnderTheShoulderShot(time);
+    } else if (get_shot(time, 6.)) {
+        viewFromBehind(time);
+    } else if (get_shot(time, 6.)) {
+        faceView(time);
+    }
+    overTheHeadShot();
+}
+
+void main_old(void)
 {
     gl_Position = a_position;
     float time = iTime;
@@ -202,35 +241,39 @@ void main(void)
     int shot = int(t);
     float t_in_shot = fract(t);
 
-    if (shot == SHOT_SIDE_REAR)
+    if (shot == 0)
+    {
+        openingShot(t_in_shot);
+    }
+    if (shot == 1)
     {
         sideShotRear();
     }
-    if (shot == SHOT_SIDE_FRONT)
+    if (shot == 2)
     {
         sideShotFront();
     }
-    if (shot == SHOT_FRONT_WHEEL_CLOSEUP)
+    if (shot == 3)
     {
         frontWheelCloseUpShot();
     }
-    if (shot == SHOT_OVER_THE_HEAD)
+    if (shot == 4)
     {
         overTheHeadShot();
     }
-    if (shot == SHOT_DASHBOARD_FPS)
+    if (shot == 5)
     {
         fpsDashboardShot();
     }
-    if (shot == SHOT_DASHBOARD_UNDER_SHOULDER)
+    if (shot == 6)
     {
         dashBoardUnderTheShoulderShot(t_in_shot);
     }
-    if (shot == SHOT_FROM_BEHIND)
+    if (shot == 7)
     {
         viewFromBehind(t_in_shot);
     }
-    if (shot == SHOT_FACE)
+    if (shot == 8)
     {
         faceView(t_in_shot);
     }

@@ -427,7 +427,7 @@ vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffse
 float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
-  motoDistanceOnCurve=fract(time/20.);
+  motoDistanceOnCurve=mix(.1,.9,fract(time/20.));
   motoDir=getRoadDirectionAndPosition(motoDistanceOnCurve,motoPos);
   vec2 motoRight=vec2(-motoDir.z,motoDir);
   float rightOffset=2.+.5*sin(time);
@@ -957,7 +957,7 @@ void overTheHeadShot()
 void viewFromBehind(float t_in_shot)
 {
   camTa=vec3(1,1,0);
-  camPos=vec3(-2.-4.*t_in_shot,.5,sin(t_in_shot));
+  camPos=vec3(-2.-3.*t_in_shot,1,sin(t_in_shot));
   camProjectionRatio=1.;
 }
 void faceView(float t_in_shot)
@@ -966,34 +966,48 @@ void faceView(float t_in_shot)
   camPos=vec3(1.+3.*t_in_shot,1.5,1);
   camProjectionRatio=1.;
 }
+void openingShot(float t_in_shot)
+{
+  camTa=vec3(10,12.-mix(0.,10.,min(1.,t_in_shot/6.)),1);
+  camPos=vec3(5,7.-min(t_in_shot,6.),1);
+  camProjectionRatio=1.;
+}
+bool get_shot(inout float time,float duration)
+{
+  if(time<duration)
+    return true;
+  time-=duration;
+  return false;
+}
 void main()
 {
   gl_Position=a_position;
+  float time=iTime;
   GenerateSpline();
   camProjectionRatio=1.;
   camFishEye=.1;
   camMotoSpace=1.;
   camShowDriver=1.;
-  float t=fract(iTime/6./8.)*8.;
-  int shot=int(t);
-  t=fract(t);
-  if(shot==1)
-    sideShotRear();
-  if(shot==0)
-    sideShotFront();
-  if(shot==4)
-    frontWheelCloseUpShot();
-  if(shot==5)
-    overTheHeadShot();
-  if(shot==2)
-    fpsDashboardShot();
-  if(shot==3)
-    dashBoardUnderTheShoulderShot(t);
-  if(shot==6)
-    viewFromBehind(t);
-  if(shot==7)
-    faceView(t);
   camFoV=atan(1./camProjectionRatio);
+  if(get_shot(time,10.5))
+    openingShot(time);
+  else if(get_shot(time,6.))
+    sideShotRear();
+  else if(get_shot(time,5.))
+    sideShotFront();
+  else if(get_shot(time,6.))
+    frontWheelCloseUpShot();
+  else if(get_shot(time,6.))
+    overTheHeadShot();
+  else if(get_shot(time,6.))
+    fpsDashboardShot();
+  else if(get_shot(time,6.))
+    dashBoardUnderTheShoulderShot(time);
+  else if(get_shot(time,6.))
+    viewFromBehind(time);
+  else if(get_shot(time,6.))
+    faceView(time);
+  overTheHeadShot();
 }
 
 // src\shaders\preprocessed.fxaa.frag#version 150
