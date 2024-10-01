@@ -27,7 +27,8 @@ float motoDistanceOnCurve;
 
 void computeMotoPosition()
 {
-    motoDistanceOnCurve = fract(time/20.);
+    // Use mix to skip the beginning/end of the road.
+    motoDistanceOnCurve = mix(0.1, 0.9, fract(time/20.));
 
     motoDir = getRoadDirectionAndPosition(motoDistanceOnCurve, motoPos);
 
