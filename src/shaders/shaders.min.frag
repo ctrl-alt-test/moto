@@ -330,7 +330,7 @@ material roadMaterial(vec2 uv)
 }
 float smoothTerrainHeight(vec2 p)
 {
-  return 1e2*fBm(p*2./2e3,3,.6,.5);
+  return 50.*fBm(p*2./2e3,3,.6,.5);
 }
 float roadBumpHeight(float d)
 {
@@ -774,7 +774,7 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       float epsilon=t*PIXEL_ANGLE;
       if(d.x<epsilon)
         return vec2(t,d.y);
-      if(t>=1e2)
+      if(t>=1e3)
         return vec2(t,-1);
     }
   return vec2(t,d.y);
