@@ -18,7 +18,7 @@
 
 // Global defines
 #define SOUND_ON
-#define USE_FXAA 1
+// #define USE_FXAA 1
 #define USE_CREATE_SHADER_PROGRAM // Save almost 40 bytes, require OpenGL 4.1 (Anat : doesn't work on my emulated windows)
 #define USE_POSTPROCESS 1
 
