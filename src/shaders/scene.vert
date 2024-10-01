@@ -2,14 +2,13 @@
 
 in vec4 a_position;
 
-out vec3 sunDir;
+out float camFishEye;
+out float camFoV;
+out float camMotoSpace; // bool - 0. or 1.
+out float camProjectionRatio;
+out float camShowDriver; // bool - 0. or 1.
 out vec3 camPos;
 out vec3 camTa;
-out float camFoV;
-out float camProjectionRatio;
-out float camFishEye;
-out float camMotoSpace; // bool - 0. or 1.
-out float camShowDriver; // bool - 0. or 1.
 
 const int SPLINE_SIZE = 13;
 out vec2 spline[SPLINE_SIZE];

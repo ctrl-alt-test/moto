@@ -30,13 +30,14 @@ uniform sampler2D tex;
 
 
 // Inputs:
+in float camFishEye;
+in float camFoV;
+in float camMotoSpace;
+in float camProjectionRatio;
+in float camShowDriver;
 in vec3 camPos;
 in vec3 camTa;
-in float camMotoSpace;
-in float camFoV;
-in float camProjectionRatio;
-in float camFishEye;
-in float camShowDriver;
+
 in vec2 spline[SPLINE_SIZE];
 
 // Outputs:

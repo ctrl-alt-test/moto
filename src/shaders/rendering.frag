@@ -204,8 +204,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
     // Crude global illumination coming from the sky dome:
 #ifdef ENABLE_DAY_MODE
     // Day version:
+    vec3 daySkyDomeLight = 0.8 * vec3(0.25, 0.5, 1.0);
     vec3 I0 = daySkyDomeLight * (N.y * 0.5 + 0.5);
 #else
+    vec3 nightHorizonLight = 0.01 * vec3(0.07, 0.1, 1.0);
     // Night version:
     vec3 I0 = nightHorizonLight * mix(1.0, 0.1, N.y * N.y) * (N.x * 0.5 + 0.5);
 #endif
@@ -231,8 +233,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         if (i == MAX_ROAD_LIGHTS)
         {
 #ifdef ENABLE_DAY_MODE
+            vec3 sunLightColor = vec3(1.0, 0.85, 0.7);
             l = light(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
 #else
+            vec3 moonLightColor = vec3(0.2, 0.8, 1.0);
             l = light(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
 #endif
         }
@@ -241,6 +245,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         if (i == MAX_ROAD_LIGHTS + 1)
         {
             vec3 pos = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
+            vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
             vec3 dir = motoToWorld(dirHeadLight, false);
             l = light(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 5.);
         }
@@ -249,6 +254,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         if (i == MAX_ROAD_LIGHTS + 2)
         {
             vec3 pos = motoToWorld(breakLightOffsetFromMotoRoot, true);
+            vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
             vec3 dir = motoToWorld(dirBreakLight, false);
             l = light(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 2.0, 0.05);
         }
@@ -279,7 +285,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
             pos.x += (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
             pos.y += 5.;
-            // 90° rotation:
+            // 90ï¿½ rotation:
             //roadDirAndCurve.xz = vec2(roadDirAndCurve.z, -roadDirAndCurve.x);
 
             vec3 coldNeon = vec3(0.8, 0.9, 1.);

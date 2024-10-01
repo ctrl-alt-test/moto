@@ -3,8 +3,8 @@
 vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
+in float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 in vec3 camPos,camTa;
-in float camMotoSpace,camFoV,camProjectionRatio,camFishEye,camShowDriver;
 in vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
@@ -433,7 +433,7 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV,current_t),9);
 }
-vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0);
 float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
@@ -812,7 +812,7 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     f0=m.C;
   if(m.T==3)
     f0=m.C,N=V;
-  vec3 I0=nightHorizonLight*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
+  vec3 I0=.01*vec3(.07,.1,1)*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
   emissive+=I0*albedo;
   if(m.R<.25)
     {
@@ -823,15 +823,15 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     {
       light l;
       if(i==16)
-        l=light(moonDirection*1e3,-moonDirection,moonLightColor,0.,0.,1e10,.005);
+        l=light(moonDirection*1e3,-moonDirection,vec3(.2,.8,1),0.,0.,1e10,.005);
       if(i==17)
         {
-          vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(dirHeadLight,false);
+          vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(normalize(vec3(1,-.15,0)),false);
           l=light(pos,dir,vec3(1),.75,.95,10.,5.);
         }
       if(i==18)
         {
-          vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(dirBreakLight,false);
+          vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(normalize(vec3(-1,-.5,0)),false);
           l=light(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
         }
       if(i<16)
@@ -869,8 +869,8 @@ void main()
 // src\shaders\scene.vert#version 150
 
 in vec4 a_position;
-out vec3 sunDir,camPos,camTa;
-out float camFoV,camProjectionRatio,camFishEye,camMotoSpace,camShowDriver;
+out float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
+out vec3 camPos,camTa;
 out vec2 spline[13];
 uniform float iTime;
 float hash11(float x)
