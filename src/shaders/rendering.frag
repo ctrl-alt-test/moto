@@ -265,7 +265,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             float distanceOfCurrentLamp = distanceOfFirstLamp + t * DISTANCE_BETWEEN_LAMPS;
 
             float distanceOnCurve = distanceOfCurrentLamp / roadLength;
-            if (distanceOnCurve > 0.97)
+            if (distanceOnCurve >= 1.)
             {
                 // End of the road.
                 // (hard coded 0.97 value because I couldn't determine
@@ -273,17 +273,19 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
                 // getRoadDirectionAndPosition)
                 continue;
             }
-            vec3 pos, roadDir = getRoadDirectionAndPosition(distanceOnCurve, pos);
+            vec3 pos;
+            vec4 roadDirAndCurve = getRoadPositionDirectionAndCurvature(distanceOnCurve, pos);
+            roadDirAndCurve.y = 0.;
 
             pos.x += (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
             pos.y += 5.;
-            roadDir = 1. * vec3(roadDir.x, 0., roadDir.z);
-            //roadDir = 1. * vec3(roadDir.z, 0., -roadDir.x);
+            // 90° rotation:
+            //roadDirAndCurve.xz = vec2(roadDirAndCurve.z, -roadDirAndCurve.x);
 
             vec3 coldNeon = vec3(0.8, 0.9, 1.);
             vec3 warmNeon = vec3(1., 0.9, 0.7);
             vec3 sodium = vec3(1., 0.3, 0.0);
-            l = light(pos, pos + roadDir, sodium, -1.0, 0.0, 0.0, 10.0);
+            l = light(pos, pos + roadDirAndCurve.xyz, sodium, -1.0, 0.0, 0.0, 10.0);
         }
 
         radiance += lightContribution(l, p, V, N, albedo, f0, m.R);

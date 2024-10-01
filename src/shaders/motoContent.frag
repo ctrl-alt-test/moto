@@ -1,5 +1,4 @@
 vec3 motoPos;
-vec3 motoDir;
 vec3 headLightOffsetFromMotoRoot = vec3(0.53, 0.98, 0.0);
 vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
 vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
@@ -30,16 +29,16 @@ void computeMotoPosition()
     // Use mix to skip the beginning/end of the road.
     motoDistanceOnCurve = mix(0.1, 0.9, fract(time/20.));
 
-    motoDir = getRoadDirectionAndPosition(motoDistanceOnCurve, motoPos);
+    vec4 motoDirAndTurn = getRoadPositionDirectionAndCurvature(motoDistanceOnCurve, motoPos);
 
-    vec2 motoRight = vec2(-motoDir.z, motoDir.x);
+    vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
     float rightOffset = 2.0 + 0.5*sin(time);
     motoPos.xz += motoRight * rightOffset;
     motoPos.y += roadBumpHeight(abs(rightOffset))+.1;
 
-    motoYaw = atan(motoDir.z, motoDir.x);
-    motoPitch = atan(motoDir.y, length(motoDir.zx));
-    motoRoll = 0.0;//0.1*PI * sin(time);
+    motoYaw = atan(motoDirAndTurn.z, motoDirAndTurn.x);
+    motoPitch = atan(motoDirAndTurn.y, length(motoDirAndTurn.zx));
+    motoRoll = 20. * motoDirAndTurn.w;
 }
 
 vec3 motoToWorld(vec3 v, bool isPos)

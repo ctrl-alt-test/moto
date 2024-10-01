@@ -335,13 +335,6 @@ float DistanceFromAABB(vec2 p, vec4 aabb)
 // https://www.shadertoy.com/view/NltBRB
 // Credit: MMatteini
 
-vec2 Bezier(vec2 A, vec2 B, vec2 C, float t)
-{
-    vec2 AB = mix(A, B, t);
-    vec2 BC = mix(B, C, t);
-    return mix(AB, BC, t);
-}
-
 // Roots of the cubic equation for the closest point to a bezier.
 // From: https://www.shadertoy.com/view/MdXBzB by tomkh
 vec4 FindCubicRoots(float a, float b, float c)

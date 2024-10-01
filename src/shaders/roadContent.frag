@@ -89,9 +89,11 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
 // - y the index of the curve in the spline.
 //
 // If you have a splineUV, call:
-// GetPositionOnSplineFromIndex(splineUV.yw)
+// position = GetPositionOnSpline(splineUV.yw, directionAndCurvature)
 //
-vec2 GetPositionOnSplineFromIndex(vec2 spline_t_and_index)
+// If you don't, get the pair with GetTAndIndex(t)
+//
+vec2 GetPositionOnSpline(vec2 spline_t_and_index, out vec3 directionAndCurvature)
 {
     float t = spline_t_and_index.x;
     int index = int(spline_t_and_index.y);
@@ -99,14 +101,29 @@ vec2 GetPositionOnSplineFromIndex(vec2 spline_t_and_index)
     vec2 B = spline[index + 1];
     vec2 C = spline[index + 2];
 
-    return Bezier(A, B, C, t);
+    vec2 AB = mix(A, B, t);
+    vec2 BC = mix(B, C, t);
+
+    directionAndCurvature.xy = 2.0 * (BC - AB);
+
+    // Second derivative
+    vec2 d2 = 2.0 * (C - 2.0 * B + A);     
+    // Determinant (cross product)
+    // -----------
+    //   |d1|^3
+    float norm = length(directionAndCurvature.xy);
+    directionAndCurvature.z = directionAndCurvature.x * d2.y - directionAndCurvature.y * d2.x;
+    directionAndCurvature.z /= norm*norm*norm;
+
+    // Position:
+    return mix(AB, BC, t);
 }
 
 //
 // 2D position on the curve.
 // - t in [0, 1]
 //
-vec2 GetPositionOnSpline(float t)
+vec2 GetTAndIndex(float t)
 {
     // Desired length along the spline for the given t
     float targetLength = t * splineSegmentDistances[SPLINE_SIZE / 2 - 1].y;
@@ -124,7 +141,7 @@ vec2 GetPositionOnSpline(float t)
     // Calculate how far along the segment we are
     float segmentT = (targetLength - segmentStartDistance) / (segmentEndDistance - segmentStartDistance);
 
-    return GetPositionOnSplineFromIndex(vec2(segmentT, index * 2.0));
+    return vec2(segmentT, index * 2.0);
 }
 
 // x: actual width
@@ -236,19 +253,18 @@ float roadBumpHeight(float d)
 }
 
 //
-// Returns the 3D direction (as a return value) and the 3D position (as
-// an out argument) on the road spline at t in [0, 1].
+// Returns the 3D direction and curvature as a 4D return value, and the
+// 3D position as an out argument, on the road spline at t in [0, 1].
 //
-vec3 getRoadDirectionAndPosition(float t, out vec3 position)
+vec4 getRoadPositionDirectionAndCurvature(float t, out vec3 position)
 {
-    vec3 nextPos = position *= 0.;
-    position.xz = GetPositionOnSpline(t);
+    vec4 directionAndCurvature;
+    position.xz = GetPositionOnSpline(GetTAndIndex(t), directionAndCurvature.xzw);
     position.y = smoothTerrainHeight(position.xz);
+    directionAndCurvature.y = smoothTerrainHeight(position.xz + directionAndCurvature.xz) - position.y;
 
-    nextPos.xz = GetPositionOnSpline(t + 0.02);
-    nextPos.y = smoothTerrainHeight(nextPos.xz);
-
-    return normalize(nextPos - position);
+    directionAndCurvature.xyz = normalize(directionAndCurvature.xyz);
+    return directionAndCurvature;
 }
 
 vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
@@ -343,7 +359,8 @@ vec2 terrainShape(vec3 p, vec4 splineUV)
     if (isRoad > 0.0)
     {
         // Get the point on the center line of the spline
-        vec2 positionOnSpline = GetPositionOnSplineFromIndex(splineUV.yw);
+        vec3 directionAndCurvature;
+        vec2 positionOnSpline = GetPositionOnSpline(splineUV.yw, directionAndCurvature);
 
         // Get the terrain height at the center line
         roadHeight = smoothTerrainHeight(positionOnSpline);

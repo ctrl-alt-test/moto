@@ -134,10 +134,6 @@ float DistanceFromAABB(vec2 p,vec4 aabb)
 {
   return Box2(p-(aabb.xy+aabb.zw)/2.,(aabb.zw-aabb.xy)/2.,0.);
 }
-vec2 Bezier(vec2 A,vec2 B,vec2 C,float t)
-{
-  return mix(mix(A,B,t),mix(B,C,t),t);
-}
 vec4 FindCubicRoots(float a,float b,float c)
 {
   float p=b-a*a/3.,p3=p*p*p;
@@ -281,19 +277,27 @@ vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
     }
   return splineUV;
 }
-vec2 GetPositionOnSplineFromIndex(vec2 spline_t_and_index)
+vec2 GetPositionOnSpline(vec2 spline_t_and_index,out vec3 directionAndCurvature)
 {
+  float t=spline_t_and_index.x;
   int index=int(spline_t_and_index.y);
-  return Bezier(spline[index],spline[index+1],spline[index+2],spline_t_and_index.x);
+  spline_t_and_index=spline[index];
+  vec2 B=spline[index+1],C=spline[index+2],AB=mix(spline_t_and_index,B,t),BC=mix(B,C,t);
+  directionAndCurvature.xy=2.*(BC-AB);
+  B=2.*(C-2.*B+spline_t_and_index);
+  float norm=length(directionAndCurvature.xy);
+  directionAndCurvature.z=directionAndCurvature.x*B.y-directionAndCurvature.y*B.x;
+  directionAndCurvature.z/=norm*norm*norm;
+  return mix(AB,BC,t);
 }
-vec2 GetPositionOnSpline(float t)
+vec2 GetTAndIndex(float t)
 {
   t*=splineSegmentDistances[5].y;
   int index=0;
   for(;index<6&&t>splineSegmentDistances[index].y;++index)
     ;
   float segmentStartDistance=splineSegmentDistances[index].x,segmentEndDistance=splineSegmentDistances[index].y;
-  return GetPositionOnSplineFromIndex(vec2((t-segmentStartDistance)/(segmentEndDistance-segmentStartDistance),index*2.));
+  return vec2((t-segmentStartDistance)/(segmentEndDistance-segmentStartDistance),index*2.);
 }
 vec3 roadWidthInMeters=vec3(4,8,8);
 float roadMarkings(vec2 uv)
@@ -337,14 +341,14 @@ float roadBumpHeight(float d)
   d=clamp(abs(d/roadWidthInMeters.x),0.,1.);
   return.2*(1.-d*d*d);
 }
-vec3 getRoadDirectionAndPosition(float t,out vec3 position)
+vec4 getRoadPositionDirectionAndCurvature(float t,out vec3 position)
 {
-  vec3 nextPos=position*=0.;
-  position.xz=GetPositionOnSpline(t);
+  vec4 directionAndCurvature;
+  position.xz=GetPositionOnSpline(GetTAndIndex(t),directionAndCurvature.xzw);
   position.y=smoothTerrainHeight(position.xz);
-  nextPos.xz=GetPositionOnSpline(t+.02);
-  nextPos.y=smoothTerrainHeight(nextPos.xz);
-  return normalize(nextPos-position);
+  directionAndCurvature.y=smoothTerrainHeight(position.xz+directionAndCurvature.xz)-position.y;
+  directionAndCurvature.xyz=normalize(directionAndCurvature.xyz);
+  return directionAndCurvature;
 }
 vec2 roadSideItems(vec4 splineUV,float relativeHeight)
 {
@@ -394,7 +398,13 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
     terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
   float roadHeight=terrainHeight;
   if(isRoad>0.)
-    roadHeight=smoothTerrainHeight(GetPositionOnSplineFromIndex(splineUV.yw)),d=MinDist(d,roadSideItems(splineUV,p.y-roadHeight)),roadHeight+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
+    {
+      vec3 directionAndCurvature;
+      vec2 positionOnSpline=GetPositionOnSpline(splineUV.yw,directionAndCurvature);
+      roadHeight=smoothTerrainHeight(positionOnSpline);
+      d=MinDist(d,roadSideItems(splineUV,p.y-roadHeight));
+      roadHeight+=roadBumpHeight(splineUV.x)+pow(valueNoise(mod(p.xz*40,100)),.01)*.1;
+    }
   roadHeight=mix(terrainHeight,roadHeight,isRoad);
   relativeHeight=p.y-roadHeight;
   return MinDist(d,vec2(.75*relativeHeight,9));
@@ -423,19 +433,18 @@ vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
   localP.xz-=id;
   return vec2(tree(p,localP,id,splineUV,current_t),9);
 }
-vec3 motoPos,motoDir,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
+vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMotoRoot=vec3(-1.14,.55,0),dirHeadLight=normalize(vec3(1,-.15,0)),dirBreakLight=normalize(vec3(-1,-.5,0));
 float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
   motoDistanceOnCurve=mix(.1,.9,fract(time/20.));
-  motoDir=getRoadDirectionAndPosition(motoDistanceOnCurve,motoPos);
-  vec2 motoRight=vec2(-motoDir.z,motoDir);
+  vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
   float rightOffset=2.+.5*sin(time);
-  motoPos.xz+=motoRight*rightOffset;
+  motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
   motoPos.y+=roadBumpHeight(abs(rightOffset))+.1;
-  motoYaw=atan(motoDir.z,motoDir.x);
-  motoPitch=atan(motoDir.y,length(motoDir.zx));
-  motoRoll=0.;
+  motoYaw=atan(motoDirAndTurn.z,motoDirAndTurn.x);
+  motoPitch=atan(motoDirAndTurn.y,length(motoDirAndTurn.zx));
+  motoRoll=20.*motoDirAndTurn.w;
 }
 vec3 motoToWorld(vec3 v,bool isPos)
 {
@@ -829,13 +838,14 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
         {
           float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
           t=(floor(motoDistanceOnRoad/50.)*50.+t*50.)/roadLength;
-          if(t>.97)
+          if(t>=1.)
             continue;
-          vec3 pos,roadDir=getRoadDirectionAndPosition(t,pos);
+          vec3 pos;
+          vec4 roadDirAndCurve=getRoadPositionDirectionAndCurvature(t,pos);
+          roadDirAndCurve.y=0.;
           pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
           pos.y+=5.;
-          roadDir=vec3(roadDir.x,0,roadDir.z);
-          l=light(pos,pos+roadDir,vec3(1,.3,0),-1.,0.,0.,10.);
+          l=light(pos,pos+roadDirAndCurve.xyz,vec3(1,.3,0),-1.,0.,0.,10.);
         }
       emissive+=lightContribution(l,p,V,N,albedo,f0,m.R);
     }
