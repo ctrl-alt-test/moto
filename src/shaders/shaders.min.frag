@@ -367,7 +367,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   if(relativeHeight>=1.||true)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
   {
-    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/30.)*30.-pRoad.z);
+    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
     float len=Box3(pObj,vec3(.1,7,.1),.1);
     pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
     pObj.xy*=Rotation(-.2);
@@ -823,14 +823,14 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       if(i<16)
         {
           float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
-          t=(floor(motoDistanceOnRoad/30.)*30.+t*30.)/roadLength;
+          t=(floor(motoDistanceOnRoad/50.)*50.+t*50.)/roadLength;
           if(t>.97)
             continue;
           vec3 pos,roadDir=getRoadDirectionAndPosition(t,pos);
           pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
           pos.y+=5.;
           roadDir=vec3(roadDir.x,0,roadDir.z);
-          l=light(pos,pos+roadDir,vec3(.8,.9,1),-1.,0.,0.,.1);
+          l=light(pos,pos+roadDir,vec3(1,.3,0),-1.,0.,0.,10.);
         }
       emissive+=lightContribution(l,p,V,N,albedo,f0,m.R);
     }

@@ -22,7 +22,7 @@ const float GAMMA = 2.2;
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
 
-const float DISTANCE_BETWEEN_LAMPS = 30.;
+const float DISTANCE_BETWEEN_LAMPS = 50.;
 
 // Uniforms:
 uniform float iTime;

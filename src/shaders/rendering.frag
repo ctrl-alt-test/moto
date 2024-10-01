@@ -282,7 +282,8 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 
             vec3 coldNeon = vec3(0.8, 0.9, 1.);
             vec3 warmNeon = vec3(1., 0.9, 0.7);
-            l = light(pos, pos + roadDir, coldNeon, -1.0, 0.0, 0.0, 0.10);
+            vec3 sodium = vec3(1., 0.3, 0.0);
+            l = light(pos, pos + roadDir, sodium, -1.0, 0.0, 0.0, 10.0);
         }
 
         radiance += lightContribution(l, p, V, N, albedo, f0, m.R);
