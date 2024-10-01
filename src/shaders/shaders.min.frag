@@ -536,8 +536,8 @@ vec2 driverShape(vec3 p)
   float wind=fBm((p.xy+time)*12.,1,.5,.5);
   if(d<.8)
     {
-      vec3 pBody=simP;
-      pBody.z-=.02;
+      vec3 pBody=p;
+      pBody.z=max(abs(pBody.z)-.02,0);
       pBody.xy*=Rotation(3.1);
       pBody.yz*=Rotation(-.1);
       d=smin(d,Capsule(pBody,.12,.12),.1);
@@ -551,6 +551,11 @@ vec2 driverShape(vec3 p)
       pBody.y+=.1;
       pBody.yz*=Rotation(1.7);
       d=smin(d,Capsule(pBody,.12,.1),.015);
+      pBody=p;
+      pBody.y-=.48;
+      pBody.x-=.25;
+      pBody.xy*=Rotation(-.7);
+      d=min(d,length(vec2(max(abs(pBody.y)-.07,0),abs(length(pBody.xz)-.05)))-.04);
     }
   d+=.005*wind;
   {
@@ -584,7 +589,7 @@ vec2 driverShape(vec3 p)
   d+=.002*wind;
   {
     vec3 pHead=p-vec3(.39,.6,0);
-    float head=length(pHead)-.15;
+    float head=max(length(pHead*vec3(1,1,1.2+pHead.y))-.15,-pHead.y-.09-pHead.x);
     if(head<d)
       return vec2(head,7);
   }
@@ -947,12 +952,12 @@ void frontWheelCloseUpShot()
 }
 void overTheHeadShot()
 {
-  camPos=vec3(-1.4,1.7,0);
+  camPos=vec3(-1.8,1.7,0);
   camTa=vec3(.05,1.45,0);
   float bump=.01*verticalBump();
   camPos.y+=bump;
   camTa.y+=bump;
-  camProjectionRatio=2.;
+  camProjectionRatio=3.;
 }
 void viewFromBehind(float t_in_shot)
 {
@@ -1007,7 +1012,8 @@ void main()
     viewFromBehind(time);
   else if(get_shot(time,6.))
     faceView(time);
-  overTheHeadShot();
+  else
+     overTheHeadShot();
 }
 
 // src\shaders\preprocessed.fxaa.frag#version 150

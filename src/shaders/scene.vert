@@ -197,8 +197,9 @@ void main() {
         viewFromBehind(time);
     } else if (get_shot(time, 6.)) {
         faceView(time);
+    } else {
+        overTheHeadShot();
     }
-    overTheHeadShot();
 }
 
 void main_old(void)
