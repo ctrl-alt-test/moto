@@ -863,7 +863,7 @@ void main()
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraPosition);
-  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2)),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
+  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
 }
 
 // src\shaders\scene.vert#version 150
