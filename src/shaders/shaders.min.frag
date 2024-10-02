@@ -972,7 +972,7 @@ void overTheHeadShot()
 void viewFromBehind(float t_in_shot)
 {
   camTa=vec3(1,1,0);
-  camPos=vec3(-2.-3.*t_in_shot,1,sin(t_in_shot));
+  camPos=vec3(-2.-2.5*t_in_shot,1.5,sin(t_in_shot));
   camProjectionRatio=1.;
 }
 void faceView(float t_in_shot)
@@ -1010,18 +1010,32 @@ void main()
     sideShotRear();
   else if(get_shot(time,5.))
     sideShotFront();
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     frontWheelCloseUpShot();
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     overTheHeadShot();
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     fpsDashboardShot();
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     dashBoardUnderTheShoulderShot(time);
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     viewFromBehind(time);
-  else if(get_shot(time,6.))
+  else if(get_shot(time,8.))
     faceView(time);
+  else if(get_shot(time,8.))
+    sideShotRear();
+  else if(get_shot(time,8.))
+    sideShotFront();
+  else if(get_shot(time,8.))
+    frontWheelCloseUpShot();
+  else if(get_shot(time,8.))
+    overTheHeadShot();
+  else if(get_shot(time,8.))
+    fpsDashboardShot();
+  else if(get_shot(time,8.))
+    dashBoardUnderTheShoulderShot(time);
+  else if(get_shot(time,8.))
+    viewFromBehind(time);
   else
      overTheHeadShot();
 }
