@@ -255,7 +255,7 @@ float fBm(vec2 p, int iterations, float weight_param, float frequency_param)
     float frequency = 1.0;
     float offset = 0.0;
 
-    for (int i = ZERO(iTime); i < iterations; ++i)
+    for (int i = min(0, int(iTime)); i < iterations; ++i)
     {
         float noise = valueNoise(p * frequency + offset) * 2. - 1.;
         v += weight * noise;

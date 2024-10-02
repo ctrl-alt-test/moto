@@ -115,7 +115,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
     float t = 0.;
     vec2 d;
 
-    for (int i = ZERO(iTime); i < max_steps; ++i)
+    for (int i = min(0, int(iTime)); i < max_steps; ++i)
     {
 #ifdef ENABLE_STEP_COUNT
         steps = i + 1;

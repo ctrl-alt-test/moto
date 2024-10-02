@@ -46,7 +46,6 @@ out vec4 fragColor;
 // Semantic constants:
 float PIXEL_ANGLE = camFoV / iResolution.x;
 float time;
-#define ZERO(iTime) min(0, int(iTime))
 
 #include "common.frag"
 #include "ids.frag"

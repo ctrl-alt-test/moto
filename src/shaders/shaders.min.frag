@@ -8,9 +8,6 @@ in vec3 camPos,camTa;
 in vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
-
-#define ZERO(iTime)min(0,int(iTime))
-
 const float PI=acos(-1.);
 struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
 struct M{int T;vec3 C;float R;};
@@ -78,7 +75,7 @@ float valueNoise(vec2 p)
 float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
 {
   float v=0.,weight=1.,frequency=1.,offset=0.;
-  for(int i=ZERO(iTime);i<iterations;++i)
+  for(int i=min(0,int(iTime));i<iterations;++i)
     {
       float noise=valueNoise(p*frequency+offset)*2.-1.;
       v+=weight*noise;
@@ -243,7 +240,7 @@ void ComputeBezierSegmentsLengthAndAABB()
 {
   float splineLength=0.;
   splineAABB=vec4(1e6,1e6,-1e6,-1e6);
-  for(int i=ZERO(iTime);i<6;++i)
+  for(int i=min(0,int(iTime));i<6;++i)
     {
       int index=2*i;
       vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
@@ -261,7 +258,7 @@ vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
   vec4 splineUV=vec4(1e6,0,0,0);
   if(DistanceFromAABB(p,splineAABB)>splineWidth)
     return splineUV;
-  for(int i=ZERO(iTime);i<6;++i)
+  for(int i=min(0,int(iTime));i<6;++i)
     {
       int index=2*i;
       vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
@@ -318,19 +315,15 @@ M roadMaterial(vec2 uv)
 {
   vec2 laneUV=uv/3.5;
   float tireTrails=sin((laneUV.x-.125)*4.*PI)*.5+.5;
-  tireTrails=mix(tireTrails,smoothstep(0.,1.,tireTrails),.25);
-  float largeScaleNoise=smoothstep(-.25,1.,fBm(laneUV*vec2(15,.1),2,.7,.4));
-  tireTrails=mix(tireTrails,largeScaleNoise,.2);
-  largeScaleNoise=fBm(laneUV*vec2(150,6),1,1.,1.);
-  tireTrails=mix(tireTrails,largeScaleNoise,.1);
-  largeScaleNoise=mix(.8,.4,tireTrails);
+  tireTrails=mix(mix(mix(tireTrails,smoothstep(0.,1.,tireTrails),.25),smoothstep(-.25,1.,fBm(laneUV*vec2(15,.1),2,.7,.4)),.2),fBm(laneUV*vec2(150,6),1,1.,1.),.1);
+  float roughness=mix(.8,.4,tireTrails);
   vec3 color=vec3(mix(vec3(.11,.105,.1),vec3(.15),tireTrails));
   tireTrails=roadMarkings(uv.yx);
   color=mix(color,vec3(1),tireTrails);
-  largeScaleNoise=mix(largeScaleNoise,.7,tireTrails);
+  roughness=mix(roughness,.7,tireTrails);
   return M(tireTrails>.5?
     3:
-    0,color,largeScaleNoise);
+    0,color,roughness);
 }
 float smoothTerrainHeight(vec2 p)
 {
@@ -411,20 +404,19 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
-  float h1=hash21(id),h2=fract(sin(h1)*43758.5453),presence=smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3));
-  if(h1<presence)
+  float h1=hash21(id),h2=fract(sin(h1)*43758.5453);
+  if(h1<smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3)))
     return 1e6;
   if(abs(splineUV.x)<roadWidthInMeters.y)
     return 1e6;
-  presence=mix(5.,20.,1.-h1*h1);
-  float treeWidth=presence*mix(.3,.5,h2*h2),terrainHeight=smoothTerrainHeight(id);
-  localP.y-=terrainHeight+.5*presence;
+  float treeHeight=mix(5.,20.,1.-h1*h1),treeWidth=treeHeight*mix(.3,.5,h2*h2);
+  localP.y-=smoothTerrainHeight(id)+.5*treeHeight;
   localP.xz+=(vec2(h1,h2)*2.-1.)*2.;
-  treeWidth=Ellipsoid(localP,.5*vec3(treeWidth,presence,treeWidth));
-  terrainHeight=1.-smoothstep(50.,2e2,current_t);
-  if(treeWidth<2.&&terrainHeight>0.)
-    treeWidth+=terrainHeight*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
-  return treeWidth;
+  treeHeight=Ellipsoid(localP,.5*vec3(treeWidth,treeHeight,treeWidth));
+  treeWidth=1.-smoothstep(50.,2e2,current_t);
+  if(treeHeight<2.&&treeWidth>0.)
+    treeHeight+=treeWidth*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
+  return treeHeight;
 }
 vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
 {
@@ -775,7 +767,7 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   p=ro;
   float t=0.;
   vec2 d;
-  for(int i=ZERO(iTime);i<200;++i)
+  for(int i=min(0,int(iTime));i<200;++i)
     {
       d=sceneSDF(p,t);
       t+=d.x;
