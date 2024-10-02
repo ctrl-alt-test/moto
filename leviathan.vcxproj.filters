@@ -58,6 +58,9 @@
     <None Include="src\shaders\ids.frag">
       <Filter>shaders</Filter>
     </None>
+    <None Include="src\shaders\iResolution.inc.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">
