@@ -1018,27 +1018,6 @@ void main()
   fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
 }
 
-// src\shaders\preprocessed.fxaa.frag#version 150
-
-out vec4 fragColor;
-vec2 iResolution=vec2(1920,1080);
-uniform sampler2D tex;
-void main()
-{
-  vec2 rcpFrame=1./iResolution,texcoord=gl_FragCoord.xy*rcpFrame,uv=texcoord;
-  texcoord-=rcpFrame*.5;
-  vec4 luma=vec4(.299,.587,.114,0);
-  float lumaNW=dot(texture(tex,texcoord),luma),lumaNE=dot(texture(tex,texcoord+vec2(1,0)*rcpFrame.xy),luma),lumaSW=dot(texture(tex,texcoord+vec2(0,1)*rcpFrame.xy),luma),lumaSE=dot(texture(tex,texcoord+rcpFrame.xy),luma),lumaM=dot(texture(tex,uv),luma);
-  texcoord=vec2(-lumaNW-lumaNE+lumaSW+lumaSE,lumaNW+lumaSW-lumaNE-lumaSE);
-  float rcpDirMin=1./(min(abs(texcoord.x),abs(texcoord.y))+1./128.);
-  texcoord=min(vec2(8),max(vec2(-8),texcoord*rcpDirMin))*rcpFrame.xy;
-  vec4 rgbA=.5*(texture(tex,uv+texcoord*(1./3.-.5))+texture(tex,uv+texcoord*(2./3.-.5))),rgbB=rgbA*.5+.25*(texture(tex,uv+texcoord*-.5)+texture(tex,uv+texcoord*.5));
-  rcpDirMin=dot(rgbB,luma);
-  fragColor=rcpDirMin<min(lumaM,min(min(lumaNW,lumaNE),min(lumaSW,lumaSE)))||rcpDirMin>max(lumaM,max(max(lumaNW,lumaNE),max(lumaSW,lumaSE)))?
-    rgbA:
-    rgbB;
-}
-
 // src\shaders\preprocessed.postprocess.frag#version 150
 
 out vec4 fragColor;
