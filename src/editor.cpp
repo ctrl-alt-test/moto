@@ -104,7 +104,7 @@ void Editor::updateShaders(int* mainShaderPID, int* ppShaderPID, bool force_upda
 
 void Editor::reloadShaderSource(int* mainShaderPID, int* postShaderPID)
 {
-	char* sourceVS = textFileRead("src/shaders/scene.vert");
+	char* sourceVS = textFileRead("src/shaders/preprocessed.scene.vert");
 	char* sourcePS = textFileRead("src/shaders/preprocessed.scene.frag");
 	if (!sourceVS || !sourcePS) return;
 

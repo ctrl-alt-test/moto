@@ -3,9 +3,9 @@
 vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
-in float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
-in vec3 camPos,camTa;
-in vec2 spline[13];
+float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
+vec3 camPos,camTa;
+vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
 const float PI=acos(-1.);
@@ -57,6 +57,10 @@ vec3 lightContribution(L l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughn
   L=cookTorrance(f0,roughness,cross(N,L),max(0.,dot(V,L)),NdotL,max(0.,dot(N,V)));
   return irradiance*(albedo+L);
 }
+float hash11(float x)
+{
+  return fract(sin(x)*43758.5453);
+}
 float hash21(vec2 xy)
 {
   return fract(sin(dot(xy,vec2(12.9898,78.233)))*43758.5453);
@@ -65,12 +69,24 @@ float hash31(vec3 xyz)
 {
   return hash21(vec2(hash21(xyz.xy),xyz.z));
 }
+vec2 hash12(float x)
+{
+  x=hash11(x);
+  return vec2(x,hash11(x));
+}
 float valueNoise(vec2 p)
 {
   vec2 p00=floor(p);
   p-=p00;
   p=p*p*(3.-2.*p);
   return mix(mix(hash21(p00),hash21(p00+vec2(1,0)),p.x),mix(hash21(p00+vec2(0,1)),hash21(p00+vec2(1)),p.x),p.y);
+}
+vec2 valueNoise2(float p)
+{
+  float p0=floor(p);
+  p-=p0;
+  p=p*p*(3.-2.*p);
+  return mix(hash12(p0),hash12(p0+1.),p);
 }
 float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
 {
@@ -404,7 +420,7 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
-  float h1=hash21(id),h2=fract(sin(h1)*43758.5453);
+  float h1=hash21(id),h2=hash11(h1);
   if(h1<smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3)))
     return 1e6;
   if(abs(splineUV.x)<roadWidthInMeters.y)
@@ -844,49 +860,6 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
   emissive=mix(emissive,vec3(.001,.001,.005),1.-exp(-t.x*.01));
   return emissive*2;
 }
-void main()
-{
-  ComputeBezierSegmentsLengthAndAABB();
-  vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
-  time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
-  computeMotoPosition();
-  vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
-  if(camMotoSpace>.5)
-    cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
-  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
-  vec2 t=rayMarchScene(ro,rd,cameraPosition);
-  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
-}
-
-// src\shaders\scene.vert#version 150
-
-in vec4 a_position;
-out float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
-out vec3 camPos,camTa;
-out vec2 spline[13];
-uniform float iTime;
-float hash11(float x)
-{
-  return fract(sin(x)*43758.5453);
-}
-vec2 hash12(float x)
-{
-  x=hash11(x);
-  return vec2(x,hash11(x));
-}
-mat2 Rotation(float angle)
-{
-  float c=cos(angle);
-  angle=sin(angle);
-  return mat2(c,angle,-angle,c);
-}
-vec2 valueNoise(float p)
-{
-  float p0=floor(p);
-  p-=p0;
-  p=p*p*(3.-2.*p);
-  return mix(hash12(p0),hash12(p0+1.),p);
-}
 void GenerateSpline()
 {
   float seed=2.+floor(iTime/20);
@@ -906,12 +879,12 @@ void GenerateSpline()
 }
 float verticalBump()
 {
-  return valueNoise(6.*iTime).x;
+  return valueNoise2(6.*iTime).x;
 }
 void sideShotFront()
 {
   vec2 p=vec2(.95,.5);
-  p.x+=mix(-.5,1.,valueNoise(.5*iTime).y);
+  p.x+=mix(-.5,1.,valueNoise2(.5*iTime).y);
   p.y+=.05*verticalBump();
   camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
@@ -920,7 +893,7 @@ void sideShotFront()
 void sideShotRear()
 {
   vec2 p=vec2(-1,.5);
-  p.x+=mix(-.2,.2,valueNoise(.5*iTime).y);
+  p.x+=mix(-.2,.2,valueNoise2(.5*iTime).y);
   p.y+=.05*verticalBump();
   camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
@@ -929,8 +902,8 @@ void sideShotRear()
 void fpsDashboardShot()
 {
   camPos=vec3(.1,1.12,0);
-  camPos.z+=mix(-.02,.02,valueNoise(.1*iTime).x);
-  camPos.y+=.01*valueNoise(5.*iTime).y;
+  camPos.z+=mix(-.02,.02,valueNoise2(.1*iTime).x);
+  camPos.y+=.01*valueNoise2(5.*iTime).y;
   camTa=vec3(5,1,0);
   camProjectionRatio=.7;
 }
@@ -945,7 +918,7 @@ void frontWheelCloseUpShot()
 {
   camPos=vec3(-.1,.5,.5);
   camTa=vec3(.9,.35,.2);
-  vec2 vibration=.005*valueNoise(40.*iTime);
+  vec2 vibration=.005*valueNoise2(40.*iTime);
   vibration.x+=.02*verticalBump();
   camPos.yz+=vibration;
   camTa.yz+=vibration;
@@ -986,9 +959,8 @@ bool get_shot(inout float time,float duration)
   time-=duration;
   return false;
 }
-void main()
+void selectShot()
 {
-  gl_Position=a_position;
   float time=iTime;
   GenerateSpline();
   camProjectionRatio=1.;
@@ -1030,6 +1002,28 @@ void main()
     viewFromBehind(time);
   else
      overTheHeadShot();
+}
+void main()
+{
+  ComputeBezierSegmentsLengthAndAABB();
+  selectShot();
+  vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
+  time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
+  computeMotoPosition();
+  vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
+  if(camMotoSpace>.5)
+    cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
+  setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
+  vec2 t=rayMarchScene(ro,rd,cameraPosition);
+  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
+}
+
+// src\shaders\preprocessed.scene.vert#version 150
+
+in vec4 a_position;
+void main()
+{
+  gl_Position=a_position;
 }
 
 // src\shaders\preprocessed.fxaa.frag#version 150

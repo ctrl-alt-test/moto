@@ -215,10 +215,12 @@ vec3 lightContribution(L l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float 
 // -------------------------------------------------------
 // Noise functions
 
+// TODO: try to reduce the number of hash functions?
 float hash11(float x) { return fract(sin(x) * 43758.5453); }
 float hash21(vec2 xy) { return fract(sin(dot(xy, vec2(12.9898, 78.233))) * 43758.5453); }
 float hash31(vec3 xyz) { return hash21(vec2(hash21(xyz.xy), xyz.z)); }
 vec2 hash22(vec2 xy) { return fract(sin(vec2(dot(xy, vec2(127.1,311.7)), dot(xy, vec2(269.5,183.3)))) * 43758.5453); }
+vec2 hash12(float x) { float h = hash11(x); return vec2(h, hash11(h)); }
 
 float valueNoise(vec2 p)
 {
@@ -246,6 +248,21 @@ float valueNoise(vec2 p)
         mix(v00, v10, fp.x),
         mix(v01, v11, fp.x),
     fp.y);
+}
+
+// TODO: merge with previous function?
+vec2 valueNoise2(float p)
+{
+    float p0 = floor(p);
+    float p1 = p0 + 1.;
+
+    vec2 v0 = hash12(p0);
+    vec2 v1 = hash12(p1);
+
+    float fp = p - p0;
+    fp = fp*fp * (3.0 - 2.0 * fp);
+
+    return mix(v0, v1, fp);
 }
 
 float fBm(vec2 p, int iterations, float weight_param, float frequency_param)

@@ -29,7 +29,7 @@ const float DISTANCE_BETWEEN_LAMPS = 50.;
 uniform float iTime;
 uniform sampler2D tex;
 
-
+#ifdef USE_VERTEX_SHADER
 // Inputs:
 in float camFishEye;
 in float camFoV;
@@ -40,6 +40,20 @@ in vec3 camPos;
 in vec3 camTa;
 
 in vec2 spline[SPLINE_SIZE];
+
+#else
+
+float camFishEye;
+float camFoV;
+float camMotoSpace;
+float camProjectionRatio;
+float camShowDriver;
+vec3 camPos;
+vec3 camTa;
+
+vec2 spline[SPLINE_SIZE];
+
+#endif
 
 // Outputs:
 out vec4 fragColor;
@@ -54,10 +68,16 @@ float time;
 #include "roadContent.frag"
 #include "motoContent.frag"
 #include "rendering.frag"
+#ifndef USE_VERTEX_SHADER
+#include "camera.frag"
+#endif
 
 void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
+#ifndef USE_VERTEX_SHADER
+    selectShot();
+#endif
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 

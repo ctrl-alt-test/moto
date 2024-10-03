@@ -101,7 +101,7 @@ int __cdecl main(int argc, char* argv[])
 	// create and compile shader programs
 	// Main shader
 	int v = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_VERTEX_SHADER);
-	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(v, 1, &scene_vert, 0);
+	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(v, 1, &preprocessed_scene_vert, 0);
 	((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(v);
 	int f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
 	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &preprocessed_scene_frag, 0);
