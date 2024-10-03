@@ -1018,14 +1018,6 @@ void main()
   fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
 }
 
-// src\shaders\preprocessed.scene.vert#version 150
-
-in vec4 a_position;
-void main()
-{
-  gl_Position=a_position;
-}
-
 // src\shaders\preprocessed.fxaa.frag#version 150
 
 out vec4 fragColor;
