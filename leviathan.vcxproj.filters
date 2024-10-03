@@ -58,7 +58,7 @@
     <None Include="src\shaders\ids.frag">
       <Filter>shaders</Filter>
     </None>
-    <None Include="src\shaders\iResolution.inc.frag">
+    <None Include="src\shaders\shared.h">
       <Filter>shaders</Filter>
     </None>
   </ItemGroup>

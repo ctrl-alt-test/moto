@@ -18,9 +18,10 @@ const float MAX_SHADOW_DIST = 5.0;
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
 const float GAMMA = 2.2;
-#include "iResolution.inc.frag"
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
+#include "shared.h"
+vec2 iResolution = vec2(XRES, YRES);
 
 const float DISTANCE_BETWEEN_LAMPS = 50.;
 

@@ -1,6 +1,7 @@
 #version 150
 out vec4 fragColor;
-#include "iResolution.inc.frag"
+#include "shared.h"
+vec2 iResolution = vec2(XRES, YRES);
 uniform sampler2D tex;
 
 void main(void)
