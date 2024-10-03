@@ -100,10 +100,13 @@ int __cdecl main(int argc, char* argv[])
 
 	// create and compile shader programs
 	// Main shader
+
+	int f;
+#ifdef USE_VERTEX_SHADER
 	int v = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_VERTEX_SHADER);
 	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(v, 1, &preprocessed_scene_vert, 0);
 	((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(v);
-	int f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
+	f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
 	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &preprocessed_scene_frag, 0);
 	((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(f);
 
@@ -111,6 +114,9 @@ int __cdecl main(int argc, char* argv[])
 	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderMain, v);
 	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderMain, f);
 	((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(shaderMain);
+#else
+	shaderMain = ((PFNGLCREATESHADERPROGRAMVPROC)wglGetProcAddress("glCreateShaderProgramv"))(GL_FRAGMENT_SHADER, 1, &preprocessed_scene_frag);
+#endif
 
 	// FXAA
 #ifdef USE_FXAA
