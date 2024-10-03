@@ -391,8 +391,9 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     res=MinDist(res,vec2(len,13));
   }
   {
-    float len=max(-abs(pRoad.x+4)+4.8+max(pRoad.y-1,0)*.5,pRoad.y-4.);
-    res=MinDist(res,vec2(min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2)),11));
+    float len=max(-abs(pRoad.x+4)+4.8+max(pRoad.y-1,0)*.5,pRoad.y-3.);
+    len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
+    res=MinDist(res,vec2(len,11));
   }
   return res;
 }
