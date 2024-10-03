@@ -127,6 +127,16 @@ bool get_shot(inout float time, float duration) {
 void selectShot() {
     float time = iTime;
     GenerateSpline(1.8/*curvature*/, 80./*scale*/, 2.+floor(iTime / 20)/*seed*/);
+    wallHeight = -1.;
+    if (time < 20.) {
+        wallHeight = -1.;
+    } else if (time < 60.) {
+        wallHeight = 3.;
+    } else if (time < 80.) {
+        wallHeight = 4.;
+    } else {
+        wallHeight = -1.;
+    }
 
     camProjectionRatio = 1.;
     camFishEye = 0.1;

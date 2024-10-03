@@ -5,6 +5,7 @@ uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa;
+float wallHeight;
 vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
@@ -377,7 +378,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
       len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
       res=MinDist(res,vec2(len,10));
     }
-  if(relativeHeight>=1.||true)
+  if(relativeHeight>=1.||wallHeight>.7)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
   {
     vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
@@ -390,11 +391,17 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     len=Box3(pObj,vec3(.7,.1,.1),.1);
     res=MinDist(res,vec2(len,13));
   }
-  {
-    float len=max(-abs(pRoad.x+4)+4.8+max(pRoad.y-1,0)*.5,pRoad.y-3.);
-    len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
-    res=MinDist(res,vec2(len,11));
-  }
+  if(wallHeight>0.)
+    {
+      bool isTunnel=wallHeight>=4.;
+      float len=max(-pRoad.x+1.+max((isTunnel?
+        0.:
+        1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
+      len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
+      if(isTunnel)
+        len=smin(len,wallHeight-pRoad.y,.4);
+      res=MinDist(res,vec2(len,11));
+    }
   return res;
 }
 vec2 terrainShape(vec3 p,vec4 splineUV)
@@ -964,6 +971,14 @@ void selectShot()
 {
   float time=iTime;
   GenerateSpline();
+  wallHeight=-1.;
+  wallHeight=time<20.?
+    -1.:
+    time<60.?
+      3.:
+      time<80.?
+        4.:
+        -1.;
   camProjectionRatio=1.;
   camFishEye=.1;
   camMotoSpace=1.;

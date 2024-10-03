@@ -38,6 +38,7 @@ in float camProjectionRatio;
 in float camShowDriver;
 in vec3 camPos;
 in vec3 camTa;
+in float wallHeight;
 
 in vec2 spline[SPLINE_SIZE];
 
@@ -50,6 +51,7 @@ float camProjectionRatio;
 float camShowDriver;
 vec3 camPos;
 vec3 camTa;
+float wallHeight;
 
 vec2 spline[SPLINE_SIZE];
 
