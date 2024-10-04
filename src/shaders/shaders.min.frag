@@ -967,14 +967,20 @@ void viewFromBehind(float t_in_shot)
 }
 void faceView(float t_in_shot)
 {
-  camTa=vec3(1,1.5,0);
-  camPos=vec3(1.+3.*t_in_shot,1.5,1);
+  camTa=vec3(0,1.5,0);
+  camPos=vec3(1.+2.5*t_in_shot,1.5,-2);
   camProjectionRatio=1.;
 }
 void openingShot(float t_in_shot)
 {
   camTa=vec3(10,12.-mix(0.,10.,min(1.,t_in_shot/6.)),1);
   camPos=vec3(5,7.-min(t_in_shot,6.),1);
+  camProjectionRatio=1.;
+}
+void introShotFromFar(float t_in_shot)
+{
+  camTa=vec3(0,1,0);
+  camPos=vec3(60.-3.*t_in_shot,2,-7+t_in_shot);
   camProjectionRatio=1.;
 }
 bool get_shot(inout float time,float duration)
@@ -990,11 +996,11 @@ void selectShot()
   GenerateSpline();
   wallHeight=-1.;
   guardrailHeight=0.;
-  if(time<20.)
+  if(time<80.)
     wallHeight=-1.;
-  else if(time<60.)
+  else if(time<1e2)
     wallHeight=3.;
-  else if(time<80.)
+  else if(time<120.)
     wallHeight=4.;
   else
      wallHeight=-1.,guardrailHeight=1.;
@@ -1005,6 +1011,8 @@ void selectShot()
   camFoV=atan(1./camProjectionRatio);
   if(get_shot(time,10.5))
     openingShot(time);
+  else if(get_shot(time,9.5))
+    introShotFromFar(time);
   else if(get_shot(time,6.))
     sideShotRear();
   else if(get_shot(time,5.))
@@ -1019,16 +1027,16 @@ void selectShot()
     dashBoardUnderTheShoulderShot(time);
   else if(get_shot(time,8.))
     viewFromBehind(time);
-  else if(get_shot(time,8.))
-    faceView(time);
-  else if(get_shot(time,8.))
+  else if(get_shot(time,4.))
     sideShotRear();
   else if(get_shot(time,8.))
+    faceView(time);
+  else if(get_shot(time,4.))
     sideShotFront();
   else if(get_shot(time,8.))
-    frontWheelCloseUpShot();
-  else if(get_shot(time,8.))
     overTheHeadShot();
+  else if(get_shot(time,8.))
+    frontWheelCloseUpShot();
   else if(get_shot(time,8.))
     fpsDashboardShot();
   else if(get_shot(time,8.))
