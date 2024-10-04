@@ -272,16 +272,19 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
     pRoad.x -= roadWidthInMeters.x * 1.2;
+    // float guardrailHeight = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
 
-    float hasGuardrail = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
+    if (wallHeight >= 0.) {
+        guardrailHeight = -1.;
+    }
     float lampHeight = 7.;
 
     vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
 	// Traffic barrier
-    if (hasGuardrail > -0.5)
+    if (guardrailHeight > -0.5)
     {
-        float height = 0.8 * hasGuardrail;
+        float height = 0.8 * guardrailHeight;
         vec3 pObj = vec3(pRoad.x, pRoad.y - height, 0.);
         float len = Box3(pObj, vec3(0.1, 0.2, 0.1), 0.05);
 
@@ -294,7 +297,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     }
 
     float reflector = Box3(pReflector, vec3(0.05), 0.01);
-    if (hasGuardrail >= 1. || wallHeight > 0.7)
+    if (guardrailHeight >= 1. || wallHeight > 0.7)
     {
         res = MinDist(res, vec2(reflector, ROAD_REFLECTOR_ID));
     }
@@ -318,7 +321,7 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     if (wallHeight > 0.)
     {
         bool isTunnel = wallHeight >= 4.;
-        float len = max(-pRoad.x+1.+max((isTunnel?0.:1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
+        float len = max(-pRoad.x+max((isTunnel?0.:1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
         float d = min(
                 len,
                 max(len-.2,abs(mod(pRoad.z,10)-5)-.2)

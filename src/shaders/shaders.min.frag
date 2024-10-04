@@ -5,7 +5,7 @@ uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa;
-float wallHeight;
+float wallHeight,guardrailHeight;
 vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
@@ -365,11 +365,12 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   vec2 res=vec2(1e6,-1);
   vec3 pRoad=vec3(abs(splineUV.x),relativeHeight,splineUV.z);
   pRoad.x-=roadWidthInMeters.x*1.2;
-  relativeHeight=smoothstep(0.,1.,abs(fract(splineUV.y*2.)*2.-1.)*2.)*2.-1.;
+  if(wallHeight>=0.)
+    guardrailHeight=-1.;
   vec3 pReflector=vec3(pRoad.x,pRoad.y-.8,round(pRoad.z/4.)*4.-pRoad.z);
-  if(relativeHeight>-.5)
+  if(guardrailHeight>-.5)
     {
-      float height=.8*relativeHeight;
+      float height=.8*guardrailHeight;
       vec3 pObj=vec3(pRoad.x,pRoad.y-height,0);
       float len=Box3(pObj,vec3(.1,.2,.1),.05);
       pObj=vec3(pRoad.x+.1,pRoad.y-height,0);
@@ -378,7 +379,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
       len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
       res=MinDist(res,vec2(len,10));
     }
-  if(relativeHeight>=1.||wallHeight>.7)
+  if(guardrailHeight>=1.||wallHeight>.7)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
   {
     vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
@@ -394,7 +395,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
   if(wallHeight>0.)
     {
       bool isTunnel=wallHeight>=4.;
-      float len=max(-pRoad.x+1.+max((isTunnel?
+      float len=max(-pRoad.x+max((isTunnel?
         0.:
         1.)*pRoad.y-1.,0)*.5,pRoad.y-wallHeight);
       len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
@@ -972,13 +973,15 @@ void selectShot()
   float time=iTime;
   GenerateSpline();
   wallHeight=-1.;
-  wallHeight=time<20.?
-    -1.:
-    time<60.?
-      3.:
-      time<80.?
-        4.:
-        -1.;
+  guardrailHeight=0.;
+  if(time<20.)
+    wallHeight=-1.;
+  else if(time<60.)
+    wallHeight=3.;
+  else if(time<80.)
+    wallHeight=4.;
+  else
+     wallHeight=-1.,guardrailHeight=1.;
   camProjectionRatio=1.;
   camFishEye=.1;
   camMotoSpace=1.;

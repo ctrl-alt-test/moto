@@ -13,6 +13,7 @@ out float camShowDriver; // bool - 0. or 1.
 out vec3 camPos;
 out vec3 camTa;
 out float wallHeight;
+out float guardrailHeight;
 
 const int SPLINE_SIZE = 13;
 out vec2 spline[SPLINE_SIZE];

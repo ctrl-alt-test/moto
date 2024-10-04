@@ -39,6 +39,7 @@ in float camShowDriver;
 in vec3 camPos;
 in vec3 camTa;
 in float wallHeight;
+in float guardrailHeight;
 
 in vec2 spline[SPLINE_SIZE];
 
@@ -52,6 +53,7 @@ float camShowDriver;
 vec3 camPos;
 vec3 camTa;
 float wallHeight;
+float guardrailHeight;
 
 vec2 spline[SPLINE_SIZE];
 
