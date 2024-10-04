@@ -845,7 +845,7 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     f0=m.C;
   if(m.T==3)
     f0=m.C,N=V;
-  vec3 I0=.01*vec3(.07,.1,1)*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
+  vec3 I0=.01*vec3(.15,.2,1)*mix(1.,.1,N.y*N.y)*(N.x*.5+.5);
   emissive+=I0*albedo;
   if(m.R<.25)
     {
@@ -860,12 +860,12 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
       if(i==17)
         {
           vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(normalize(vec3(1,-.15,0)),false);
-          light=L(pos,dir,vec3(1),.75,.95,10.,5.);
+          light=L(pos,dir,vec3(1),.75,.95,10.,10.);
         }
       if(i==18)
         {
           vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(normalize(vec3(-1,-.5,0)),false);
-          light=L(pos,dir,vec3(1,0,0),.3,.9,2.,.05);
+          light=L(pos,dir,vec3(1,0,0),.3,.9,5.,.05);
         }
       if(i<16)
         {
@@ -877,8 +877,8 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
           vec4 roadDirAndCurve=getRoadPositionDirectionAndCurvature(t,pos);
           roadDirAndCurve.y=0.;
           pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
-          pos.y+=5.;
-          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.3,0),-1.,0.,0.,10.);
+          pos.y+=6.;
+          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0),-1.,0.,0.,4.);
         }
       emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
     }
