@@ -1054,6 +1054,14 @@ void selectShot()
      overTheHeadShot();
   PIXEL_ANGLE=camFoV/iResolution.x;
 }
+vec3 Uncharted2Tonemap(vec3 x)
+{
+  return(x*(.2*x+.03)+.002)/(x*(.2*x+.3)+.1)-.02;
+}
+vec3 toneMapping(vec3 hdrColor)
+{
+  return pow(Uncharted2Tonemap(2.*hdrColor)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2));
+}
 void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
@@ -1066,7 +1074,7 @@ void main()
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraPosition);
-  fragColor=vec4(mix(pow(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.025,1);
+  fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 
 // src\shaders\preprocessed.postprocess.frag#version 150

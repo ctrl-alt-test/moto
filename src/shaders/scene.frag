@@ -17,7 +17,6 @@ const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
 const float NORMAL_DP = 2.*1e-3;
 const float BOUNCE_OFFSET = 1e-3;
-const float GAMMA = 2.2;
 const int SPLINE_SIZE = 13;
 const float INF = 1e6;
 #include "shared.h"
@@ -85,6 +84,26 @@ float time;
 #include "camera.frag"
 #endif
 
+vec3 Uncharted2Tonemap(vec3 x)
+{
+  float A = 0.2; // Shoulder strength (0.22 ~ 0.15)
+  float B = 0.3; // Linear strength (0.30 ~ 0.50)
+  float C = 0.1; // Linear angle (0.10)
+  float D = 0.2; // Toe strength (0.20)
+  float E = 0.01; // Toe numerator (0.01 ~ 0.02) (E/F: Toe angle)
+  float F = 0.50; // Toe denominator (0.30)
+  return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec3 toneMapping(vec3 hdrColor)
+{
+  float W = 11.2; // Linear white point value
+  vec3 sdrColor = Uncharted2Tonemap(2.*hdrColor) / Uncharted2Tonemap(vec3(W));
+
+  float gamma = 2.2;
+  return pow(sdrColor, vec3(1.0 / gamma));
+}
+
 void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
@@ -139,12 +158,10 @@ void main()
     vec3 i_N = evalNormal(p, t.x);
     vec3 i_radiance = evalRadiance(t, p, -rd, i_N);
     
-    vec3 i_color = pow(i_radiance, vec3(1. / GAMMA)) *
+    vec3 i_color = toneMapping(i_radiance) *
         smoothstep(0., 4., iTime) * // fade in
         smoothstep(138., 132., iTime); // fade out
-    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2)+vec3(
-        hash21(fract(uv+iTime)),
-        hash21(fract(uv-iTime)),
-        hash21(fract(uv.yx+iTime))
-    )*.025, 1.);
+    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2)
+    +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
+    , 1.);
 }
