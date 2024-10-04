@@ -429,19 +429,26 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
-  float h1=hash21(id),h2=hash11(h1);
-  if(h1<smoothstep(-.7,.7,fBm(id/5e2,2,.5,.3)))
+  float h1=hash21(id),h2=hash11(h1),terrainHeight=smoothTerrainHeight(id);
+  if(globalP.y-terrainHeight-20.>0.)
     return 1e6;
-  if(abs(splineUV.x)<roadWidthInMeters.y)
-    return 1e6;
-  float treeHeight=mix(5.,20.,1.-h1*h1),treeWidth=treeHeight*mix(.3,.5,h2*h2);
-  localP.y-=smoothTerrainHeight(id)+.5*treeHeight;
-  localP.xz+=(vec2(h1,h2)*2.-1.)*2.;
-  treeHeight=Ellipsoid(localP,.5*vec3(treeWidth,treeHeight,treeWidth));
+  float d=5.;
+  if(h1>=1.)
+    return d;
+  if(abs(splineUV.x)<roadWidthInMeters.x)
+    return d;
+  float treeClearance=roadWidthInMeters.y+5.;
+  if(abs(ToSplineLocalSpace(id,treeClearance).x)<treeClearance)
+    return d;
+  treeClearance=mix(5.,20.,1.-h1*h1);
+  float treeWidth=treeClearance*mix(.3,.5,h2*h2);
+  localP.y-=terrainHeight+.5*treeClearance;
+  localP.xz+=(vec2(h1,h2)-.5)*1.5;
+  d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeClearance,treeWidth)));
   treeWidth=1.-smoothstep(50.,2e2,current_t);
-  if(treeHeight<2.&&treeWidth>0.)
-    treeHeight+=treeWidth*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
-  return treeHeight;
+  if(d<2.&&treeWidth>0.)
+    d+=treeWidth*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
+  return d;
 }
 vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
 {
