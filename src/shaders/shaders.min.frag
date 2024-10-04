@@ -817,7 +817,9 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       if(t>=1e3)
         return vec2(t,-1);
     }
-  return vec2(t,d.y);
+  return vec2(t,d.x<10.*t*PIXEL_ANGLE?
+    d.y:
+    -1);
 }
 vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 {
