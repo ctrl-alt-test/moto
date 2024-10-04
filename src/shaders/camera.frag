@@ -86,14 +86,12 @@ void overTheHeadShot()
     camProjectionRatio = 3.;
 }
 
-void topDownView() // useful for debugging & visualizing the spline
+ // Also useful for debugging & visualizing the spline
+ void topDownView()
 {
-    camPos = vec3(-5., 37., 0.);
-    camTa = vec3(1.05, 1.45, 0.);
-    float bump = 0.01 * verticalBump();
-    camPos.y += bump;
-    camTa.y += bump;
-    camProjectionRatio = 0.5;
+    camPos = vec3(0., 300., 0.);
+    camTa = vec3(0.);
+    camProjectionRatio = 4.;
 }
 
 void viewFromBehind(float t_in_shot)
