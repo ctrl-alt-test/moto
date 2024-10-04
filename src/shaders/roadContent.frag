@@ -435,9 +435,10 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
     d = min(d, Ellipsoid(localP, 0.5*vec3(treeWidth, treeHeight, treeWidth)));
 
     float leaves = 1. - smoothstep(50., 200., current_t);
-    if (d < 2. && leaves > 0.)
+    if (leaves > 0.)
     {
-        d += leaves * fBm(5. * vec2(2.*atan(localP.z, localP.x), localP.y) + id, 2, 0.5, 0.5) * 0.5;
+        vec2 pNoise = vec2(2.*atan(localP.z, localP.x), localP.y) + id;
+        d += fBm(3. * pNoise, 2, 0.7, 0.5) + 1.;
     }
 
     return d;

@@ -377,20 +377,20 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
       len=max(len,-Box3(pObj,vec3(.1),.1));
       pObj=vec3(pRoad.x-.1,pRoad.y-height+.5,pReflector.z);
       len=min(len,Box3(pObj,vec3(.05,.5,.05),.01));
-      res=MinDist(res,vec2(len,10));
+      res=MinDist(res,vec2(len,11));
     }
   if(guardrailHeight>=1.||wallHeight>.7)
-    res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),12));
+    res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),13));
   {
     vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
     float len=Box3(pObj,vec3(.1,7,.1),.1);
     pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
     pObj.xy*=Rotation(-.2);
     len=min(len,Box3(pObj,vec3(1.8,.05,.05),.1));
-    res=MinDist(res,vec2(len,10));
+    res=MinDist(res,vec2(len,11));
     pObj.x+=1.2;
     len=Box3(pObj,vec3(.7,.1,.1),.1);
-    res=MinDist(res,vec2(len,13));
+    res=MinDist(res,vec2(len,14));
   }
   if(wallHeight>0.)
     {
@@ -401,7 +401,7 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
       len=min(len,max(len-.2,abs(mod(pRoad.z,10)-5)-.2));
       if(isTunnel)
         len=smin(len,wallHeight-pRoad.y,.4);
-      res=MinDist(res,vec2(len,11));
+      res=MinDist(res,vec2(len,12));
     }
   return res;
 }
@@ -409,8 +409,8 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
 {
   float terrainHeight=smoothTerrainHeight(p.xz),relativeHeight=p.y-terrainHeight;
   if(relativeHeight>10.)
-    return vec2(.75*relativeHeight,9);
-  vec2 d=vec2(1e6,9);
+    return vec2(.75*relativeHeight,10);
+  vec2 d=vec2(1e6,10);
   float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
   if(isRoad<1.)
     terrainHeight+=valueNoise(p.xz*10.)*.1+.5*fBm(p.xz*2./1e2,1,.6,.5);
@@ -425,14 +425,14 @@ vec2 terrainShape(vec3 p,vec4 splineUV)
     }
   roadHeight=mix(terrainHeight,roadHeight,isRoad);
   relativeHeight=p.y-roadHeight;
-  return MinDist(d,vec2(.75*relativeHeight,9));
+  return MinDist(d,vec2(.75*relativeHeight,10));
 }
 float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
 {
   float h1=hash21(id),h2=hash11(h1),terrainHeight=smoothTerrainHeight(id);
   if(globalP.y-terrainHeight-20.>0.)
     return 1e6;
-  float d=5.;
+  float d=3.5;
   if(h1>=1.)
     return d;
   if(abs(splineUV.x)<roadWidthInMeters.x)
@@ -445,9 +445,11 @@ float tree(vec3 globalP,vec3 localP,vec2 id,vec4 splineUV,float current_t)
   localP.y-=terrainHeight+.5*treeClearance;
   localP.xz+=(vec2(h1,h2)-.5)*1.5;
   d=min(d,Ellipsoid(localP,.5*vec3(treeWidth,treeClearance,treeWidth)));
-  treeWidth=1.-smoothstep(50.,2e2,current_t);
-  if(d<2.&&treeWidth>0.)
-    d+=treeWidth*fBm(5.*vec2(2.*atan(localP.z,localP.x),localP.y)+id,2,.5,.5)*.5;
+  if(1.-smoothstep(50.,2e2,current_t)>0.)
+    {
+      vec2 pNoise=vec2(2.*atan(localP.z,localP.x),localP.y)+id;
+      d+=fBm(3.*pNoise,2,.7,.5)+1.;
+    }
   return d;
 }
 vec2 treesShape(vec3 p,vec4 splineUV,float current_t)
@@ -752,32 +754,34 @@ M computeMaterial(int mid,vec3 p,vec3 N)
 {
   vec4 splineUV;
   vec3 pRoad=p;
-  if(mid>=9)
+  if(mid>=10)
     splineUV=ToSplineLocalSpace(p.xz,roadWidthInMeters.z),pRoad.xz=splineUV.xz;
   if(mid==9)
+    return M(0,vec3(.1,.2,.05),.7);
+  if(mid==10)
     {
       float isRoad=1.-smoothstep(roadWidthInMeters.x,roadWidthInMeters.y,abs(splineUV.x));
-      vec3 grassColor=pow(vec3(67,81,70)/255.,vec3(2.2));
+      vec3 grassColor=vec3(.22,.21,.04);
       if(isRoad>0.)
         {
           M m=roadMaterial(splineUV.xz);
           m.C=mix(grassColor,m.C,isRoad);
           return m;
         }
-      return M(0,grassColor,.5);
+      return M(0,grassColor,.8);
     }
   if(mid<=7)
     return p=worldToMoto(p,true),N=worldToMoto(N,false),motoMaterial(mid,p,N);
   M utility=M(1,vec3(.9),.7);
-  return mid==10?
+  return mid==11?
     utility:
-    mid==13?
+    mid==14?
       N.y>-.5?
         utility:
         M(2,vec3(5,3,.1),.4):
-      mid==11?
+      mid==12?
         M(0,vec3(.5)+fBm(pRoad.yz*vec2(.2,1)+valueNoise(pRoad.xz),3,.6,.9)*.15,.6):
-        mid==12?
+        mid==13?
           M(3,vec3(1,.4,.05),.2):
           M(0,fract(p.xyz),1.);
 }
@@ -802,7 +806,9 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   for(int i=min(0,int(iTime));i<200;++i)
     {
       d=sceneSDF(p,t);
-      t+=d.x;
+      t+=d.x*(d.y==9&&d.x*50<t*t?
+        .5:
+        1.);
       p=ro+t*rd;
       float epsilon=t*PIXEL_ANGLE;
       if(d.x<epsilon)

@@ -127,7 +127,8 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
 #endif
 
         d = sceneSDF(p, t);
-        t += d.x;
+        // Magic workaround to slow down when marhing tree leaves
+        t += d.x * (d.y == TREE_ID && d.x*50 < t*t ? 0.5 : 1.);
         p = ro + t * rd;
 
         // The minimum distance is t.sin(pixel_angle), but the angle is
