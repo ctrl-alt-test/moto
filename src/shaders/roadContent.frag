@@ -144,10 +144,6 @@ vec2 GetTAndIndex(float t)
     return vec2(segmentT, index * 2.0);
 }
 
-// x: actual width
-// y: width + transition
-// z: max width
-vec3 roadWidthInMeters = vec3(4.0, 8.0, 8.0);
 const float laneWidth = 3.5;
 
 float roadMarkings(vec2 uv, float width, vec2 params)

@@ -56,6 +56,7 @@ void fpsDashboardShot()
 // t should go from 0 to 1 in roughly 4 seconds
 void dashBoardUnderTheShoulderShot(float t)
 {
+    t /= 4.;
     float bump = 0.02 * verticalBump();
     camPos = vec3(-0.2 - 0.6 * t, 0.88 + 0.35*t + bump, 0.42);
     camTa = vec3(0.5, 1. + 0.2 * t + bump, 0.25);
@@ -133,16 +134,20 @@ void selectShot() {
     float time = iTime;
     // We currently generate a new spline every 20 seconds.
     // Bug: this can change during a shot.
-    GenerateSpline(1.8/*curvature*/, 80./*scale*/, 2.+floor(iTime / 20)/*seed*/);
+    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(iTime / 20)/*seed*/);
 
     wallHeight = -1.;
     guardrailHeight = 0.;
-    if (time < 80.) {
+    roadWidthInMeters = vec3(4.0, 8.0, 8.0);
+    if (time < 60.) {
         wallHeight = -1.;
+    } else if (time < 80.) {
+        wallHeight = 1.;
     } else if (time < 100.) {
+        roadWidthInMeters = vec3(8, 12.0, 14.0);
         wallHeight = 3.;
     } else if (time < 120.) {
-        wallHeight = 4.;
+        wallHeight = 5.;
     } else {
         wallHeight = -1.;
         guardrailHeight = 1.;
@@ -162,7 +167,7 @@ void selectShot() {
         sideShotRear();
     } else if (get_shot(time, 5.)) {
         sideShotFront();
-    } else if (get_shot(time, 8.)) {
+    } else if (get_shot(time, 4.)) {
         frontWheelCloseUpShot();
     } else if (get_shot(time, 8.)) {
         overTheHeadShot();
@@ -172,15 +177,15 @@ void selectShot() {
         dashBoardUnderTheShoulderShot(time);
     } else if (get_shot(time, 8.)) {
         viewFromBehind(time);
-    } else if (get_shot(time, 4.)) {
-        sideShotRear();
     } else if (get_shot(time, 8.)) {
         faceView(time);
     } else if (get_shot(time, 4.)) {
         sideShotFront();
-    } else if (get_shot(time, 8.)) {
+    } else if (get_shot(time, 4.)) {
         overTheHeadShot();
-    } else if (get_shot(time, 8.)) {
+    } else if (get_shot(time, 4.)) {
+        sideShotRear();
+    } else if (get_shot(time, 4.)) {
         frontWheelCloseUpShot();
     } else if (get_shot(time, 8.)) {
         fpsDashboardShot();

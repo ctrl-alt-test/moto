@@ -40,6 +40,7 @@ in vec3 camPos;
 in vec3 camTa;
 in float wallHeight;
 in float guardrailHeight;
+in vec3 roadWidthInMeters;
 
 in vec2 spline[SPLINE_SIZE];
 
@@ -54,6 +55,10 @@ vec3 camPos;
 vec3 camTa;
 float wallHeight;
 float guardrailHeight;
+// x: actual width
+// y: width + transition
+// z: max width
+vec3 roadWidthInMeters;
 
 vec2 spline[SPLINE_SIZE];
 

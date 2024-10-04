@@ -14,6 +14,10 @@ out vec3 camPos;
 out vec3 camTa;
 out float wallHeight;
 out float guardrailHeight;
+// x: actual width
+// y: width + transition
+// z: max width
+out vec3 roadWidthInMeters;
 
 const int SPLINE_SIZE = 13;
 out vec2 spline[SPLINE_SIZE];

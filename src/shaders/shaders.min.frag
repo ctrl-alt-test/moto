@@ -6,6 +6,7 @@ uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa;
 float wallHeight,guardrailHeight;
+vec3 roadWidthInMeters;
 vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE=camFoV/iResolution.x,time;
@@ -313,7 +314,6 @@ vec2 GetTAndIndex(float t)
   float segmentStartDistance=splineSegmentDistances[index].x,segmentEndDistance=splineSegmentDistances[index].y;
   return vec2((t-segmentStartDistance)/(segmentEndDistance-segmentStartDistance),index*2.);
 }
-vec3 roadWidthInMeters=vec3(4,8,8);
 float roadMarkings(vec2 uv)
 {
   vec2 params=vec2(.7,0),separationLineParams=vec2(13,3);
@@ -890,11 +890,11 @@ void GenerateSpline()
     {
       if(i%2==0)
         {
-          spline[i]=point+40.*direction;
+          spline[i]=point+50.*direction;
           continue;
         }
       float ha=hash11(seed+float(i)*3.);
-      point+=direction*80.;
+      point+=direction*1e2;
       direction*=Rotation(mix(-1.8,1.8,ha));
       spline[i]=point;
     }
@@ -933,6 +933,7 @@ void fpsDashboardShot()
 }
 void dashBoardUnderTheShoulderShot(float t)
 {
+  t/=4.;
   float bump=.02*verticalBump();
   camPos=vec3(-.2-.6*t,.88+.35*t+bump,.42);
   camTa=vec3(.5,1.+.2*t+bump,.25);
@@ -996,12 +997,15 @@ void selectShot()
   GenerateSpline();
   wallHeight=-1.;
   guardrailHeight=0.;
-  if(time<80.)
+  roadWidthInMeters=vec3(4,8,8);
+  if(time<60.)
     wallHeight=-1.;
+  else if(time<80.)
+    wallHeight=1.;
   else if(time<1e2)
-    wallHeight=3.;
+    roadWidthInMeters=vec3(8,12,14),wallHeight=3.;
   else if(time<120.)
-    wallHeight=4.;
+    wallHeight=5.;
   else
      wallHeight=-1.,guardrailHeight=1.;
   camProjectionRatio=1.;
@@ -1017,7 +1021,7 @@ void selectShot()
     sideShotRear();
   else if(get_shot(time,5.))
     sideShotFront();
-  else if(get_shot(time,8.))
+  else if(get_shot(time,4.))
     frontWheelCloseUpShot();
   else if(get_shot(time,8.))
     overTheHeadShot();
@@ -1027,15 +1031,15 @@ void selectShot()
     dashBoardUnderTheShoulderShot(time);
   else if(get_shot(time,8.))
     viewFromBehind(time);
-  else if(get_shot(time,4.))
-    sideShotRear();
   else if(get_shot(time,8.))
     faceView(time);
   else if(get_shot(time,4.))
     sideShotFront();
-  else if(get_shot(time,8.))
+  else if(get_shot(time,4.))
     overTheHeadShot();
-  else if(get_shot(time,8.))
+  else if(get_shot(time,4.))
+    sideShotRear();
+  else if(get_shot(time,4.))
     frontWheelCloseUpShot();
   else if(get_shot(time,8.))
     fpsDashboardShot();
