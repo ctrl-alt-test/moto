@@ -79,9 +79,6 @@ float time;
 void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
-#ifndef USE_VERTEX_SHADER
-    selectShot();
-#endif
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
@@ -91,8 +88,12 @@ void main()
         time = iTime;
     }
 
-    // Compute moto position
     computeMotoPosition();
+#ifndef USE_VERTEX_SHADER
+    selectShot();
+#endif
+
+    // Compute moto position
 
     // camPos and camTa are passed by the vertex shader
     vec3 ro;

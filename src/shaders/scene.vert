@@ -19,6 +19,7 @@ const int SPLINE_SIZE = 13;
 out vec2 spline[SPLINE_SIZE];
 
 uniform float iTime;
+float time;
 
 const float INF = 1e6;
 
@@ -55,6 +56,7 @@ void main(void)
 {
     gl_Position = a_position;
 #ifdef USE_VERTEX_SHADER
+    time = iTime;
     selectShot();
 #endif
 }

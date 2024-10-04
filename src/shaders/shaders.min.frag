@@ -895,12 +895,13 @@ void GenerateSpline()
 }
 float verticalBump()
 {
-  return valueNoise2(6.*iTime).x;
+  return valueNoise2(6.*time).x;
 }
 void sideShotFront()
 {
   vec2 p=vec2(.95,.5);
-  p.x+=mix(-.5,1.,valueNoise2(.5*iTime).y);
+  p.x+=mix(-.5,1.,valueNoise2(.5*time).y);
+  p.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
   p.y+=.05*verticalBump();
   camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
@@ -909,7 +910,8 @@ void sideShotFront()
 void sideShotRear()
 {
   vec2 p=vec2(-1,.5);
-  p.x+=mix(-.2,.2,valueNoise2(.5*iTime).y);
+  p.x+=mix(-.2,.2,valueNoise2(.5*time).y);
+  p.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
   p.y+=.05*verticalBump();
   camPos=vec3(p,1.5);
   camTa=vec3(p.x,p.y+.1,0);
@@ -918,8 +920,8 @@ void sideShotRear()
 void fpsDashboardShot()
 {
   camPos=vec3(.1,1.12,0);
-  camPos.z+=mix(-.02,.02,valueNoise2(.1*iTime).x);
-  camPos.y+=.01*valueNoise2(5.*iTime).y;
+  camPos.z+=mix(-.02,.02,valueNoise2(.1*time).x);
+  camPos.y+=.01*valueNoise2(5.*time).y;
   camTa=vec3(5,1,0);
   camProjectionRatio=.7;
 }
@@ -934,9 +936,10 @@ void frontWheelCloseUpShot()
 {
   camPos=vec3(-.1,.5,.5);
   camTa=vec3(.9,.35,.2);
-  vec2 vibration=.005*valueNoise2(40.*iTime);
+  vec2 vibration=.005*valueNoise2(40.*time);
   vibration.x+=.02*verticalBump();
   camPos.yz+=vibration;
+  vibration.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
   camTa.yz+=vibration;
   camProjectionRatio=1.6;
   camShowDriver=0.;
@@ -1032,10 +1035,10 @@ void selectShot()
 void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
-  selectShot();
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   computeMotoPosition();
+  selectShot();
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);

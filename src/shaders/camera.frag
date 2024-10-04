@@ -18,14 +18,15 @@ void GenerateSpline(float maxCurvature, float segmentLength, float seed)
 
 float verticalBump()
 {
-    return valueNoise2(6.*iTime).x;
+    return valueNoise2(6.*time).x;
 }
 
 const int SHOT_SIDE_FRONT = 0;
 void sideShotFront()
 {
     vec2 p = vec2(0.95, 0.5);
-    p.x += mix(-0.5, 1., valueNoise2(0.5*iTime).y);
+    p.x += mix(-0.5, 1., valueNoise2(0.5*time).y);
+    p.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
     p.y += 0.05 * verticalBump();
     camPos = vec3(p, 1.5);
     camTa = vec3(p.x, p.y + 0.1, 0.);
@@ -35,7 +36,8 @@ void sideShotFront()
 void sideShotRear()
 {
     vec2 p = vec2(-1., 0.5);
-    p.x += mix(-0.2, 0.2, valueNoise2(0.5*iTime).y);
+    p.x += mix(-0.2, 0.2, valueNoise2(0.5*time).y);
+    p.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
     p.y += 0.05 * verticalBump();
     camPos = vec3(p, 1.5);
     camTa = vec3(p.x, p.y + 0.1, 0.);
@@ -44,12 +46,9 @@ void sideShotRear()
 
 void fpsDashboardShot()
 {
-    vec2 noise = valueNoise2(5.*iTime);
-    vec2 slowNoise = valueNoise2(0.1*iTime);
-
     camPos = vec3(0.1, 1.12, 0.);
-    camPos.z += mix(-0.02, 0.02, slowNoise.x);
-    camPos.y += 0.01 * noise.y;
+    camPos.z += mix(-0.02, 0.02, valueNoise2(0.1*time).x);
+    camPos.y += 0.01 * valueNoise2(5.*time).y;
     camTa = vec3(5, 1, 0.);
     camProjectionRatio = 0.7;
 }
@@ -67,10 +66,11 @@ void frontWheelCloseUpShot()
 {
     camPos = vec3(-0.1, 0.5, 0.5);
     camTa = vec3(0.9, 0.35, 0.2);
-    vec2 vibration = 0.005 * valueNoise2(40.*iTime);
+    vec2 vibration = 0.005 * valueNoise2(40.*time);
     float bump = 0.02 * verticalBump();
     vibration.x += bump;
     camPos.yz += vibration;
+    vibration.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
     camTa.yz += vibration;
     camProjectionRatio = 1.6;
     camShowDriver = 0.;
