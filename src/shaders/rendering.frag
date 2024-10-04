@@ -18,10 +18,15 @@ M computeMaterial(int mid, vec3 p, vec3 N)
         pRoad.xz = splineUV.xz;
     }
 
+    if (mid == TREE_ID)
+    {
+        return M(MATERIAL_TYPE_DIELECTRIC, vec3(0.1, 0.2, 0.05), 0.7);
+    }
+        
     if (mid == GROUND_ID)
     {
         float isRoad = 1.0 - smoothstep(roadWidthInMeters.x, roadWidthInMeters.y, abs(splineUV.x));
-        vec3 grassColor = pow(vec3(67., 81., 70.) / 255. * 1., vec3(GAMMA));
+        vec3 grassColor = vec3(0.22, 0.21, 0.04);
         if (isRoad > 0.)
         {
             M m = roadMaterial(splineUV.xz, 3.5, vec2(0.7, 0.0));
@@ -29,7 +34,7 @@ M computeMaterial(int mid, vec3 p, vec3 N)
             return m;
         }
         // Terrain
-        return M(MATERIAL_TYPE_DIELECTRIC, grassColor, 0.5);
+        return M(MATERIAL_TYPE_DIELECTRIC, grassColor, 0.8);
     }
 
     if (IsMoto(mid))

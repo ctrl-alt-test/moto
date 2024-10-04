@@ -450,5 +450,5 @@ vec2 treesShape(vec3 p, vec4 splineUV, float current_t)
     vec2 id = round(p.xz / (halfTreeSpace * 2.)) * (halfTreeSpace * 2.);
     vec3 localP = p;
     localP.xz -= id;
-    return vec2(tree(p, localP, id, splineUV, current_t), GROUND_ID);
+    return vec2(tree(p, localP, id, splineUV, current_t), TREE_ID);
 }

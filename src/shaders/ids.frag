@@ -10,12 +10,13 @@ const int MOTO_DRIVER_ID = 6;
 const int MOTO_DRIVER_HELMET_ID = 7;
 
 const int CITY_ID = 8;
+const int TREE_ID = 9;
 
-const int GROUND_ID = 9;
-const int ROAD_UTILITY_ID = 10;
-const int ROAD_WALL_ID = 11;
-const int ROAD_REFLECTOR_ID = 12;
-const int ROAD_LIGHT_ID = 13;
+const int GROUND_ID = 10;
+const int ROAD_UTILITY_ID = 11;
+const int ROAD_WALL_ID = 12;
+const int ROAD_REFLECTOR_ID = 13;
+const int ROAD_LIGHT_ID = 14;
 
 #ifdef DEBUG
 const int DEBUG_ID = 9999;
