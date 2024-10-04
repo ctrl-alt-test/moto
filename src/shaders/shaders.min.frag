@@ -93,7 +93,7 @@ vec2 valueNoise2(float p)
 float fBm(vec2 p,int iterations,float weight_param,float frequency_param)
 {
   float v=0.,weight=1.,frequency=1.,offset=0.;
-  for(int i=min(0,int(iTime));i<iterations;++i)
+  for(int i=0;i<iterations;++i)
     {
       float noise=valueNoise(p*frequency+offset)*2.-1.;
       v+=weight*noise;
@@ -258,7 +258,7 @@ void ComputeBezierSegmentsLengthAndAABB()
 {
   float splineLength=0.;
   splineAABB=vec4(1e6,1e6,-1e6,-1e6);
-  for(int i=min(0,int(iTime));i<6;++i)
+  for(int i=0;i<6;++i)
     {
       int index=2*i;
       vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
@@ -276,7 +276,7 @@ vec4 ToSplineLocalSpace(vec2 p,float splineWidth)
   vec4 splineUV=vec4(1e6,0,0,0);
   if(DistanceFromAABB(p,splineAABB)>splineWidth)
     return splineUV;
-  for(int i=min(0,int(iTime));i<6;++i)
+  for(int i=0;i<6;++i)
     {
       int index=2*i;
       vec2 A=spline[index],B=spline[index+1],C=spline[index+2];
@@ -803,7 +803,7 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   p=ro;
   float t=0.;
   vec2 d;
-  for(int i=min(0,int(iTime));i<200;++i)
+  for(int i=0;i<200;++i)
     {
       d=sceneSDF(p,t);
       t+=d.x*(d.y==9&&d.x*50<t*t?

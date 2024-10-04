@@ -12,7 +12,7 @@ void ComputeBezierSegmentsLengthAndAABB()
     float splineLength = 0.0;
     splineAABB = vec4(INF, INF, -INF, -INF);
 
-    for (int i = min(0, int(iTime)); i < SPLINE_SIZE / 2; ++i)
+    for (int i = 0; i < SPLINE_SIZE / 2; ++i)
     {
         int index = 2 * i;
         vec2 A = spline[index + 0];
@@ -51,7 +51,7 @@ vec4 ToSplineLocalSpace(vec2 p, float splineWidth)
     }
 
     // For each bezier segment
-    for (int i = min(0, int(iTime)); i < SPLINE_SIZE / 2; ++i)
+    for (int i = 0; i < SPLINE_SIZE / 2; ++i)
     {
         int index = 2 * i;
         vec2 A = spline[index + 0];
