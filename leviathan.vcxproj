@@ -577,6 +577,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="preprocess_shaders.bat" />
     <None Include="src\shaders\backgroundContent.frag" />
     <None Include="src\shaders\camera.frag" />
     <None Include="src\shaders\common.frag" />

@@ -61,6 +61,10 @@
     <None Include="src\shaders\shared.h">
       <Filter>shaders</Filter>
     </None>
+    <None Include="preprocess_shaders.bat" />
+    <None Include="src\shaders\camera.frag">
+      <Filter>shaders</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="ext">

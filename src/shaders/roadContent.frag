@@ -272,7 +272,9 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     vec3 pRoad = vec3(abs(splineUV.x), relativeHeight, splineUV.z);
 
     pRoad.x -= roadWidthInMeters.x * 1.2;
-    // float guardrailHeight = smoothstep(0., 1., abs(fract(splineUV.y*2.) * 2. - 1.)*2.) *2. - 1.;
+#ifdef USE_VERTEX_SHADER
+    float guardrailHeight = guardrailHeight;
+#endif
 
     if (wallHeight >= 0.) {
         guardrailHeight = -1.;
