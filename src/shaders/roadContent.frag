@@ -404,7 +404,7 @@ float tree(vec3 globalP, vec3 localP, vec2 id, vec4 splineUV, float current_t) {
         return INF;
     }
 
-    float d = halfTreeSpace;
+    float d = halfTreeSpace * 0.7;
 
     // Define if the area has trees
     float presence = 1.;//smoothstep(-0.7, 0.7, fBm(id / 500., 2, 0.5, 0.3));
