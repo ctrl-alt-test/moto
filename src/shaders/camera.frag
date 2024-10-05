@@ -285,4 +285,7 @@ void selectShot() {
         // staticRoadShotMotoArrives
         motoDistanceOnCurve += 0.2;
     }
+    if (shotStartTime > 120.) {
+        motoDistanceOnCurve += 0.1;
+    }
 }
