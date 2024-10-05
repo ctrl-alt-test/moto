@@ -1,6 +1,6 @@
 #version 150
 
-vec2 iResolution=vec2(960,540);
+vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
@@ -947,7 +947,7 @@ void overTheHeadShot()
 void viewFromBehind(float t_in_shot)
 {
   camTa=vec3(1,1,0);
-  camPos=vec3(-2.-2.5*t_in_shot,1.5,sin(t_in_shot));
+  camPos=vec3(-2.-2.5*t_in_shot,.5+.2*t_in_shot,sin(t_in_shot));
   camProjectionRatio=1.;
 }
 void faceView(float t_in_shot)
@@ -1013,6 +1013,7 @@ void selectShot()
   camMotoSpace=1.;
   camShowDriver=1.;
   camFoV=atan(1./camProjectionRatio);
+  float seedOffset=0.;
   if(get_shot(time,10.5))
     moonShot(time);
   else if(get_shot(time,5.))
@@ -1024,13 +1025,13 @@ void selectShot()
   else if(get_shot(time,5.))
     introShotFromFar(time);
   else if(get_shot(time,6.))
-    sideShotRear();
+    seedOffset=10.,sideShotRear();
   else if(get_shot(time,5.))
     sideShotFront();
   else if(get_shot(time,4.))
-    frontWheelCloseUpShot();
+    seedOffset=4.,frontWheelCloseUpShot();
   else if(get_shot(time,8.))
-    overTheHeadShot();
+    seedOffset=2.,overTheHeadShot();
   else if(get_shot(time,8.))
     fpsDashboardShot();
   else if(get_shot(time,8.))
@@ -1066,13 +1067,15 @@ void selectShot()
     wallHeight=-1.;
   else if(time<80.)
     wallHeight=-1.,guardrailHeight=1.;
-  else if(time<1e2)
-    roadWidthInMeters=vec3(8,12,14),wallHeight=3.;
-  else if(time<120.)
-    wallHeight=5.;
   else
-     wallHeight=-1.,guardrailHeight=1.;
-  GenerateSpline(2.+floor(time/20));
+     wallHeight=time<1e2?
+      roadWidthInMeters=vec3(8,12,14),3.:
+      time<110.?
+        5.:
+        time<120.?
+          roadWidthInMeters=vec3(8,12,18),3.9:
+          (roadWidthInMeters=vec3(12,16,18),3.9);
+  GenerateSpline(2.+floor(time/20)+seedOffset);
   motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
   if(time<18.||time>125.)
     motoDistanceOnCurve=.6;

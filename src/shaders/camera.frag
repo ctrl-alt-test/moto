@@ -98,7 +98,7 @@ void overTheHeadShot()
 void viewFromBehind(float t_in_shot)
 {
     camTa = vec3(1., 1., 0.);
-    camPos = vec3(-2. - 2.5*t_in_shot, 1.5, sin(t_in_shot));
+    camPos = vec3(-2. - 2.5*t_in_shot, .5+0.2*t_in_shot, sin(t_in_shot));
     camProjectionRatio = 1.;
 }
 
@@ -179,6 +179,7 @@ void selectShot() {
     camShowDriver = 1.;
     camFoV = atan(1. / camProjectionRatio);
 
+    float seedOffset = 0.;
     if (get_shot(time, 10.5)) {
         moonShot(time);
     } else if (get_shot(time, 5.)) {
@@ -193,12 +194,15 @@ void selectShot() {
         // staticRoadShotMotoArrives2(time);
         introShotFromFar(time);
     } else if (get_shot(time, 6.)) {
+        seedOffset = 10.;
         sideShotRear();
     } else if (get_shot(time, 5.)) {
         sideShotFront();
     } else if (get_shot(time, 4.)) {
+        seedOffset = 4.;
         frontWheelCloseUpShot();
     } else if (get_shot(time, 8.)) {
+        seedOffset = 2.;
         overTheHeadShot();
     } else if (get_shot(time, 8.)) {
         fpsDashboardShot();
@@ -244,16 +248,21 @@ void selectShot() {
     } else if (shotStartTime < 100.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
         wallHeight = 3.;
-    } else if (shotStartTime < 120.) {
+    } else if (shotStartTime < 110.) {
         wallHeight = 5.;
+    } else if (shotStartTime < 120.) {
+        roadWidthInMeters = vec3(8., 12.0, 18.0);
+         wallHeight = 3.9;
     } else {
-        wallHeight = -1.;
-        guardrailHeight = 1.;
+        roadWidthInMeters = vec3(12., 16.0, 18.0);
+        wallHeight = 3.9;
+        //guardrailHeight = -1.;
     }
 
     // We currently generate a new spline every 20 seconds.
+
     // Bug: this can change during a shot.
-    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20)/*seed*/);
+    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20) + seedOffset);
 
     // Use mix to skip the beginning/end of the road.
     float t = mod(shotStartTime, 14.)
