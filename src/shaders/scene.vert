@@ -21,6 +21,7 @@ out vec3 roadWidthInMeters;
 
 const int SPLINE_SIZE = 13;
 out vec2 spline[SPLINE_SIZE];
+out float motoDistanceOnCurve;
 
 uniform float iTime;
 float time;

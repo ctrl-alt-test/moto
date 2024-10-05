@@ -4,7 +4,9 @@ vec3 breakLightOffsetFromMotoRoot = vec3(-1.14, 0.55, 0.0);
 float motoYaw;
 float motoPitch;
 float motoRoll;
+#ifndef USE_VERTEX_SHADER
 float motoDistanceOnCurve;
+#endif
 
 //
 // Moto position functions
