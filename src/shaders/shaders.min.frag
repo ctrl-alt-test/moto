@@ -1,6 +1,6 @@
 // src\shaders\preprocessed.scene.frag#version 150
 
-vec2 iResolution=vec2(960,540);
+vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
@@ -1095,13 +1095,18 @@ void main()
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraTarget);
+  cameraPosition=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true);
+  vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false);
+  ro=normalize(cameraPosition-ro);
+  float d=1.-dot(rd,ro);
+  evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x))+=5.*vec3(1,.9,.8)*max(0.,dot(ro,-headLightDirection))/(1.+1e4*d);
   fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 
 // src\shaders\preprocessed.postprocess.frag#version 150
 
 out vec4 fragColor;
-vec2 iResolution=vec2(960,540);
+vec2 iResolution=vec2(1920,1080);
 uniform sampler2D tex;
 void main()
 {

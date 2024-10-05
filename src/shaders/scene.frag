@@ -161,7 +161,17 @@ void main()
 #endif
     vec3 i_N = evalNormal(p, t.x);
     vec3 i_radiance = evalRadiance(t, p, -rd, i_N);
-    
+
+    // Bloom around headlight
+    vec3 headLightPosition = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), true);
+    vec3 headLightDirection = motoToWorld(normalize(vec3(1.0, -0.15, 0.0)), false);
+    vec3 cameraToLightDir = normalize(headLightPosition - ro);
+    float aligned = max(0., dot(cameraToLightDir, -headLightDirection));
+    float d = 1.-dot(rd, cameraToLightDir);
+    i_radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
+
+
+    // Final tonemapping, fade, accumulation, and dithering
     vec3 i_color = toneMapping(i_radiance) *
         smoothstep(0., 4., iTime) * // fade in
         smoothstep(138., 132., iTime); // fade out
