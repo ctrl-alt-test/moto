@@ -97,10 +97,10 @@ void main()
         time = iTime;
     }
 
-    computeMotoPosition();
 #ifndef USE_VERTEX_SHADER
     selectShot();
 #endif
+    computeMotoPosition();
 
     // Compute moto position
 

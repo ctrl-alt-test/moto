@@ -1059,8 +1059,8 @@ void main()
   ComputeBezierSegmentsLengthAndAABB();
   vec2 texCoord=gl_FragCoord.xy/iResolution.xy,uv=(texCoord*2.-1.)*vec2(1,iResolution.y/iResolution.x);
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
-  computeMotoPosition();
   selectShot();
+  computeMotoPosition();
   vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
