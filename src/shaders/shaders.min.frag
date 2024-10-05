@@ -9,7 +9,7 @@ float wallHeight,guardrailHeight;
 vec3 roadWidthInMeters;
 vec2 spline[13];
 out vec4 fragColor;
-float PIXEL_ANGLE=camFoV/iResolution.x,time;
+float PIXEL_ANGLE,time;
 const float PI=acos(-1.);
 struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
 struct M{int T;vec3 C;float R;};
@@ -1052,6 +1052,7 @@ void selectShot()
     viewFromBehind(time);
   else
      overTheHeadShot();
+  PIXEL_ANGLE=camFoV/iResolution.x;
 }
 void main()
 {

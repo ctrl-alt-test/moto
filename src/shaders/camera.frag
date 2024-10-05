@@ -196,4 +196,8 @@ void selectShot() {
     } else {
         overTheHeadShot();
     }
+
+#ifndef USE_VERTEX_SHADER
+    PIXEL_ANGLE = camFoV / iResolution.x;
+#endif
 }

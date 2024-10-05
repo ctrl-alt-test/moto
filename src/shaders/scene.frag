@@ -68,7 +68,11 @@ vec2 spline[SPLINE_SIZE];
 out vec4 fragColor;
 
 // Semantic constants:
+#ifdef USE_VERTEX_SHADER
 float PIXEL_ANGLE = camFoV / iResolution.x;
+#else
+float PIXEL_ANGLE;
+#endif
 float time;
 
 #include "common.frag"
