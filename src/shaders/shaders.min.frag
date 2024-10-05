@@ -671,6 +671,9 @@ vec2 motoShape(vec3 p)
     handle=pFork.x-.02;
     pFork.xz*=Rotation(.25);
     handle=-min(handle,-Ellipsoid(pFork,vec3(.04,.05,.08)));
+    pFork.x-=.05;
+    pFork.yz*=Rotation(1);
+    handle=min(handle,max(length(pFork.xz)-.003,max(pFork.y,-pFork.y-.15)));
     fork=min(fork,handle);
     d=MinDist(d,vec2(fork,0));
   }
@@ -804,7 +807,7 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
   p=ro;
   float t=0.;
   vec2 d;
-  for(int i=0;i<200;++i)
+  for(int i=0;i<250;++i)
     {
       d=sceneSDF(p,t);
       t+=d.x*(d.y==9&&d.x*50<t*t?
@@ -817,7 +820,7 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
       if(t>=1e3)
         return vec2(t,-1);
     }
-  return vec2(t,d.x<10.*t*PIXEL_ANGLE?
+  return vec2(t,d.x<20.*t*PIXEL_ANGLE?
     d.y:
     -1);
 }
@@ -967,31 +970,12 @@ void viewFromBehind(float t_in_shot)
   camPos=vec3(-2.-2.5*t_in_shot,.5+.2*t_in_shot,sin(t_in_shot));
   camProjectionRatio=1.;
 }
-void faceView(float t_in_shot)
-{
-  camTa=vec3(0,1.5,0);
-  camPos=vec3(1.+2.5*t_in_shot,1.5,-2);
-  camProjectionRatio=1.;
-}
 void moonShot(float t_in_shot)
 {
   camMotoSpace=0.;
   camPos=vec3(0,18,0);
   camTa=vec3(-1,18.3,1.-.02*t_in_shot);
   camProjectionRatio=1.5;
-}
-void staticRoadShotEnd(float t_in_shot)
-{
-  camMotoSpace=0.;
-  camPos=vec3(1,1.5,0);
-  camTa=vec3(2,3.+.5*t_in_shot,-10);
-  camProjectionRatio=1.5;
-}
-void introShotFromFar(float t_in_shot)
-{
-  camTa=vec3(0,1,0);
-  camPos=vec3(30.-.1*t_in_shot,2.-.2*t_in_shot,-2-.5*t_in_shot);
-  camProjectionRatio=1.;
 }
 bool get_shot(inout float time,float duration)
 {
@@ -1024,7 +1008,7 @@ void selectShot()
   else if(get_shot(time,4.5))
     camMotoSpace=0.,camPos=vec3(1,1,0),camTa=vec3(0,1,5),camProjectionRatio=1.5;
   else if(get_shot(time,5.))
-    introShotFromFar(time);
+    camTa=vec3(0,1,0),camPos=vec3(30.-.1*time,2.-.2*time,-2-.5*time),camProjectionRatio=1.;
   else if(get_shot(time,6.))
     seedOffset=10.,sideShotRear();
   else if(get_shot(time,5.))
@@ -1040,7 +1024,7 @@ void selectShot()
   else if(get_shot(time,8.))
     viewFromBehind(time);
   else if(get_shot(time,8.))
-    faceView(time);
+    camTa=vec3(0,1.5,0),camPos=vec3(1.+2.5*time,1.5,-2),camProjectionRatio=1.;
   else if(get_shot(time,4.))
     sideShotFront();
   else if(get_shot(time,4.))
@@ -1056,7 +1040,7 @@ void selectShot()
   else if(get_shot(time,6.))
     viewFromBehind(time);
   else if(get_shot(time,10.))
-    staticRoadShotEnd(time);
+    camMotoSpace=0.,camPos=vec3(1,1.5,0),camTa=vec3(2,3.+.5*time,-10),camProjectionRatio=1.5;
   else if(get_shot(time,10.))
     moonShot(time+20.);
   PIXEL_ANGLE=camFoV/iResolution.x;
@@ -1107,10 +1091,16 @@ void main()
   vec2 t=rayMarchScene(ro,rd,cameraTarget);
   cameraTarget=max(vec3(0),evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)));
   cameraPosition=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true);
-  vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false);
-  ro=normalize(cameraPosition-ro);
-  float d=1.-dot(rd,ro);
-  cameraTarget+=5.*vec3(1,.9,.8)*max(0.,dot(ro,-headLightDirection))/(1.+1e4*d);
+  vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false),cameraToLightDir=normalize(cameraPosition-ro);
+  float aligned=max(0.,dot(cameraToLightDir,-headLightDirection)),d=1.-dot(rd,cameraToLightDir);
+  cameraTarget+=5.*vec3(1,.9,.8)*aligned/(1.+1e4*d);
+  cameraPosition=motoToWorld(breakLightOffsetFromMotoRoot+vec3(0),true);
+  headLightDirection=motoToWorld(normalize(vec3(-1,-.5,0)),false);
+  cameraToLightDir=normalize(cameraPosition-ro);
+  float dist=length(cameraPosition-ro);
+  aligned=max(0.,dot(cameraToLightDir,-headLightDirection));
+  d=1.-dot(rd,cameraToLightDir);
+  cameraTarget+=vec3(1,0,0)*aligned/(1.+2e3*d)/dist;
   fragColor=vec4(mix(pow(Uncharted2Tonemap(2.*cameraTarget)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 
