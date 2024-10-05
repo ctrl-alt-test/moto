@@ -11,7 +11,7 @@ const bool ENABLE_STOCHASTIC_MOTION_BLUR = true;
 
 // Constants:
 const int MAX_ROAD_LIGHTS = 2 * 8; // Pairs of lights
-const int MAX_RAY_MARCH_STEPS = 200;
+const int MAX_RAY_MARCH_STEPS = 250;
 const float MAX_RAY_MARCH_DIST = 1000.0;
 const int MAX_SHADOW_STEPS = 30;
 const float MAX_SHADOW_DIST = 5.0;
