@@ -3,7 +3,7 @@
 vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
 uniform sampler2D tex;
-float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
+float camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
 vec3 camPos,camTa;
 float wallHeight,guardrailHeight;
 vec3 roadWidthInMeters;
@@ -225,7 +225,7 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
     cameraUp=vec3(1,0,0);
   vec3 cameraRight=normalize(cross(cameraTarget,cameraUp));
   cameraUp=normalize(cross(cameraRight,cameraTarget));
-  uv*=mix(1.,length(uv),camFishEye);
+  uv*=mix(1.,length(uv),.1);
   ro=cameraPosition;
   rd=normalize(cameraTarget*camProjectionRatio+uv.x*cameraRight+uv.y*cameraUp);
 }
@@ -988,7 +988,6 @@ void selectShot()
 {
   float time=iTime;
   camProjectionRatio=1.;
-  camFishEye=.1;
   camMotoSpace=1.;
   camShowDriver=1.;
   camFoV=atan(1./camProjectionRatio);

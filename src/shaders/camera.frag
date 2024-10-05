@@ -143,7 +143,6 @@ void selectShot() {
     float time = iTime;
 
     camProjectionRatio = 1.;
-    camFishEye = 0.1;
     camMotoSpace = 1.;
     camShowDriver = 1.;
     camFoV = atan(1. / camProjectionRatio);

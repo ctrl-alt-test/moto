@@ -5,7 +5,6 @@ in vec4 a_position;
 #include "shared.h"
 
 #ifdef USE_VERTEX_SHADER
-out float camFishEye;
 out float camFoV;
 out float camMotoSpace; // bool - 0. or 1.
 out float camProjectionRatio;

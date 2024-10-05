@@ -31,7 +31,6 @@ uniform sampler2D tex;
 
 #ifdef USE_VERTEX_SHADER
 // Inputs:
-in float camFishEye;
 in float camFoV;
 in float camMotoSpace;
 in float camProjectionRatio;
@@ -47,7 +46,6 @@ in vec2 spline[SPLINE_SIZE];
 
 #else
 
-float camFishEye;
 float camFoV;
 float camMotoSpace;
 float camProjectionRatio;

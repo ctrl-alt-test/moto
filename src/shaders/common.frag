@@ -521,7 +521,7 @@ void setupCamera(vec2 uv, vec3 cameraPosition, vec3 cameraTarget, vec3 cameraUp,
     cameraUp = normalize(cross(cameraRight, cameraForward));
 
     // meh. FIXME
-    uv *= mix(1., length(uv), camFishEye);
+    uv *= mix(1., length(uv), 0.1);
     ro = cameraPosition;
     rd = normalize(cameraForward * camProjectionRatio + uv.x * cameraRight + uv.y * cameraUp);
 }
