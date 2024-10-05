@@ -126,18 +126,21 @@ void Editor::reloadShaderSource(int* mainShaderPID, int* postShaderPID)
 	}
 
 	// Postprocess shader
-	char* sourcePPS = textFileRead("src/shaders/preprocessed.postprocess.frag");
-	if (!sourcePPS) return;
-	int shaderPPS = compileShader(sourcePPS, GL_FRAGMENT_SHADER);
-	if (!shaderPPS) return;
-	int newPostShaderPID = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
-	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(newPostShaderPID, shaderPPS);
-	((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(newPostShaderPID);
+	if (postShaderPID != nullptr)
+	{
+		char* sourcePPS = textFileRead("src/shaders/preprocessed.postprocess.frag");
+		if (!sourcePPS) return;
+		int shaderPPS = compileShader(sourcePPS, GL_FRAGMENT_SHADER);
+		if (!shaderPPS) return;
+		int newPostShaderPID = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
+		((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(newPostShaderPID, shaderPPS);
+		((PFNGLLINKPROGRAMPROC)wglGetProcAddress("glLinkProgram"))(newPostShaderPID);
 
-	((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(shaderPPS);
-	if (newPostShaderPID > 0) {
-		((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(*postShaderPID);
-		*postShaderPID = newPostShaderPID;
+		((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(shaderPPS);
+		if (newPostShaderPID > 0) {
+			((PFNGLDELETESHADERPROC)wglGetProcAddress("glDeleteShader"))(*postShaderPID);
+			*postShaderPID = newPostShaderPID;
+		}
 	}
 }
 

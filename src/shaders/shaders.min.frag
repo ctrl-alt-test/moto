@@ -1,4 +1,4 @@
-// src\shaders\preprocessed.scene.frag#version 150
+#version 150
 
 vec2 iResolution=vec2(1920,1080);
 uniform float iTime;
@@ -1101,17 +1101,5 @@ void main()
   float d=1.-dot(rd,ro);
   evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x))+=5.*vec3(1,.9,.8)*max(0.,dot(ro,-headLightDirection))/(1.+1e4*d);
   fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
-}
-
-// src\shaders\preprocessed.postprocess.frag#version 150
-
-out vec4 fragColor;
-vec2 iResolution=vec2(1920,1080);
-uniform sampler2D tex;
-void main()
-{
-  vec2 uv=gl_FragCoord.xy/iResolution;
-  fragColor=1-(1-texture(tex,uv))*(1-textureLod(tex,uv,7))*(1-textureLod(tex,1-uv,5)*.2);
-  fragColor*=max(1-pow(length(uv-.5),1.5)*1.5,0);
 }
 

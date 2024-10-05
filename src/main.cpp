@@ -18,9 +18,9 @@
 
 // Global defines
 #define SOUND_ON
-// #define USE_FXAA 1
+//#define USE_FXAA 1
 #define USE_CREATE_SHADER_PROGRAM // Save almost 40 bytes, require OpenGL 4.1 (Anat : doesn't work on my emulated windows)
-#define USE_POSTPROCESS 1
+//#define USE_POSTPROCESS 0
 
 // Relative path or absolute path to a wav file. Within VS, current path is `Intro`.
 #define TRACK_AS_WAV_FILE L"moto.wav"
@@ -101,7 +101,10 @@ int __cdecl main(int argc, char* argv[])
 	// create and compile shader programs
 	// Main shader
 
+#if defined(USE_VERTEX_SHADER) || defined(USE_FXAA) || defined(USE_POSTPROCESS)
 	int f;
+#endif
+
 #ifdef USE_VERTEX_SHADER
 	int v = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_VERTEX_SHADER);
 	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(v, 1, &preprocessed_scene_vert, 0);
@@ -162,7 +165,11 @@ int __cdecl main(int argc, char* argv[])
 #endif
 #else
 	Leviathan::Editor editor = Leviathan::Editor();
+#ifdef USE_POSTPROCESS
 	editor.updateShaders(&shaderMain, &shaderPostProcess, true);
+#else
+	editor.updateShaders(&shaderMain, nullptr, true);
+#endif
 
 	#ifdef SOUND_ON
 	Leviathan::Song track(TRACK_AS_WAV_FILE);
@@ -243,7 +250,12 @@ int __cdecl main(int argc, char* argv[])
 		editor.endFrame(timeGetTime());
 		position = editor.handleEvents(&track, position);
 		editor.printFrameStatistics();
+
+#ifdef USE_POSTPROCESS
 		editor.updateShaders(&shaderMain, &shaderPostProcess, false);
+#else
+		editor.updateShaders(&shaderMain, nullptr, false);
+#endif
 #endif
 
 #ifdef EDITOR_CONTROLS // disable escape in editor mode
