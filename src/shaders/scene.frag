@@ -160,7 +160,7 @@ void main()
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 #endif
     vec3 i_N = evalNormal(p, t.x);
-    vec3 i_radiance = evalRadiance(t, p, -rd, i_N);
+    vec3 radiance = evalRadiance(t, p, -rd, i_N);
 
     // Bloom around headlight
     vec3 headLightPosition = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), true);
@@ -168,11 +168,11 @@ void main()
     vec3 cameraToLightDir = normalize(headLightPosition - ro);
     float aligned = max(0., dot(cameraToLightDir, -headLightDirection));
     float d = 1.-dot(rd, cameraToLightDir);
-    i_radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
+    radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
 
 
     // Final tonemapping, fade, accumulation, and dithering
-    vec3 i_color = toneMapping(i_radiance) *
+    vec3 i_color = toneMapping(radiance) *
         smoothstep(0., 4., iTime) * // fade in
         smoothstep(138., 132., iTime); // fade out
     fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2)

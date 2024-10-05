@@ -1077,10 +1077,6 @@ vec3 Uncharted2Tonemap(vec3 x)
 {
   return(x*(.2*x+.03)+.002)/(x*(.2*x+.3)+.1)-.02;
 }
-vec3 toneMapping(vec3 hdrColor)
-{
-  return pow(Uncharted2Tonemap(2.*hdrColor)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2));
-}
 void main()
 {
   ComputeBezierSegmentsLengthAndAABB();
@@ -1095,11 +1091,12 @@ void main()
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraTarget);
+  cameraTarget=evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x));
   cameraPosition=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true);
   vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false);
   ro=normalize(cameraPosition-ro);
   float d=1.-dot(rd,ro);
-  evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x))+=5.*vec3(1,.9,.8)*max(0.,dot(ro,-headLightDirection))/(1.+1e4*d);
-  fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
+  cameraTarget+=5.*vec3(1,.9,.8)*max(0.,dot(ro,-headLightDirection))/(1.+1e4*d);
+  fragColor=vec4(mix(pow(Uncharted2Tonemap(2.*cameraTarget)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 

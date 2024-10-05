@@ -112,6 +112,9 @@ int __cdecl main(int argc, char* argv[])
 	f = ((PFNGLCREATESHADERPROC)wglGetProcAddress("glCreateShader"))(GL_FRAGMENT_SHADER);
 	((PFNGLSHADERSOURCEPROC)wglGetProcAddress("glShaderSource"))(f, 1, &preprocessed_scene_frag, 0);
 	((PFNGLCOMPILESHADERPROC)wglGetProcAddress("glCompileShader"))(f);
+	//static char errorBuffer[1024];
+	//int len = 0;
+	//((PFNGLGETSHADERINFOLOGPROC)wglGetProcAddress("glGetShaderInfoLog"))(f, 1024 - 1, &len, static_cast<char*>(errorBuffer));
 
 	shaderMain = ((PFNGLCREATEPROGRAMPROC)wglGetProcAddress("glCreateProgram"))();
 	((PFNGLATTACHSHADERPROC)wglGetProcAddress("glAttachShader"))(shaderMain, v);
