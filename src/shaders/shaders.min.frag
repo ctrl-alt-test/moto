@@ -1,6 +1,6 @@
 #version 150
 
-vec2 iResolution=vec2(1920,1080);
+vec2 iResolution=vec2(960,540);
 uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
@@ -966,15 +966,23 @@ void moonShot(float t_in_shot)
 void staticRoadShot1(float t_in_shot)
 {
   camMotoSpace=0.;
-  camPos=vec3(1,1.5,0);
-  camTa=vec3(2,3.-.2*min(4.,t_in_shot),2);
+  camPos=vec3(4,1.7,1);
+  camTa=vec3(4,3.5-.17*min(5.,t_in_shot),4);
   camProjectionRatio=1.5;
 }
 void staticRoadShot2(float t_in_shot)
 {
   camMotoSpace=0.;
-  camPos=vec3(5,1,0);
-  camTa=vec3(10,1.5,5.+t_in_shot);
+  vec3 dp=vec3(.2,.2,1)*t_in_shot;
+  camPos=vec3(3,1.5,5)+dp;
+  camTa=vec3(3,1.5,6)+dp;
+  camProjectionRatio=1.5;
+}
+void staticRoadShotMotoArrives(float t_in_shot)
+{
+  camMotoSpace=0.;
+  camPos=vec3(1,1,0);
+  camTa=vec3(0,1,5);
   camProjectionRatio=1.5;
 }
 void staticRoadShotEnd(float t_in_shot)
@@ -1011,7 +1019,9 @@ void selectShot()
     staticRoadShot1(time);
   else if(get_shot(time,4.5))
     staticRoadShot2(time);
-  else if(get_shot(time,9.5))
+  else if(get_shot(time,4.5))
+    staticRoadShotMotoArrives(time);
+  else if(get_shot(time,5.))
     introShotFromFar(time);
   else if(get_shot(time,6.))
     sideShotRear();
@@ -1064,8 +1074,10 @@ void selectShot()
      wallHeight=-1.,guardrailHeight=1.;
   GenerateSpline(2.+floor(time/20));
   motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
-  if(time<20.||time>125.)
+  if(time<18.||time>125.)
     motoDistanceOnCurve=.6;
+  if(time>18.&&time<21.)
+    motoDistanceOnCurve+=.2;
 }
 vec3 Uncharted2Tonemap(vec3 x)
 {

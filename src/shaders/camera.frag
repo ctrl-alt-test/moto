@@ -131,6 +131,15 @@ void staticRoadShot2(float t_in_shot) {
     camProjectionRatio = 1.5;
 }
 
+void staticRoadShotMotoArrives(float t_in_shot) {
+    camMotoSpace = 0.;
+    camPos = vec3(1., 1., 0.);
+    camTa = vec3(-0., 1., 5.);// + t_in_shot);
+    // camPos = vec3(-1., 3., -4.);
+    // camTa = vec3(2., 1., 5.);// + t_in_shot);
+    camProjectionRatio = 1.5;
+}
+
 void staticRoadShotEnd(float t_in_shot) {
     camMotoSpace = 0.;
     camPos = vec3(1., 1.5, 0.);
@@ -178,7 +187,10 @@ void selectShot() {
         staticRoadShot2(time);
     // } else if (get_shot(time, 3.5)) {
     //     invisibleMotoShot(time);
-    } else if (get_shot(time, 9.5)) {
+    } else if (get_shot(time, 4.5)) {
+        staticRoadShotMotoArrives(time);
+    } else if (get_shot(time, 5.)) {
+        // staticRoadShotMotoArrives2(time);
         introShotFromFar(time);
     } else if (get_shot(time, 6.)) {
         sideShotRear();
@@ -247,7 +259,11 @@ void selectShot() {
     float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
     motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
-    if (shotStartTime < 20. || shotStartTime > 125.) {
+    if (shotStartTime < 18. || shotStartTime > 125.) {
         motoDistanceOnCurve = 0.6;
+    }
+    if (shotStartTime > 18. && shotStartTime < 21.) {
+        // staticRoadShotMotoArrives
+        motoDistanceOnCurve += 0.2;
     }
 }
