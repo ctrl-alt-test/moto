@@ -161,7 +161,7 @@ void main()
     vec2 t = rayMarchScene(ro, rd, MAX_RAY_MARCH_DIST, MAX_RAY_MARCH_STEPS, p);
 #endif
     vec3 i_N = evalNormal(p, t.x);
-    vec3 radiance = evalRadiance(t, p, -rd, i_N);
+    vec3 radiance = max(vec3(0), evalRadiance(t, p, -rd, i_N));
 
     // Bloom around headlight
     vec3 headLightPosition = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), true);

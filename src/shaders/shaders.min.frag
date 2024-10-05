@@ -975,28 +975,35 @@ void faceView(float t_in_shot)
 void moonShot(float t_in_shot)
 {
   camMotoSpace=0.;
-  camPos=vec3(0,10,0);
-  camTa=vec3(-1,11.5-.1*t_in_shot,1);
+  camPos=vec3(0,18,0);
+  camTa=vec3(-1,18.3,1.-.02*t_in_shot);
   camProjectionRatio=1.5;
 }
-void staticRoadShot(float t_in_shot)
+void staticRoadShot1(float t_in_shot)
 {
   camMotoSpace=0.;
-  camPos=vec3(1,1,0);
-  camTa=vec3(2,2.5-.2*min(4.,t_in_shot),2);
+  camPos=vec3(1,1.5,0);
+  camTa=vec3(2,3.-.2*min(4.,t_in_shot),2);
   camProjectionRatio=1.5;
 }
-void invisibleMotoShot(float t_in_shot)
+void staticRoadShot2(float t_in_shot)
 {
-  t_in_shot/=5.;
-  camTa=vec3(10,3,1);
-  camPos=vec3(5,3.+t_in_shot,1);
-  camProjectionRatio=1.;
+  camMotoSpace=0.;
+  camPos=vec3(5,1,0);
+  camTa=vec3(10,1.5,5.+t_in_shot);
+  camProjectionRatio=1.5;
+}
+void staticRoadShotEnd(float t_in_shot)
+{
+  camMotoSpace=0.;
+  camPos=vec3(1,1.5,0);
+  camTa=vec3(2,3.+.5*t_in_shot,-10);
+  camProjectionRatio=1.5;
 }
 void introShotFromFar(float t_in_shot)
 {
   camTa=vec3(0,1,0);
-  camPos=vec3(60.-3.*t_in_shot,1,-7+t_in_shot);
+  camPos=vec3(30.-.1*t_in_shot,2.-.2*t_in_shot,-2-.5*t_in_shot);
   camProjectionRatio=1.;
 }
 bool get_shot(inout float time,float duration)
@@ -1016,10 +1023,10 @@ void selectShot()
   camFoV=atan(1./camProjectionRatio);
   if(get_shot(time,10.5))
     moonShot(time);
-  else if(get_shot(time,6.))
-    staticRoadShot(time);
-  else if(get_shot(time,3.5))
-    invisibleMotoShot(time);
+  else if(get_shot(time,5.))
+    staticRoadShot1(time);
+  else if(get_shot(time,4.5))
+    staticRoadShot2(time);
   else if(get_shot(time,9.5))
     introShotFromFar(time);
   else if(get_shot(time,6.))
@@ -1050,10 +1057,12 @@ void selectShot()
     fpsDashboardShot();
   else if(get_shot(time,8.))
     dashBoardUnderTheShoulderShot(time);
-  else if(get_shot(time,8.))
+  else if(get_shot(time,6.))
     viewFromBehind(time);
-  else
-     overTheHeadShot();
+  else if(get_shot(time,10.))
+    staticRoadShotEnd(time);
+  else if(get_shot(time,10.))
+    moonShot(time);
   PIXEL_ANGLE=camFoV/iResolution.x;
   time=iTime-time;
   wallHeight=-1.;
@@ -1070,7 +1079,9 @@ void selectShot()
   else
      wallHeight=-1.,guardrailHeight=1.;
   GenerateSpline(2.+floor(time/20));
-  motoDistanceOnCurve=mix(.1,.9,(mod(time,15.)+iTime-time)/20.);
+  motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
+  if(time<20.||time>125.)
+    motoDistanceOnCurve=.6;
 }
 vec3 Uncharted2Tonemap(vec3 x)
 {
@@ -1090,7 +1101,7 @@ void main()
      getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraTarget);
-  cameraTarget=evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x));
+  cameraTarget=max(vec3(0),evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)));
   cameraPosition=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true);
   vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false);
   ro=normalize(cameraPosition-ro);
