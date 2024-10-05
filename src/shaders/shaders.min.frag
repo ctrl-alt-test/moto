@@ -232,6 +232,8 @@ void setupCamera(vec2 uv,vec3 cameraPosition,vec3 cameraTarget,out vec3 ro,out v
 vec3 nightHorizonLight=.01*vec3(.07,.1,1),moonLightColor=vec3(.2,.8,1),moonDirection=normalize(vec3(-1,.3,.4));
 vec3 sky(vec3 V)
 {
+  if(wallHeight>4.)
+    return vec3(0);
   float direction=clamp(dot(V,normalize(vec3(0,1,.25))),0.,1.);
   vec3 color=mix(vec3(1,4,7),mix(vec3(3,12,18),mix(vec3(3,7,19),vec3(0,0,2),sqrt(direction)),smoothstep(0.,.3,mix(V.y,direction,.5))),smoothstep(.05,.15,V.y));
   direction=smoothstep(0.,1.,fBm(.015*time+V.xz/(.01+V.y)*.5,5,.55,.7)+1.);
@@ -370,17 +372,25 @@ vec2 roadSideItems(vec4 splineUV,float relativeHeight)
     }
   if(guardrailHeight>=1.||wallHeight>.7)
     res=MinDist(res,vec2(Box3(pReflector,vec3(.05),.01),13));
-  {
-    vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/50.)*50.-pRoad.z);
-    float len=Box3(pObj,vec3(.1,7,.1),.1);
-    pObj=vec3(pRoad.x+.7,pRoad.y-7.,pObj.z);
-    pObj.xy*=Rotation(-.2);
-    len=min(len,Box3(pObj,vec3(1.8,.05,.05),.1));
-    res=MinDist(res,vec2(len,11));
-    pObj.x+=1.2;
-    len=Box3(pObj,vec3(.7,.1,.1),.1);
-    res=MinDist(res,vec2(len,14));
-  }
+  relativeHeight=wallHeight>=4.?
+    wallHeight-.2:
+    7.;
+  if(relativeHeight>0.)
+    {
+      float distanceBetween=wallHeight>=4.?
+        30.:
+        50.;
+      vec3 pObj=vec3(pRoad.x-.7,pRoad.y,round(pRoad.z/distanceBetween)*distanceBetween-pRoad.z);
+      distanceBetween=Box3(pObj,vec3(.1,relativeHeight,.1),.1);
+      pObj=vec3(pRoad.x+.7,pRoad.y-relativeHeight,pObj.z);
+      pObj.xy*=Rotation(-.2);
+      distanceBetween=min(distanceBetween,Box3(pObj,vec3(1.8,.05,.05),.1));
+      pObj.x+=1.2;
+      distanceBetween=wallHeight<4.?
+        res=MinDist(res,vec2(distanceBetween,11)),Box3(pObj,vec3(.7,.1,.1),.1):
+        Box3(pObj,vec3(.2,.1,.7),.1);
+      res=MinDist(res,vec2(distanceBetween,14));
+    }
   if(wallHeight>0.)
     {
       bool isTunnel=wallHeight>=4.;
@@ -534,19 +544,22 @@ M motoMaterial(int mid,vec3 p,vec3 N)
         }
       return M(2,luminance,.08);
     }
-  return mid==4?
-    M(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5):
-    mid==3?
-      M(1,vec3(1),.05):
-      mid==2?
-        M(0,vec3(0),.3):
-        mid==1?
-          M(0,vec3(.008),.8):
-          mid==6?
-            M(0,vec3(.02,.025,.04),.6):
-            mid==7?
-              M(0,vec3(0),.12):
-              M(0,vec3(0),.08);
+  if(mid==4)
+    return M(2,smoothstep(.9,.95,-N.x)*mix(vec3(1,.005,.02),vec3(.02,0,0),smoothstep(.2,1.,sqrt(length(fract(68.*p.yz+vec2(.6,0))*2.-1.)))),.5);
+  if(mid==3)
+    return M(1,vec3(1),.05);
+  if(mid==2)
+    return M(0,vec3(0),.3);
+  if(mid==1)
+    return M(0,vec3(.008),.8);
+  if(mid==6)
+    {
+      float isCoat=smoothstep(0.,.1,p.y-.84);
+      return M(0,mix(vec3(.02,.025,.04),vec3(.01),isCoat),.7-.1*isCoat);
+    }
+  return mid==7?
+    M(0,vec3(0),.12):
+    M(0,vec3(0),.08);
 }
 vec2 driverShape(vec3 p)
 {
@@ -852,15 +865,20 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
         }
       if(i<16)
         {
-          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength;
-          t=(floor(motoDistanceOnRoad/50.)*50.+t*50.)/roadLength;
+          float t=float(i/2-4+1),roadLength=splineSegmentDistances[5].y,motoDistanceOnRoad=motoDistanceOnCurve*roadLength,distanceBetween=wallHeight>=4.?
+            30.:
+            50.;
+          t=(floor(motoDistanceOnRoad/distanceBetween)*distanceBetween+t*distanceBetween)/roadLength;
           if(t>=1.)
             continue;
           vec3 pos;
           vec4 roadDirAndCurve=getRoadPositionDirectionAndCurvature(t,pos);
           roadDirAndCurve.y=0.;
-          pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
-          pos.y+=6.;
+          t=wallHeight>=4.?
+            wallHeight-.2:
+            7.;
+          pos.xz+=vec2(-roadDirAndCurve.z,roadDirAndCurve)*(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
+          pos.y+=t-.1;
           light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0)*4.,-1.,0.,0.);
         }
       emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
@@ -928,9 +946,8 @@ void frontWheelCloseUpShot()
   camPos=vec3(-.1,.5,.5);
   camTa=vec3(.9,.35,.2);
   vec2 vibration=.005*valueNoise2(40.*time);
-  vibration.x+=.02*verticalBump();
+  vibration.x+=.02*verticalBump()+mix(-.01,.01,valueNoise2(1e2*time).y);
   camPos.yz+=vibration;
-  vibration.x+=mix(-.01,.01,valueNoise2(6e2*time).y);
   camTa.yz+=vibration;
   camProjectionRatio=1.6;
   camShowDriver=0.;
@@ -961,28 +978,6 @@ void moonShot(float t_in_shot)
   camMotoSpace=0.;
   camPos=vec3(0,18,0);
   camTa=vec3(-1,18.3,1.-.02*t_in_shot);
-  camProjectionRatio=1.5;
-}
-void staticRoadShot1(float t_in_shot)
-{
-  camMotoSpace=0.;
-  camPos=vec3(4,1.7,1);
-  camTa=vec3(4,3.5-.17*min(5.,t_in_shot),4);
-  camProjectionRatio=1.5;
-}
-void staticRoadShot2(float t_in_shot)
-{
-  camMotoSpace=0.;
-  vec3 dp=vec3(.2,.2,1)*t_in_shot;
-  camPos=vec3(3,1.5,5)+dp;
-  camTa=vec3(3,1.5,6)+dp;
-  camProjectionRatio=1.5;
-}
-void staticRoadShotMotoArrives(float t_in_shot)
-{
-  camMotoSpace=0.;
-  camPos=vec3(1,1,0);
-  camTa=vec3(0,1,5);
   camProjectionRatio=1.5;
 }
 void staticRoadShotEnd(float t_in_shot)
@@ -1017,11 +1012,17 @@ void selectShot()
   if(get_shot(time,10.5))
     moonShot(time);
   else if(get_shot(time,5.))
-    staticRoadShot1(time);
+    camMotoSpace=0.,camPos=vec3(4,1.7,1),camTa=vec3(4,3.5-.17*min(5.,time),4),camProjectionRatio=1.5;
   else if(get_shot(time,4.5))
-    staticRoadShot2(time);
+    {
+      camMotoSpace=0.;
+      vec3 dp=vec3(.2,.2,1)*time;
+      camPos=vec3(3,1.5,5)+dp;
+      camTa=vec3(3,1.5,6)+dp;
+      camProjectionRatio=1.5;
+    }
   else if(get_shot(time,4.5))
-    staticRoadShotMotoArrives(time);
+    camMotoSpace=0.,camPos=vec3(1,1,0),camTa=vec3(0,1,5),camProjectionRatio=1.5;
   else if(get_shot(time,5.))
     introShotFromFar(time);
   else if(get_shot(time,6.))
@@ -1057,7 +1058,7 @@ void selectShot()
   else if(get_shot(time,10.))
     staticRoadShotEnd(time);
   else if(get_shot(time,10.))
-    moonShot(time);
+    moonShot(time+20.);
   PIXEL_ANGLE=camFoV/iResolution.x;
   time=iTime-time;
   wallHeight=-1.;
@@ -1065,22 +1066,26 @@ void selectShot()
   roadWidthInMeters=vec3(4,8,8);
   if(time<60.)
     wallHeight=-1.;
-  else if(time<80.)
+  else if(time<76.)
     wallHeight=-1.,guardrailHeight=1.;
   else
-     wallHeight=time<1e2?
+     wallHeight=time<88.?
       roadWidthInMeters=vec3(8,12,14),3.:
-      time<110.?
-        5.:
-        time<120.?
-          roadWidthInMeters=vec3(8,12,18),3.9:
-          (roadWidthInMeters=vec3(12,16,18),3.9);
+      time<96.?
+        roadWidthInMeters=vec3(8,12,14),5.:
+        time<110.?
+          5.:
+          time<120.?
+            roadWidthInMeters=vec3(8,12,18),3.9:
+            (roadWidthInMeters=vec3(12,16,18),3.9);
   GenerateSpline(2.+floor(time/20)+seedOffset);
   motoDistanceOnCurve=mix(.1,.9,(mod(time,14.)+iTime-time)/20.);
   if(time<18.||time>125.)
     motoDistanceOnCurve=.6;
   if(time>18.&&time<21.)
     motoDistanceOnCurve+=.2;
+  if(time>120.)
+    motoDistanceOnCurve+=.1;
 }
 vec3 Uncharted2Tonemap(vec3 x)
 {

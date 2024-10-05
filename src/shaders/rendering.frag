@@ -146,7 +146,7 @@ vec2 rayMarchScene(vec3 ro, vec3 rd, float tMax, int max_steps, out vec3 p
 
     // Under 10 epsilon, we return the closest object.
     // Otherwise, we consider it a miss.
-    return vec2(t, d.x < 10. * t * PIXEL_ANGLE ? d.y : NO_ID);
+    return vec2(t, d.x < 20. * t * PIXEL_ANGLE ? d.y : NO_ID);
 }
 
 float castShadowRay(vec3 p, vec3 N, vec3 rd)
