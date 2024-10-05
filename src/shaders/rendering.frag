@@ -243,10 +243,10 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
         {
 #ifdef ENABLE_DAY_MODE
             vec3 sunLightColor = vec3(1.0, 0.85, 0.7);
-            light = L(moonDirection * 1e3, -moonDirection, sunLightColor, 0., 0., 1e10, 5.);
+            light = L(moonDirection * 1e3, -moonDirection, sunLightColor * 5., 0., 0., 1e10);
 #else
             vec3 moonLightColor = vec3(0.2, 0.8, 1.0);
-            light = L(moonDirection * 1e3, -moonDirection, moonLightColor, 0., 0., 1e10, 0.005);
+            light = L(moonDirection * 1e3, -moonDirection, moonLightColor * 0.005, 0., 0., 1e10);
 #endif
         }
 
@@ -256,7 +256,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 pos = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, 0., 0.), true);
             vec3 dirHeadLight = normalize(vec3(1.0, -0.15, 0.0));
             vec3 dir = motoToWorld(dirHeadLight, false);
-            light = L(pos, dir, vec3(1.), 0.75, 0.95, 10.0, 10.);
+            light = L(pos, dir, vec3(10.), 0.75, 0.95, 10.0);
         }
 
         // Break light
@@ -265,7 +265,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 pos = motoToWorld(breakLightOffsetFromMotoRoot, true);
             vec3 dirBreakLight = normalize(vec3(-1.0, -0.5, 0.0));
             vec3 dir = motoToWorld(dirBreakLight, false);
-            light = L(pos, dir, vec3(1., 0., 0.), 0.3, 0.9, 5.0, 0.05);
+            light = L(pos, dir, vec3(0.05, 0., 0.), 0.3, 0.9, 5.0);
         }
 
         // Road lights
@@ -301,7 +301,7 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec3 coldNeon = vec3(0.8, 0.9, 1.);
             vec3 warmNeon = vec3(1., 0.9, 0.7);
             vec3 sodium = vec3(1., 0.32, 0.0);
-            light = L(pos, pos + roadDirAndCurve.xyz, sodium, -1.0, 0.0, 0.0, 4.0);
+            light = L(pos, pos + roadDirAndCurve.xyz, sodium * 4., -1.0, 0.0, 0.0);
         }
 
         radiance += lightContribution(light, p, V, N, albedo, f0, m.R);

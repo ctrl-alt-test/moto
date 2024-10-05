@@ -11,7 +11,7 @@ vec2 spline[13];
 out vec4 fragColor;
 float PIXEL_ANGLE,time;
 const float PI=acos(-1.);
-struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;float I;};
+struct L{vec3 P;vec3 Q;vec3 C;float A;float B;float F;};
 struct M{int T;vec3 C;float R;};
 float invV1(float NdotV,float sqrAlpha)
 {
@@ -37,7 +37,7 @@ vec3 lightContribution(L l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughn
       angleFallOff*=angleFallOff;
       angleFallOff*=angleFallOff;
       angleFallOff*=angleFallOff;
-      vec3 radiant_intensity=l.C*l.I*((sin((180.+vec3(0,.4,.8))/LdotD)*.5+.5)*.2+.8)*angleFallOff*((1.+l.F)/(l.F+d0*d0));
+      vec3 radiant_intensity=l.C*((sin((180.+vec3(0,.4,.8))/LdotD)*.5+.5)*.2+.8)*angleFallOff*((1.+l.F)/(l.F+d0*d0));
       irradiance=radiant_intensity*NdotL;
     }
   else
@@ -47,7 +47,7 @@ vec3 lightContribution(L l,vec3 p,vec3 V,vec3 N,vec3 albedo,vec3 f0,float roughn
       d1=max(0.,dot(N,L0)/d0+dot(N,L1)/d1)/(d0*d1+dot(L0,L1));
       if(d1<=0.)
         return vec3(0);
-      irradiance=l.C*l.I*d1;
+      irradiance=l.C*d1;
       vec3 Ld=l.Q-l.P,R=reflect(-V,N);
       d1=dot(R,Ld);
       L=normalize(mix(L0,L1,clamp((dot(R,L0)*d1-dot(L0,Ld))/(dot(Ld,Ld)-d1*d1),0.,1.)));
@@ -856,16 +856,16 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
     {
       L light;
       if(i==16)
-        light=L(moonDirection*1e3,-moonDirection,vec3(.2,.8,1),0.,0.,1e10,.005);
+        light=L(moonDirection*1e3,-moonDirection,vec3(.2,.8,1)*.005,0.,0.,1e10);
       if(i==17)
         {
           vec3 pos=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,0,0),true),dir=motoToWorld(normalize(vec3(1,-.15,0)),false);
-          light=L(pos,dir,vec3(1),.75,.95,10.,10.);
+          light=L(pos,dir,vec3(10),.75,.95,10.);
         }
       if(i==18)
         {
           vec3 pos=motoToWorld(breakLightOffsetFromMotoRoot,true),dir=motoToWorld(normalize(vec3(-1,-.5,0)),false);
-          light=L(pos,dir,vec3(1,0,0),.3,.9,5.,.05);
+          light=L(pos,dir,vec3(.05,0,0),.3,.9,5.);
         }
       if(i<16)
         {
@@ -878,7 +878,7 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
           roadDirAndCurve.y=0.;
           pos.x+=(roadWidthInMeters.x-1.)*1.2*(float(i%2)*2.-1.);
           pos.y+=6.;
-          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0),-1.,0.,0.,4.);
+          light=L(pos,pos+roadDirAndCurve.xyz,vec3(1,.32,0)*4.,-1.,0.,0.);
         }
       emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
     }

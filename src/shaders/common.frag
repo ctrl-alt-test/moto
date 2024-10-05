@@ -72,7 +72,6 @@ struct L // light
     float A; // Start cos angle; -1 for rod light.
     float B; // End cos angle.
     float F; // Collimation factor (point light vs focused torch light).
-    float I; // intensity
 };
 
 const int MATERIAL_TYPE_DIELECTRIC = 0;
@@ -143,7 +142,7 @@ vec3 lightContribution(L l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float 
         angleFallOff *= angleFallOff;
         angleFallOff *= angleFallOff;
 
-        vec3 radiant_intensity = l.C * l.I;
+        vec3 radiant_intensity = l.C;
         radiant_intensity *= (sin(freq/LdotD) * 0.5 + 0.5) * 0.2 + 0.8;
         radiant_intensity *= angleFallOff;
         radiant_intensity *= (1.0 + l.F) / (l.F + d0 * d0);
@@ -185,7 +184,7 @@ vec3 lightContribution(L l, vec3 p, vec3 V, vec3 N, vec3 albedo, vec3 f0, float 
             return vec3(0.);
         }
 
-        vec3 radiant_intensity = l.C * l.I;
+        vec3 radiant_intensity = l.C;
         irradiance = radiant_intensity * contribution;
 
         vec3 Ld = l.Q - l.P;
