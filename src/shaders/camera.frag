@@ -109,16 +109,31 @@ void faceView(float t_in_shot)
     camProjectionRatio = 1.;
 }
 
-void openingShot(float t_in_shot) {
-    camTa = vec3(10., 12. - mix(0., 10., min(1.,t_in_shot/6.)), 1.);
-    camPos = vec3(5, 7. - min(t_in_shot, 6.), 1.); // vec3(1. + 3.*time, 1.5, 1);
+void moonShot(float t_in_shot) {
+    camMotoSpace = 0.;
+    camPos = vec3(0., 10., 0.);
+    camTa = vec3(-1., 11.5 - 0.1*t_in_shot, 1.);
+    camProjectionRatio = 1.5;
+}
+
+void staticRoadShot(float t_in_shot) {
+    camMotoSpace = 0.;
+    camPos = vec3(1., 1., 0.);
+    camTa = vec3(2., 2.5 - 0.2*min(4.,t_in_shot), 2.);
+    camProjectionRatio = 1.5;
+}
+
+void invisibleMotoShot(float t_in_shot) {
+    t_in_shot /= 5.;
+    camTa = vec3(10., 3., 1.);
+    camPos = vec3(5, 3.+t_in_shot, 1.); // vec3(1. + 3.*time, 1.5, 1);
     camProjectionRatio = 1.;
 }
 
 void introShotFromFar(float t_in_shot)
 {
     camTa = vec3(0., 1., 0.);
-    camPos = vec3(60. - 3.*t_in_shot, 2., -7+t_in_shot);
+    camPos = vec3(60. - 3.*t_in_shot, 1., -7+t_in_shot);
     camProjectionRatio = 1.;
 }
 
@@ -160,7 +175,11 @@ void selectShot() {
     camFoV = atan(1. / camProjectionRatio);
 
     if (get_shot(time, 10.5)) {
-        openingShot(time);
+        moonShot(time);
+    } else if (get_shot(time, 6.)) {
+        staticRoadShot(time);
+    } else if (get_shot(time, 3.5)) {
+        invisibleMotoShot(time);
     } else if (get_shot(time, 9.5)) {
         introShotFromFar(time);
     } else if (get_shot(time, 6.)) {

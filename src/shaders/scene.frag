@@ -126,13 +126,17 @@ void main()
     // camPos and camTa are passed by the vertex shader
     vec3 ro;
     vec3 rd;
-    vec3 cameraPosition = camPos;
     vec3 cameraTarget = camTa;
     vec3 cameraUp = vec3(0., 1., 0.);
+    vec3 cameraPosition = camPos;
     if (camMotoSpace > 0.5) {
         cameraPosition = motoToWorld(camPos, true);
         cameraTarget = motoToWorld(camTa, true);
         //cameraUp = motoToWorld(cameraUp, false);
+    } else {
+        getRoadPositionDirectionAndCurvature(0.7, cameraPosition);
+        cameraTarget = cameraPosition + camTa;
+        cameraPosition += camPos;
     }
     setupCamera(uv, cameraPosition, cameraTarget, cameraUp, ro, rd);
 

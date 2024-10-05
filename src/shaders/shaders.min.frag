@@ -1,6 +1,6 @@
 // src\shaders\preprocessed.scene.frag#version 150
 
-vec2 iResolution=vec2(1920,1080);
+vec2 iResolution=vec2(960,540);
 uniform float iTime;
 uniform sampler2D tex;
 float camFishEye,camFoV,camMotoSpace,camProjectionRatio,camShowDriver;
@@ -975,16 +975,31 @@ void faceView(float t_in_shot)
   camPos=vec3(1.+2.5*t_in_shot,1.5,-2);
   camProjectionRatio=1.;
 }
-void openingShot(float t_in_shot)
+void moonShot(float t_in_shot)
 {
-  camTa=vec3(10,12.-mix(0.,10.,min(1.,t_in_shot/6.)),1);
-  camPos=vec3(5,7.-min(t_in_shot,6.),1);
+  camMotoSpace=0.;
+  camPos=vec3(0,10,0);
+  camTa=vec3(-1,11.5-.1*t_in_shot,1);
+  camProjectionRatio=1.5;
+}
+void staticRoadShot(float t_in_shot)
+{
+  camMotoSpace=0.;
+  camPos=vec3(1,1,0);
+  camTa=vec3(2,2.5-.2*min(4.,t_in_shot),2);
+  camProjectionRatio=1.5;
+}
+void invisibleMotoShot(float t_in_shot)
+{
+  t_in_shot/=5.;
+  camTa=vec3(10,3,1);
+  camPos=vec3(5,3.+t_in_shot,1);
   camProjectionRatio=1.;
 }
 void introShotFromFar(float t_in_shot)
 {
   camTa=vec3(0,1,0);
-  camPos=vec3(60.-3.*t_in_shot,2,-7+t_in_shot);
+  camPos=vec3(60.-3.*t_in_shot,1,-7+t_in_shot);
   camProjectionRatio=1.;
 }
 bool get_shot(inout float time,float duration)
@@ -1017,7 +1032,11 @@ void selectShot()
   camShowDriver=1.;
   camFoV=atan(1./camProjectionRatio);
   if(get_shot(time,10.5))
-    openingShot(time);
+    moonShot(time);
+  else if(get_shot(time,6.))
+    staticRoadShot(time);
+  else if(get_shot(time,3.5))
+    invisibleMotoShot(time);
   else if(get_shot(time,9.5))
     introShotFromFar(time);
   else if(get_shot(time,6.))
@@ -1069,18 +1088,20 @@ void main()
   time=iTime+hash31(vec3(gl_FragCoord.xy,.001*iTime))*.008;
   selectShot();
   computeMotoPosition();
-  vec3 ro,rd,cameraPosition=camPos,cameraTarget=camTa;
+  vec3 ro,rd,cameraTarget=camTa,cameraPosition=camPos;
   if(camMotoSpace>.5)
     cameraPosition=motoToWorld(camPos,true),cameraTarget=motoToWorld(camTa,true);
+  else
+     getRoadPositionDirectionAndCurvature(.7,cameraPosition),cameraTarget=cameraPosition+camTa,cameraPosition+=camPos;
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
-  vec2 t=rayMarchScene(ro,rd,cameraPosition);
-  fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraPosition,-rd,evalNormal(cameraPosition,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
+  vec2 t=rayMarchScene(ro,rd,cameraTarget);
+  fragColor=vec4(mix(toneMapping(evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 
 // src\shaders\preprocessed.postprocess.frag#version 150
 
 out vec4 fragColor;
-vec2 iResolution=vec2(1920,1080);
+vec2 iResolution=vec2(960,540);
 uniform sampler2D tex;
 void main()
 {
