@@ -170,7 +170,6 @@ void main()
     float d = 1.-dot(rd, cameraToLightDir);
     radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
 
-
     // Final tonemapping, fade, accumulation, and dithering
     vec3 i_color = toneMapping(radiance) *
         smoothstep(0., 4., iTime) * // fade in

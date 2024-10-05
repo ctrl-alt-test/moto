@@ -14,7 +14,6 @@ vec3 sky(vec3 V)
     return mix(vec3(0.6, 0.8, 1.), vec3(0.01, 0.35, 1.), pow(smoothstep(0.15, 1., V.y), 0.4));
 #endif
     vec3 darkest = vec3(0, 0, 2);
-    vec3 deepest = vec3(0, 3, 18);
     vec3 clearest = vec3(3, 7, 19);
     vec3 greenest = vec3(3, 12, 18);
     vec3 fog = vec3(1, 4, 7);
@@ -40,7 +39,7 @@ vec3 sky(vec3 V)
     return color
         * mix(0.1, 1., cloud)
         * smoothstep(-0.1, 0., V.y)
-        / 2000.;
+        / 1000.;
 }
 
 vec3 cityLights(vec2 p)
