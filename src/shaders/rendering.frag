@@ -164,12 +164,12 @@ float castShadowRay(vec3 p, vec3 N, vec3 rd)
 vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
 {
     int mid = int(t.y);
-    if (mid == CITY_ID) {
-        return mix(
-            abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),
-            mix(vec3(0), vec3(.06,.04,.03),V.y),
-            min(t.x*.001,1.));
-    }
+    // if (mid == CITY_ID) {
+    //     return mix(
+    //         abs(N.y)>.8?cityLights(p.xz*2.):vec3(0.),
+    //         mix(vec3(0), vec3(.06,.04,.03),V.y),
+    //         min(t.x*.001,1.));
+    // }
 
     if (mid == NO_ID)
     {

@@ -241,18 +241,6 @@ vec3 sky(vec3 V)
     color=mix(color,vec3(10,15,13)*1e2*(.5+smoothstep(-1.,1.,-fBm(V.yz*1e2,2,.9,.5)))*direction*direction,moon);
   return color*mix(.1,1.,direction)*smoothstep(-.1,0.,V.y)/1e3;
 }
-vec3 cityLights(vec2 p)
-{
-  vec3 ctex=vec3(0);
-  for(int i=0;i<3;i++)
-    {
-      float fi=float(i);
-      vec2 xp=p*Rotation(max(fi-3.,0.)*.5)*(1.+fi*.3),mp=mod(xp,10.)-5.;
-      fi=smoothstep(.6+fi*.1,0.,min(abs(mp.x),abs(mp.y)))*max(smoothstep(.7+fi*.1,.5,length(mod(p,2.)-1.))*smoothstep(.5,.7,valueNoise(p)-.15),pow(valueNoise(xp*.5),10.));
-      ctex+=valueNoise(xp*.5)*mix(mix(vec3(.56,.32,.18)*min(fi,.5)*2.,vec3(.88,.81,.54),max(fi-.5,0.)*2.),mix(vec3(.45,.44,.6)*min(fi,.5)*2.,vec3(.8,.89,.93),max(fi-.5,0.)*2.),step(.5,valueNoise(p*2.)));
-    }
-  return ctex*5.;
-}
 vec4 splineAABB,splineSegmentAABBs[6];
 vec2 splineSegmentDistances[6];
 void ComputeBezierSegmentsLengthAndAABB()
@@ -823,10 +811,6 @@ vec2 rayMarchScene(vec3 ro,vec3 rd,out vec3 p)
 vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
 {
   int mid=int(t.y);
-  if(mid==8)
-    return mix(abs(N.y)>.8?
-      cityLights(p.xz*2.):
-      vec3(0),mix(vec3(0),vec3(.06,.04,.03),V.y),min(t.x*.001,1.));
   if(mid==-1)
     return sky(-V);
   M m=computeMaterial(mid,p,N);
@@ -1071,7 +1055,7 @@ void selectShot()
   if(time<60.)
     wallHeight=-1.;
   else if(time<80.)
-    wallHeight=1.;
+    wallHeight=-1.,guardrailHeight=1.;
   else if(time<1e2)
     roadWidthInMeters=vec3(8,12,14),wallHeight=3.;
   else if(time<120.)
