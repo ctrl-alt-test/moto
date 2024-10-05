@@ -69,9 +69,9 @@ void frontWheelCloseUpShot()
     camTa = vec3(0.9, 0.35, 0.2);
     vec2 vibration = 0.005 * valueNoise2(40.*time);
     float bump = 0.02 * verticalBump();
-    vibration.x += bump;
+    vibration.x += bump
+        + mix(-0.01, 0.01, valueNoise2(100.*time).y);
     camPos.yz += vibration;
-    vibration.x += mix(-0.01, 0.01, valueNoise2(100.*time).y);
     camTa.yz += vibration;
     camProjectionRatio = 1.6;
     camShowDriver = 0.;
@@ -88,7 +88,7 @@ void overTheHeadShot()
 }
 
  // Also useful for debugging & visualizing the spline
- void topDownView()
+void topDownView()
 {
     camPos = vec3(0., 300., 0.);
     camTa = vec3(0.);
@@ -117,18 +117,9 @@ void moonShot(float t_in_shot) {
 }
 
 void staticRoadShot1(float t_in_shot) {
-    camMotoSpace = 0.;
-    camPos = vec3(4., 1.7, 1.);
-    camTa = vec3(4., 1.8 + 1.7 - 0.17*min(5.,t_in_shot), 4.);
-    camProjectionRatio = 1.5;
 }
 
 void staticRoadShot2(float t_in_shot) {
-    camMotoSpace = 0.;
-    vec3 dp = vec3(.2, .2, 1.) * t_in_shot;
-    camPos = vec3(3., 1.5 , 5.) + dp;
-    camTa = vec3(3., 1.5, 6.) + dp;
-    camProjectionRatio = 1.5;
 }
 
 void staticRoadShotMotoArrives(float t_in_shot) {
@@ -183,11 +174,20 @@ void selectShot() {
     if (get_shot(time, 10.5)) {
         moonShot(time);
     } else if (get_shot(time, 5.)) {
-        staticRoadShot1(time);
+        // staticRoadShot1;
+        camMotoSpace = 0.;
+        camPos = vec3(4., 1.7, 1.);
+        camTa = vec3(4., 1.8 + 1.7 - 0.17*min(5.,time), 4.);
+        camProjectionRatio = 1.5;
+
     } else if (get_shot(time, 4.5)) {
-        staticRoadShot2(time);
-    // } else if (get_shot(time, 3.5)) {
-    //     invisibleMotoShot(time);
+        // staticRoadShot2(time);
+        camMotoSpace = 0.;
+        vec3 dp = vec3(.2, .2, 1.) * time;
+        camPos = vec3(3., 1.5 , 5.) + dp;
+        camTa = vec3(3., 1.5, 6.) + dp;
+        camProjectionRatio = 1.5;
+
     } else if (get_shot(time, 4.5)) {
 
         camMotoSpace = 0.;
@@ -255,8 +255,6 @@ void selectShot() {
         wallHeight = 3.;
     } else if (shotStartTime < 96.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
-        wallHeight = 5.;
-    } else if (shotStartTime < 100.) {
         wallHeight = 5.;
     } else if (shotStartTime < 110.) {
         wallHeight = 5.;
