@@ -147,26 +147,6 @@ bool get_shot(inout float time, float duration) {
 
 void selectShot() {
     float time = iTime;
-    // We currently generate a new spline every 20 seconds.
-    // Bug: this can change during a shot.
-    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(iTime / 20)/*seed*/);
-
-    wallHeight = -1.;
-    guardrailHeight = 0.;
-    roadWidthInMeters = vec3(4.0, 8.0, 8.0);
-    if (time < 60.) {
-        wallHeight = -1.;
-    } else if (time < 80.) {
-        wallHeight = 1.;
-    } else if (time < 100.) {
-        roadWidthInMeters = vec3(8, 12.0, 14.0);
-        wallHeight = 3.;
-    } else if (time < 120.) {
-        wallHeight = 5.;
-    } else {
-        wallHeight = -1.;
-        guardrailHeight = 1.;
-    }
 
     camProjectionRatio = 1.;
     camFishEye = 0.1;
@@ -219,4 +199,31 @@ void selectShot() {
 #ifndef USE_VERTEX_SHADER
     PIXEL_ANGLE = camFoV / iResolution.x;
 #endif
+
+    float shotStartTime = iTime - time;
+    wallHeight = -1.;
+    guardrailHeight = 0.;
+    roadWidthInMeters = vec3(4.0, 8.0, 8.0);
+    if (shotStartTime < 60.) {
+        wallHeight = -1.;
+    } else if (shotStartTime < 80.) {
+        wallHeight = 1.;
+    } else if (shotStartTime < 100.) {
+        roadWidthInMeters = vec3(8, 12.0, 14.0);
+        wallHeight = 3.;
+    } else if (shotStartTime < 120.) {
+        wallHeight = 5.;
+    } else {
+        wallHeight = -1.;
+        guardrailHeight = 1.;
+    }
+
+    // We currently generate a new spline every 20 seconds.
+    // Bug: this can change during a shot.
+    GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20)/*seed*/);
+
+    // Use mix to skip the beginning/end of the road.
+    float t = mod(shotStartTime, 15.)
+        + (iTime - shotStartTime);
+    motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
 }

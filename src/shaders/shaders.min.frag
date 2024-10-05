@@ -239,7 +239,7 @@ vec3 sky(vec3 V)
   float moon=smoothstep(0.,.4,(dot(V,moonDirection)-1.)*1e4+1.);
   if(moon>0.)
     color=mix(color,vec3(10,15,13)*1e2*(.5+smoothstep(-1.,1.,-fBm(V.yz*1e2,2,.9,.5)))*direction*direction,moon);
-  return color*mix(.1,1.,direction)*smoothstep(-.1,0.,V.y)/2e3;
+  return color*mix(.1,1.,direction)*smoothstep(-.1,0.,V.y)/1e3;
 }
 vec3 cityLights(vec2 p)
 {
@@ -464,7 +464,6 @@ vec3 motoPos,headLightOffsetFromMotoRoot=vec3(.53,.98,0),breakLightOffsetFromMot
 float motoYaw,motoPitch,motoRoll,motoDistanceOnCurve;
 void computeMotoPosition()
 {
-  motoDistanceOnCurve=mix(.1,.9,fract(time/20.));
   vec4 motoDirAndTurn=getRoadPositionDirectionAndCurvature(motoDistanceOnCurve,motoPos);
   float rightOffset=2.+.5*sin(time);
   motoPos.xz+=vec2(-motoDirAndTurn.z,motoDirAndTurn)*rightOffset;
@@ -882,12 +881,10 @@ vec3 evalRadiance(vec2 t,vec3 p,vec3 V,vec3 N)
         }
       emissive+=lightContribution(light,p,V,N,albedo,f0,m.R);
     }
-  emissive=mix(emissive,vec3(.001,.001,.005),1.-exp(-t.x*.01));
-  return emissive*2;
+  return mix(emissive,vec3(1,4,7)*5e-4,1.-exp(-t.x*.002));
 }
-void GenerateSpline()
+void GenerateSpline(float seed)
 {
-  float seed=2.+floor(iTime/20);
   vec2 direction=normalize(vec2(hash11(seed),hash11(seed+1.))*2.-1.),point=vec2(0);
   for(int i=0;i<13;i++)
     {
@@ -1012,20 +1009,6 @@ bool get_shot(inout float time,float duration)
 void selectShot()
 {
   float time=iTime;
-  GenerateSpline();
-  wallHeight=-1.;
-  guardrailHeight=0.;
-  roadWidthInMeters=vec3(4,8,8);
-  if(time<60.)
-    wallHeight=-1.;
-  else if(time<80.)
-    wallHeight=1.;
-  else if(time<1e2)
-    roadWidthInMeters=vec3(8,12,14),wallHeight=3.;
-  else if(time<120.)
-    wallHeight=5.;
-  else
-     wallHeight=-1.,guardrailHeight=1.;
   camProjectionRatio=1.;
   camFishEye=.1;
   camMotoSpace=1.;
@@ -1072,6 +1055,22 @@ void selectShot()
   else
      overTheHeadShot();
   PIXEL_ANGLE=camFoV/iResolution.x;
+  time=iTime-time;
+  wallHeight=-1.;
+  guardrailHeight=0.;
+  roadWidthInMeters=vec3(4,8,8);
+  if(time<60.)
+    wallHeight=-1.;
+  else if(time<80.)
+    wallHeight=1.;
+  else if(time<1e2)
+    roadWidthInMeters=vec3(8,12,14),wallHeight=3.;
+  else if(time<120.)
+    wallHeight=5.;
+  else
+     wallHeight=-1.,guardrailHeight=1.;
+  GenerateSpline(2.+floor(time/20));
+  motoDistanceOnCurve=mix(.1,.9,(mod(time,15.)+iTime-time)/20.);
 }
 vec3 Uncharted2Tonemap(vec3 x)
 {

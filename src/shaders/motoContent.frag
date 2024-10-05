@@ -24,9 +24,6 @@ float motoDistanceOnCurve;
 
 void computeMotoPosition()
 {
-    // Use mix to skip the beginning/end of the road.
-    motoDistanceOnCurve = mix(0.1, 0.9, fract(time/20.));
-
     vec4 motoDirAndTurn = getRoadPositionDirectionAndCurvature(motoDistanceOnCurve, motoPos);
 
     vec2 motoRight = vec2(-motoDirAndTurn.z, motoDirAndTurn.x);
