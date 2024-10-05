@@ -269,7 +269,11 @@ M motoMaterial(int mid, vec3 p, vec3 N)
 
     if (mid == MOTO_DRIVER_ID)
     {
-        return M(MATERIAL_TYPE_DIELECTRIC, vec3(0.02, 0.025, 0.04), 0.6);
+        float isCoat = smoothstep(0., 0.1, p.y - 0.84);
+        vec3 i_coat = vec3(0.01);
+        vec3 i_denim = vec3(0.02, 0.025, 0.04);
+        vec3 cloth = mix(i_denim, i_coat, isCoat);
+        return M(MATERIAL_TYPE_DIELECTRIC, cloth, 0.7 - .1 *isCoat);
     }
     if (mid == MOTO_DRIVER_HELMET_ID)
     {
