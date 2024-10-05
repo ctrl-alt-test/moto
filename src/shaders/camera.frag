@@ -111,15 +111,22 @@ void faceView(float t_in_shot)
 
 void moonShot(float t_in_shot) {
     camMotoSpace = 0.;
-    camPos = vec3(0., 10., 0.);
-    camTa = vec3(-1., 11.5 - 0.1*t_in_shot, 1.);
+    camPos = vec3(0., 18., 0.);
+    camTa = vec3(-1., 18.3, 1. - 0.02*t_in_shot);
     camProjectionRatio = 1.5;
 }
 
-void staticRoadShot(float t_in_shot) {
+void staticRoadShot1(float t_in_shot) {
     camMotoSpace = 0.;
-    camPos = vec3(1., 1., 0.);
-    camTa = vec3(2., 2.5 - 0.2*min(4.,t_in_shot), 2.);
+    camPos = vec3(1., 1.5, 0.);
+    camTa = vec3(2., 3. - 0.2*min(4.,t_in_shot), 2.);
+    camProjectionRatio = 1.5;
+}
+
+void staticRoadShot2(float t_in_shot) {
+    camMotoSpace = 0.;
+    camPos = vec3(5., 1., 0.);
+    camTa = vec3(10., 1.5, 5. + t_in_shot);
     camProjectionRatio = 1.5;
 }
 
@@ -133,7 +140,7 @@ void invisibleMotoShot(float t_in_shot) {
 void introShotFromFar(float t_in_shot)
 {
     camTa = vec3(0., 1., 0.);
-    camPos = vec3(60. - 3.*t_in_shot, 1., -7+t_in_shot);
+    camPos = vec3(30. - 0.1*t_in_shot, 2.-0.2*t_in_shot, -2-0.5*t_in_shot);
     camProjectionRatio = 1.;
 }
 
@@ -156,10 +163,12 @@ void selectShot() {
 
     if (get_shot(time, 10.5)) {
         moonShot(time);
-    } else if (get_shot(time, 6.)) {
-        staticRoadShot(time);
-    } else if (get_shot(time, 3.5)) {
-        invisibleMotoShot(time);
+    } else if (get_shot(time, 5.)) {
+        staticRoadShot1(time);
+    } else if (get_shot(time, 4.5)) {
+        staticRoadShot2(time);
+    // } else if (get_shot(time, 3.5)) {
+    //     invisibleMotoShot(time);
     } else if (get_shot(time, 9.5)) {
         introShotFromFar(time);
     } else if (get_shot(time, 6.)) {
@@ -191,9 +200,9 @@ void selectShot() {
     } else if (get_shot(time, 8.)) {
         dashBoardUnderTheShoulderShot(time);
     } else if (get_shot(time, 8.)) {
-        viewFromBehind(time);
-    } else {
         overTheHeadShot();
+    } else {
+        viewFromBehind(time);
     }
 
 #ifndef USE_VERTEX_SHADER
@@ -223,7 +232,10 @@ void selectShot() {
     GenerateSpline(1.8/*curvature*/, 100./*scale*/, 2.+floor(shotStartTime / 20)/*seed*/);
 
     // Use mix to skip the beginning/end of the road.
-    float t = mod(shotStartTime, 15.)
+    float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
     motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
+    if (shotStartTime < 20.) {
+        motoDistanceOnCurve = 0.6;
+    }
 }
