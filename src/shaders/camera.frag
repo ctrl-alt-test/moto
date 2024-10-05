@@ -118,15 +118,16 @@ void moonShot(float t_in_shot) {
 
 void staticRoadShot1(float t_in_shot) {
     camMotoSpace = 0.;
-    camPos = vec3(1., 1.5, 0.);
-    camTa = vec3(2., 3. - 0.2*min(4.,t_in_shot), 2.);
+    camPos = vec3(4., 1.7, 1.);
+    camTa = vec3(4., 1.8 + 1.7 - 0.17*min(5.,t_in_shot), 4.);
     camProjectionRatio = 1.5;
 }
 
 void staticRoadShot2(float t_in_shot) {
     camMotoSpace = 0.;
-    camPos = vec3(5., 1., 0.);
-    camTa = vec3(10., 1.5, 5. + t_in_shot);
+    vec3 dp = vec3(.2, .2, 1.) * t_in_shot;
+    camPos = vec3(3., 1.5 , 5.) + dp;
+    camTa = vec3(3., 1.5, 6.) + dp;
     camProjectionRatio = 1.5;
 }
 
