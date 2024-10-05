@@ -247,12 +247,17 @@ void selectShot() {
     roadWidthInMeters = vec3(4.0, 8.0, 8.0);
     if (shotStartTime < 60.) {
         wallHeight = -1.;
-    } else if (shotStartTime < 80.) {
+    } else if (shotStartTime < 76.) {
         wallHeight = -1.;
         guardrailHeight = 1.;
-    } else if (shotStartTime < 100.) {
+    } else if (shotStartTime < 88.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
         wallHeight = 3.;
+    } else if (shotStartTime < 96.) {
+        roadWidthInMeters = vec3(8, 12.0, 14.0);
+        wallHeight = 5.;
+    } else if (shotStartTime < 100.) {
+        wallHeight = 5.;
     } else if (shotStartTime < 110.) {
         wallHeight = 5.;
     } else if (shotStartTime < 120.) {
