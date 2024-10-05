@@ -234,7 +234,7 @@ void selectShot() {
     } else if (get_shot(time, 10.)) {
         staticRoadShotEnd(time);
     } else if (get_shot(time, 10.)) {
-        moonShot(time);
+        moonShot(time + 20.);
     }
 
 #ifndef USE_VERTEX_SHADER
