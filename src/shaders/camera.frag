@@ -226,7 +226,8 @@ void selectShot() {
     if (shotStartTime < 60.) {
         wallHeight = -1.;
     } else if (shotStartTime < 80.) {
-        wallHeight = 1.;
+        wallHeight = -1.;
+        guardrailHeight = 1.;
     } else if (shotStartTime < 100.) {
         roadWidthInMeters = vec3(8, 12.0, 14.0);
         wallHeight = 3.;
