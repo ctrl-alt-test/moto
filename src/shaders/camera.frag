@@ -130,6 +130,14 @@ void staticRoadShot2(float t_in_shot) {
     camProjectionRatio = 1.5;
 }
 
+void staticRoadShotEnd(float t_in_shot) {
+    camMotoSpace = 0.;
+    camPos = vec3(1., 1.5, 0.);
+    camTa = vec3(2., 3. + 0.5*t_in_shot, -10.);
+    //camTa = vec3(2., 2. - 0.2*min(4.,t_in_shot), 2.);
+    camProjectionRatio = 1.5;
+}
+
 void invisibleMotoShot(float t_in_shot) {
     t_in_shot /= 5.;
     camTa = vec3(10., 3., 1.);
@@ -199,10 +207,12 @@ void selectShot() {
         fpsDashboardShot();
     } else if (get_shot(time, 8.)) {
         dashBoardUnderTheShoulderShot(time);
-    } else if (get_shot(time, 8.)) {
-        overTheHeadShot();
-    } else {
+    } else if (get_shot(time, 6.)) {
         viewFromBehind(time);
+    } else if (get_shot(time, 10.)) {
+        staticRoadShotEnd(time);
+    } else if (get_shot(time, 10.)) {
+        moonShot(time);
     }
 
 #ifndef USE_VERTEX_SHADER
@@ -235,7 +245,7 @@ void selectShot() {
     float t = mod(shotStartTime, 14.)
         + (iTime - shotStartTime);
     motoDistanceOnCurve = mix(0.1, 0.9, t/20.);
-    if (shotStartTime < 20.) {
+    if (shotStartTime < 20. || shotStartTime > 125.) {
         motoDistanceOnCurve = 0.6;
     }
 }
