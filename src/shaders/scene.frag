@@ -22,7 +22,8 @@ const float INF = 1e6;
 #include "shared.h"
 vec2 iResolution = vec2(XRES, YRES);
 
-const float DISTANCE_BETWEEN_LAMPS = 50.;
+float DISTANCE_BETWEEN_LAMPS = 50.;
+float lampHeight = 7.;
 
 // Uniforms:
 uniform float iTime;

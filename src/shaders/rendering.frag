@@ -292,14 +292,13 @@ vec3 evalRadiance(vec2 t, vec3 p, vec3 V, vec3 N)
             vec4 roadDirAndCurve = getRoadPositionDirectionAndCurvature(distanceOnCurve, pos);
             roadDirAndCurve.y = 0.;
 
-            float lampHeight = 7.;
-            pos.x += (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
-            pos.y += lampHeight - 1.;
+            pos.xz += vec2(-roadDirAndCurve.z, roadDirAndCurve.x) * (roadWidthInMeters.x - 1.) * 1.2 * (float(i % 2) * 2. - 1.);
+            pos.y += lampHeight - .1;
             // 90° rotation:
             //roadDirAndCurve.xz = vec2(roadDirAndCurve.z, -roadDirAndCurve.x);
 
-            vec3 coldNeon = vec3(0.8, 0.9, 1.);
-            vec3 warmNeon = vec3(1., 0.9, 0.7);
+            //vec3 coldNeon = vec3(0.8, 0.9, 1.);
+            //vec3 warmNeon = vec3(1., 0.9, 0.7);
             vec3 sodium = vec3(1., 0.32, 0.0);
             light = L(pos, pos + roadDirAndCurve.xyz, sodium * 4., -1.0, 0.0, 0.0);
         }

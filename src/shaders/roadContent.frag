@@ -275,7 +275,10 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
     if (wallHeight >= 0.) {
         guardrailHeight = -1.;
     }
-    float lampHeight = 7.;
+    if (wallHeight >= 4.) {
+        DISTANCE_BETWEEN_LAMPS = 30.;
+        lampHeight = wallHeight - .2;
+    }
 
     vec3 pReflector = vec3(pRoad.x, pRoad.y - 0.8, round(pRoad.z / 4.) * 4. - pRoad.z);
 
@@ -309,10 +312,17 @@ vec2 roadSideItems(vec4 splineUV, float relativeHeight) {
         pObj = vec3(pRoad.x + 0.7, pRoad.y - lampHeight, pObj.z);
         pObj.xy *= Rotation(-0.2);
         len = min(len, Box3(pObj, vec3(1.8, 0.05, 0.05), 0.1));
-        res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
 
         pObj.x += 1.2;
-        len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
+        if (wallHeight < 4.)
+        {
+            res = MinDist(res, vec2(len, ROAD_UTILITY_ID));
+            len = Box3(pObj, vec3(0.7, 0.1, 0.1), 0.1);
+        }
+        else
+        {
+            len = Box3(pObj, vec3(0.2, 0.1, 0.7), 0.1);
+        }
         res = MinDist(res, vec2(len, ROAD_LIGHT_ID));
     }
 
