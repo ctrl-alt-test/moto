@@ -172,6 +172,15 @@ void main()
     float d = 1.-dot(rd, cameraToLightDir);
     radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
 
+    headLightPosition = motoToWorld(breakLightOffsetFromMotoRoot + vec3(0., 0., 0.), true);
+    headLightDirection = motoToWorld(normalize(vec3(-1.0, -0.5, 0.0)), false);
+    cameraToLightDir = normalize(headLightPosition - ro);
+    float dist = length(headLightPosition - ro);
+    aligned = max(0., dot(cameraToLightDir, -headLightDirection));
+    d = 1.-dot(rd, cameraToLightDir);
+    radiance += 1.*vec3(1., 0., 0.) * aligned / (1.+2000.*d) / dist;
+
+
     // Final tonemapping, fade, accumulation, and dithering
     vec3 i_color = toneMapping(radiance) *
         smoothstep(0., 4., iTime) * // fade in
