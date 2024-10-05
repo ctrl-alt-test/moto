@@ -489,6 +489,9 @@ vec2 motoShape(vec3 p)
         pMirror.xz *= Rotation(0.25);
 
         mirror = -min(mirror, -Ellipsoid(pMirror, vec3(0.04, 0.05, 0.08)));
+        pMirror.x-=.05;
+        pMirror.yz *= Rotation(1);
+        mirror = min(mirror,max(length(pMirror.xz)-.003,max(pMirror.y,-pMirror.y-.15)));
         fork = min(fork, mirror);
 
         d = MinDist(d, vec2(fork, MOTO_ID));
