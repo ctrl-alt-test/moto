@@ -189,7 +189,12 @@ void selectShot() {
     // } else if (get_shot(time, 3.5)) {
     //     invisibleMotoShot(time);
     } else if (get_shot(time, 4.5)) {
-        staticRoadShotMotoArrives(time);
+
+        camMotoSpace = 0.;
+        camPos = vec3(1., 1., 0.);
+        camTa = vec3(-0., 1., 5.);// + t_in_shot);
+        camProjectionRatio = 1.5;
+
     } else if (get_shot(time, 5.)) {
         // staticRoadShotMotoArrives2(time);
         introShotFromFar(time);
