@@ -71,7 +71,7 @@ void frontWheelCloseUpShot()
     float bump = 0.02 * verticalBump();
     vibration.x += bump;
     camPos.yz += vibration;
-    vibration.x += mix(-0.01, 0.01, valueNoise2(600.*time).y);
+    vibration.x += mix(-0.01, 0.01, valueNoise2(100.*time).y);
     camTa.yz += vibration;
     camProjectionRatio = 1.6;
     camShowDriver = 0.;
