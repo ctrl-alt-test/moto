@@ -10,6 +10,9 @@ vec3 moonDirection = normalize(vec3(-1., 0.3, 0.4));
 
 vec3 sky(vec3 V)
 {
+    if (wallHeight > 4.) {
+        return vec3(0);
+    }
 #ifdef ENABLE_DAY_MODE
     return mix(vec3(0.6, 0.8, 1.), vec3(0.01, 0.35, 1.), pow(smoothstep(0.15, 1., V.y), 0.4));
 #endif
