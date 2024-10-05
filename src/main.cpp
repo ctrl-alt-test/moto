@@ -217,6 +217,7 @@ int __cdecl main(int argc, char* argv[])
 		#endif
 
 		// main renderer
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, XRES, YRES, 0);
 		((PFNGLUSEPROGRAMPROC)wglGetProcAddress("glUseProgram"))(shaderMain);
 		((PFNGLUNIFORM1FPROC)wglGetProcAddress("glUniform1f"))(0, time);
