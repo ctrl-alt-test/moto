@@ -24,7 +24,7 @@
     to RTX3080 or higher.
 
     In the balance between binary size and performance, the latter was
-    essentially sacrificed, hance the hardware requirements.  We might
+    essentially sacrificed, hence the hardware requirements.  We might
     release a later version with a different tradeoff so the intro can
     be enjoyed smoothly on mid-range hardware.
 
@@ -33,6 +33,7 @@
         - Heat          (1995, director of photography: Dante Spinott)
         - Tron Legacy (2010, director of photography: Claudio Miranda)
         - Nightcrawler  (2014, director of photography: Robert Elswit)
+        - Eternal Apex               (https://acatalept.com, Acatalep)
 
     Special thanks to:
         - rubix, for the series of improvements to Shader Minifier.
