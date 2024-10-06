@@ -266,6 +266,6 @@ void selectShot() {
         motoDistanceOnCurve += 0.2;
     }
     if (shotStartTime > 120.) {
-        motoDistanceOnCurve += 0.1;
+        motoDistanceOnCurve = min(1., motoDistanceOnCurve+0.1);
     }
 }
