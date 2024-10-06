@@ -183,7 +183,8 @@ void main()
     vec3 i_color = toneMapping(radiance) *
         smoothstep(0., 4., iTime) * // fade in
         smoothstep(138., 132., iTime); // fade out
-    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.2)
+    // motion blur
+    fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.6)
     +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
     , 1.);
 }
