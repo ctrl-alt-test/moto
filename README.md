@@ -1,3 +1,32 @@
+# Night Ride
+
+## About
+
+A Night Ride is a realtime computer animation (a [demo](https://en.wikipedia.org/wiki/Demoscene)).
+A capture of the demo is available on YouTube: https://www.youtube.com/watch?v=OomA9W_N3Ik
+
+For more information about Night Ride, see:
+- https://www.ctrl-alt-test.fr/productions/night-ride/
+- https://www.pouet.net/prod.php?which=98212
+
+## Build & Tools
+
+To build the demo, we use [Microsoft Visual Studio Community 2022](https://visualstudio.microsoft.com/vs/community/).
+
+Tips:
+
+* For interactive development, build using the `Editor` configuration:
+** Shaders are recompiled automatically when `Ctrl-S` is pressed.
+** The Editor mode expects a file `moto.wav` that can be generated using the `wav_export` project.
+Alternatively, comment out the `SOUND_ON` macro during development (PRs to improve this would be welcome).
+
+* For performance, you may want to reduce the resolution in the file `shared.h` as the demo is very GPU-intensive.
+
+* The demo uses a perprocessor to merge all shader input files. The output is stored in `preprocessed.scene.frag`.
+
+* The minified shader is visible in `shaders.inl`. To analyze the minified code, you may want to check `shaders.min.frag` instead (it's minified, but indented and without renaming).
+
+## Original README
 
                           Ctrl-Alt-Test & Alcatraz
                                    present
