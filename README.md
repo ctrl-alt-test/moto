@@ -16,9 +16,11 @@ To build the demo, we use [Microsoft Visual Studio Community 2022](https://visua
 Tips:
 
 * For interactive development, build using the `Editor` configuration:
-** Shaders are recompiled automatically when `Ctrl-S` is pressed.
-** The Editor mode expects a file `moto.wav` that can be generated using the `wav_export` project.
-Alternatively, comment out the `SOUND_ON` macro during development (PRs to improve this would be welcome).
+
+  * Shaders are recompiled automatically when `Ctrl-S` is pressed.
+  * The Editor mode expects a file `moto.wav` that can be generated using the `wav_export` project. Alternatively, comment out the `SOUND_ON` macro during development (PRs to improve this would be welcome).
+
+* Build using the `Snapshot` configuration to get a binary quickly. Switch to `Release` if you want a smaller binary (but it may take more than a minute to build). Use `Heavy Release` if you want to waste more CPU cycles.
 
 * For performance, you may want to reduce the resolution in the file `shared.h` as the demo is very GPU-intensive.
 
