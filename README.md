@@ -1,5 +1,7 @@
 # Night Ride
 
+> We're organizing a size-coding challenge. See [size-coding.md](size-coding.md) for details.
+
 ## About
 
 A Night Ride is a realtime computer animation (a [demo](https://en.wikipedia.org/wiki/Demoscene)).
