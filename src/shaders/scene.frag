@@ -104,6 +104,16 @@ vec3 toneMapping(vec3 hdrColor)
   return pow(sdrColor, vec3(1.0 / gamma));
 }
 
+float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float falloff, float distFalloff)
+{
+    vec3 ol = motoToWorld(lightPosition, true) - ro;
+    vec3 cameraToLightDir = normalize(ol);
+    float dist = mix(1., length(ol), distFalloff);
+    float aligned = max(0., dot(cameraToLightDir, -motoToWorld(normalize(lightDirection), false)));
+    float d = 1.-dot(rd, cameraToLightDir);
+    return aligned / (1.+falloff*d) / dist;
+}
+
 void main()
 {
     ComputeBezierSegmentsLengthAndAABB();
@@ -163,27 +173,15 @@ void main()
     vec3 radiance = max(vec3(0), evalRadiance(t, p, -rd, i_N));
 
     // Bloom around headlight
-    vec3 headLightPosition = motoToWorld(headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), true);
-    vec3 headLightDirection = motoToWorld(normalize(vec3(1.0, -0.15, 0.0)), false);
-    vec3 cameraToLightDir = normalize(headLightPosition - ro);
-    float aligned = max(0., dot(cameraToLightDir, -headLightDirection));
-    float d = 1.-dot(rd, cameraToLightDir);
-    radiance += 5.*vec3(1., 0.9, .8) * aligned / (1.+10000.*d);
-
-    headLightPosition = motoToWorld(breakLightOffsetFromMotoRoot + vec3(0., 0., 0.), true);
-    headLightDirection = motoToWorld(normalize(vec3(-1.0, -0.5, 0.0)), false);
-    cameraToLightDir = normalize(headLightPosition - ro);
-    float dist = length(headLightPosition - ro);
-    aligned = max(0., dot(cameraToLightDir, -headLightDirection));
-    d = 1.-dot(rd, cameraToLightDir);
-    radiance += 1.*vec3(1., 0., 0.) * aligned / (1.+2000.*d) / dist;
-
+    radiance += bloom(ro, rd, headLightOffsetFromMotoRoot + vec3(0.1, -0.05, 0.), vec3(1.0, -0.15, 0.0), 10000., 0.) * 5.*vec3(1., 0.9, .8);
+    radiance += bloom(ro, rd, breakLightOffsetFromMotoRoot, vec3(-1.0, -0.5, 0.0), 2000., 1.) * vec3(1., 0., 0.);
 
     // Final tonemapping, fade, accumulation, and dithering
     vec3 i_color = toneMapping(radiance) *
         smoothstep(0., 4., iTime) * // fade in
         smoothstep(138., 132., iTime); // fade out
-    // motion blur
+
+    // Motion blur
     fragColor = vec4(mix(i_color, texture(tex, texCoord).rgb, 0.6)
     +vec3(hash21(fract(uv+iTime)), hash21(fract(uv-iTime)), hash21(fract(uv.yx+iTime)))*.04-0.02
     , 1.);

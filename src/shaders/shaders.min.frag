@@ -1068,11 +1068,18 @@ void selectShot()
   if(time>18.&&time<21.)
     motoDistanceOnCurve+=.2;
   if(time>120.)
-    motoDistanceOnCurve+=.1;
+    motoDistanceOnCurve=min(1.,motoDistanceOnCurve+.1);
 }
 vec3 Uncharted2Tonemap(vec3 x)
 {
   return(x*(.2*x+.03)+.002)/(x*(.2*x+.3)+.1)-.02;
+}
+float bloom(vec3 ro,vec3 rd,vec3 lightPosition,vec3 lightDirection,float falloff,float distFalloff)
+{
+  ro=motoToWorld(lightPosition,true)-ro;
+  lightPosition=normalize(ro);
+  float aligned=max(0.,dot(lightPosition,-motoToWorld(normalize(lightDirection),false)));
+  return aligned/(1.+falloff*(1.-dot(rd,lightPosition)))/mix(1.,length(ro),distFalloff);
 }
 void main()
 {
@@ -1089,17 +1096,8 @@ void main()
   setupCamera(uv,cameraPosition,cameraTarget,ro,rd);
   vec2 t=rayMarchScene(ro,rd,cameraTarget);
   cameraTarget=max(vec3(0),evalRadiance(t,cameraTarget,-rd,evalNormal(cameraTarget,t.x)));
-  cameraPosition=motoToWorld(headLightOffsetFromMotoRoot+vec3(.1,-.05,0),true);
-  vec3 headLightDirection=motoToWorld(normalize(vec3(1,-.15,0)),false),cameraToLightDir=normalize(cameraPosition-ro);
-  float aligned=max(0.,dot(cameraToLightDir,-headLightDirection)),d=1.-dot(rd,cameraToLightDir);
-  cameraTarget+=5.*vec3(1,.9,.8)*aligned/(1.+1e4*d);
-  cameraPosition=motoToWorld(breakLightOffsetFromMotoRoot+vec3(0),true);
-  headLightDirection=motoToWorld(normalize(vec3(-1,-.5,0)),false);
-  cameraToLightDir=normalize(cameraPosition-ro);
-  float dist=length(cameraPosition-ro);
-  aligned=max(0.,dot(cameraToLightDir,-headLightDirection));
-  d=1.-dot(rd,cameraToLightDir);
-  cameraTarget+=vec3(1,0,0)*aligned/(1.+2e3*d)/dist;
-  fragColor=vec4(mix(pow(Uncharted2Tonemap(2.*cameraTarget)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.2)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
+  cameraTarget+=bloom(ro,rd,headLightOffsetFromMotoRoot+vec3(.1,-.05,0),vec3(1,-.15,0),1e4,0.)*5.*vec3(1,.9,.8);
+  cameraTarget+=bloom(ro,rd,breakLightOffsetFromMotoRoot,vec3(-1,-.5,0),2e3,1.)*vec3(1,0,0);
+  fragColor=vec4(mix(pow(Uncharted2Tonemap(2.*cameraTarget)/Uncharted2Tonemap(vec3(11.2)),vec3(1./2.2))*smoothstep(0.,4.,iTime)*smoothstep(138.,132.,iTime),texture(tex,texCoord).xyz,.6)+vec3(hash21(fract(uv+iTime)),hash21(fract(uv-iTime)),hash21(fract(uv.yx+iTime)))*.04-.02,1);
 }
 
