@@ -116,7 +116,6 @@ float bloom(vec3 ro, vec3 rd, vec3 lightPosition, vec3 lightDirection, float fal
 
 void main()
 {
-    ComputeBezierSegmentsLengthAndAABB();
     vec2 texCoord = gl_FragCoord.xy/iResolution.xy;
     vec2 uv = (texCoord * 2. - 1.) * vec2(1., iResolution.y / iResolution.x);
 
@@ -129,6 +128,7 @@ void main()
 #ifndef USE_VERTEX_SHADER
     selectShot();
 #endif
+    ComputeBezierSegmentsLengthAndAABB();
     computeMotoPosition();
 
     // Compute moto position
